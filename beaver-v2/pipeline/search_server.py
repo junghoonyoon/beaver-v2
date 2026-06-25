@@ -245,9 +245,13 @@ class Handler(BaseHTTPRequestHandler):
 def main():
     if not config.SEARCH_INDEX_JSON.exists():
         print("⚠️ 검색 인덱스가 없어 빈 상태로 서버를 먼저 시작합니다.")
-        refresh_search_index_async()
-    krx_listed.refresh_if_needed_async()
-    us_listed.refresh_if_needed_async()
+        if config.STARTUP_REFRESH_ENABLED:
+            refresh_search_index_async()
+    if config.STARTUP_REFRESH_ENABLED:
+        krx_listed.refresh_if_needed_async()
+        us_listed.refresh_if_needed_async()
+    else:
+        print("시작 시 자동 데이터 갱신은 꺼져 있어요. seed 캐시를 사용합니다.")
     try:
         server = SearchServer((HOST, PORT), Handler)
     except OSError as exc:

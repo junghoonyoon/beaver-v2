@@ -13,6 +13,11 @@ MANUAL_TRANSCRIPT_DIR = CACHE_DIR / "manual_transcripts"
 SEARCH_INDEX_JSON = CACHE_DIR / "search_index.json"
 KRX_LISTED_JSON = CACHE_DIR / "krx_listed_stocks.json"
 US_LISTED_JSON = CACHE_DIR / "us_listed_stocks.json"
+IS_RENDER = bool(os.environ.get("RENDER") or os.environ.get("RENDER_SERVICE_ID"))
+STARTUP_REFRESH_ENABLED = os.environ.get(
+    "STARTUP_REFRESH_ENABLED",
+    "0" if IS_RENDER else "1",
+) == "1"
 
 # ── API 키 (환경변수에서) ──
 YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY", "")

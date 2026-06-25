@@ -141,6 +141,16 @@ FALLBACK_STOCK_MASTER = [
 
 def stock_master():
     """KRX·미국 캐시가 있으면 전체 종목을 우선 사용하고, 보강 목록을 합친다."""
+    cache_key = (
+        id(krx_listed.load_cached_stocks),
+        id(us_listed.load_cached_stocks),
+        config.KRX_LISTED_JSON.stat().st_mtime if config.KRX_LISTED_JSON.exists() else None,
+        config.US_LISTED_JSON.stat().st_mtime if config.US_LISTED_JSON.exists() else None,
+    )
+    cached_key = getattr(stock_master, "_cached_key", None)
+    cached = getattr(stock_master, "_cached", None)
+    if cached_key == cache_key and cached is not None:
+        return cached
     rows = []
     seen_codes = set()
     for stock in krx_listed.load_cached_stocks():
@@ -160,6 +170,8 @@ def stock_master():
         if code and code in seen_codes:
             continue
         rows.append(stock)
+    stock_master._cached_key = cache_key
+    stock_master._cached = rows
     return rows
 
 
