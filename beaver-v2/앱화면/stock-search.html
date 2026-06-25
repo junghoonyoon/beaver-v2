@@ -25,7 +25,7 @@
     h1 { margin:12px 0 10px; font-size:clamp(30px,6vw,48px); line-height:1.12; letter-spacing:-.045em }
     .lead { margin:0; color:var(--body); font-size:16px; line-height:1.65 }
     .search {
-      position:relative; margin-top:30px; display:flex; gap:10px; padding:8px;
+      position:sticky; top:12px; z-index:30; margin-top:30px; display:flex; gap:10px; padding:8px;
       border:1px solid var(--line); border-radius:16px; background:var(--card); box-shadow:var(--shadow);
     }
     .search input {
@@ -55,12 +55,16 @@
     .suggestion-name { min-width:0; color:#14161a; font-size:16px; font-weight:700; line-height:1.3; word-break:keep-all }
     .suggestion-name .match { color:var(--blue); font-weight:800 }
     .suggestion-market { color:#70757d; font-size:15px; font-weight:600; line-height:1.3; text-align:right; white-space:nowrap }
-    .examples { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px }
+    .chip-block { margin-top:14px }
+    .chip-label { display:none }
+    .examples { display:flex; flex-wrap:wrap; gap:8px }
     .example {
       border:1px solid var(--line); border-radius:999px; padding:7px 12px;
       background:rgba(255,255,255,.75); color:var(--body); cursor:pointer;
+      white-space:nowrap;
     }
-    .status { margin-top:18px; color:var(--muted); font-size:13px }
+    .status { display:none; margin-top:10px; color:var(--muted); font-size:13px }
+    .status.show { display:block }
     .loading {
       display:none; margin-top:34px; padding:28px; text-align:center;
       border:1px solid var(--line); border-radius:18px; background:var(--card);
@@ -73,30 +77,43 @@
     @keyframes spin { to { transform:rotate(360deg) } }
     .result { margin-top:38px }
     .result:empty { display:none }
-    .summary {
-      padding:22px; border:1px solid var(--line); border-radius:18px;
-      background:var(--card); box-shadow:var(--shadow);
-    }
+    .summary { padding:2px 0 0 }
     .summary h2 { margin:0; font-size:26px; letter-spacing:-.025em }
     .summary-meta { margin-top:8px; color:var(--body); font-size:14px }
-    .counts { display:flex; flex-wrap:wrap; gap:8px; margin-top:18px }
-    .count { border-radius:999px; padding:7px 11px; font-size:13px; font-weight:750 }
+    .counts { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px }
+    .count { border-radius:999px; padding:6px 10px; font-size:13px; font-weight:750 }
     .count.pos,.badge.pos { color:var(--pos); background:var(--pos-bg) }
     .count.neu,.badge.neu { color:var(--neu); background:var(--neu-bg) }
     .count.neg,.badge.neg { color:var(--neg); background:var(--neg-bg) }
     .count.mention,.badge.mention { color:var(--mention); background:var(--mention-bg) }
-    .cards { display:grid; gap:12px; margin-top:16px }
+    .cards { display:grid; gap:12px; margin-top:18px }
     .card { padding:20px; border:1px solid var(--line); border-radius:16px; background:var(--card) }
     .card-head { display:flex; align-items:center; gap:10px }
     .channel { font-size:16px; font-weight:800 }
     .badge { margin-left:auto; border-radius:999px; padding:6px 10px; font-size:12px; font-weight:800 }
+    .field-label { margin-top:16px; color:var(--muted); font-size:11px; font-weight:800 }
     .opinion { margin:14px 0 0; font-size:16px; font-weight:700; line-height:1.55; word-break:keep-all }
-    .evidence { margin:8px 0 0; color:var(--body); font-size:14px; line-height:1.6; word-break:keep-all }
-    .video {
-      display:flex; justify-content:space-between; gap:12px; margin-top:15px;
-      padding-top:13px; border-top:1px solid #f0f1f3; color:var(--muted); font-size:12px;
+    .evidence-label { margin-top:13px }
+    .evidence { margin:5px 0 0; color:#4b5058; font-size:15px; line-height:1.65; word-break:keep-all }
+    .source-chip {
+      display:inline-flex; align-items:center; max-width:100%; vertical-align:baseline;
+      margin-left:6px; transform:translateY(-1px); border-radius:999px; padding:3px 8px;
+      background:#f1f3f6; color:#5f6368; font-size:12px; font-weight:600;
+      line-height:1.35; text-decoration:none; white-space:nowrap;
     }
-    .video a { color:var(--blue); font-weight:700; text-decoration:none }
+    .source-chip:hover { background:#e8eef8; color:var(--blue) }
+    .source-actions {
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      margin-top:14px; padding-top:13px; border-top:1px solid #f0f1f3;
+      color:var(--muted); font-size:12px;
+    }
+    .original-link {
+      display:inline-flex; align-items:center; justify-content:center; min-height:30px;
+      border-radius:8px; padding:0 2px;
+      color:var(--blue); background:transparent; font-size:12px; font-weight:800;
+      text-decoration:none; white-space:nowrap;
+    }
+    .original-link:hover { color:#185abc; text-decoration:underline }
     .empty,.error {
       padding:24px; border:1px solid var(--line); border-radius:16px; background:var(--card);
       color:var(--body); line-height:1.6;
@@ -105,11 +122,23 @@
     .foot { margin-top:28px; color:var(--muted); font-size:12px; line-height:1.6 }
     @media (max-width:560px) {
       .page { padding-top:40px }
-      .search { flex-direction:column }
-      .search button { height:48px }
+      .search { top:10px; gap:6px; padding:6px }
+      .search input { padding:10px 10px; font-size:16px }
+      .search button { min-height:46px; padding:0 14px; font-size:15px; white-space:nowrap }
+      .chip-block {
+        width:calc(100% + 28px); margin-left:-14px; padding-left:14px;
+        overflow:hidden;
+      }
+      .examples {
+        flex-wrap:nowrap; overflow-x:auto; overscroll-behavior-x:contain;
+        scroll-snap-type:x proximity; padding:0 14px 4px 0; -webkit-overflow-scrolling:touch;
+      }
+      .examples::-webkit-scrollbar { display:none }
+      .example { flex:0 0 auto; scroll-snap-align:start }
       .suggestion { grid-template-columns:72px minmax(0,1fr) 64px; gap:10px; padding:12px 14px }
       .suggestion-code,.suggestion-name,.suggestion-market { font-size:14px }
-      .video { flex-direction:column }
+      .source-chip { margin-left:4px }
+      .source-actions { align-items:flex-start; flex-direction:column }
     }
   </style>
 </head>
@@ -117,18 +146,21 @@
   <main class="page">
     <div class="brand">BEAVER STOCK SEARCH</div>
     <h1>궁금한 종목,<br>유튜버들은 어떻게 볼까요?</h1>
-    <p class="lead">최근 영상 자막에서 해당 종목을 실제로 언급한 유튜버를 찾고,<br>긍정·신중·부정 의견과 근거를 한눈에 정리해드려요.</p>
+    <p class="lead">최근 2주 업로드 영상에서 종목을 실제로 언급한 유튜버를 찾고,<br>긍정·신중·부정 의견과 근거를 한눈에 정리해드려요.</p>
 
     <form class="search" id="form">
       <input id="query" autocomplete="off" placeholder="예: 삼성전자, SK하이닉스, 엔비디아" aria-label="종목명">
       <button id="submit" type="submit">의견 찾기</button>
       <div class="suggestions" id="suggestions" role="listbox" aria-label="종목 추천"></div>
     </form>
-    <div class="examples">
-      <button class="example" type="button">삼성전자</button>
-      <button class="example" type="button">SK하이닉스</button>
-      <button class="example" type="button">엔비디아</button>
-      <button class="example" type="button">현대차</button>
+    <div class="chip-block">
+      <div class="chip-label" id="chipLabel">최근 많이 언급된 종목</div>
+      <div class="examples" id="chips">
+        <button class="example" type="button">삼성전자</button>
+        <button class="example" type="button">SK하이닉스</button>
+        <button class="example" type="button">엔비디아</button>
+        <button class="example" type="button">현대차</button>
+      </div>
     </div>
     <div class="status" id="status">검색 인덱스를 확인하는 중이에요…</div>
 
@@ -146,6 +178,7 @@
     const form = $("form"), input = $("query"), submit = $("submit");
     const loading = $("loading"), loadingTitle = $("loadingTitle"), loadingText = $("loadingText");
     const result = $("result"), statusEl = $("status"), suggestionsEl = $("suggestions");
+    const chipsEl = $("chips"), chipLabelEl = $("chipLabel");
     const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const stanceClass = stance => ({긍정:"pos",신중:"neu",부정:"neg",단순언급:"mention"}[stance] || "mention");
     const serverRequiredMessage = "의견 분석은 종목검색실행.command를 실행한 뒤 http://127.0.0.1:8765 주소에서 사용해 주세요.";
@@ -187,9 +220,29 @@
     ].map(([name, code, market, aliases = [], english = "", keywords = []]) => ({ name, code, market, english, keywords, aliases:[name, code, english, ...aliases].filter(Boolean) }));
     const dateText = value => {
       const d = new Date(value);
-      return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("ko-KR",{year:"numeric",month:"short",day:"numeric"});
+      if (Number.isNaN(d.getTime())) return "";
+      const period = d.getHours() < 12 ? "오전" : "오후";
+      const hour = d.getHours() % 12 || 12;
+      const minute = String(d.getMinutes()).padStart(2, "0");
+      return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 ${period} ${hour}:${minute} 업로드`;
     };
     const viewsText = n => n >= 10000 ? `${(n/10000).toFixed(1)}만회` : `${n}회`;
+    const hasSourceTime = value => Number.isFinite(Number(value));
+    const sourceTimeText = value => {
+      const sec = Math.max(0, Math.floor(Number(value)));
+      const hour = Math.floor(sec / 3600);
+      const min = Math.floor(sec / 60);
+      const rest = sec % 60;
+      if (hour) return `${hour}시간 ${Math.floor((sec % 3600) / 60)}분`;
+      return min ? `${min}분 ${rest}초` : `${rest}초`;
+    };
+    const sourceUrl = o => {
+      if (!hasSourceTime(o.sourceTimeSec)) return o.url;
+      const joiner = String(o.url).includes("?") ? "&" : "?";
+      return `${o.url}${joiner}t=${Math.floor(Number(o.sourceTimeSec))}s`;
+    };
+    const sourceLabel = o => hasSourceTime(o.sourceTimeSec) ? sourceTimeText(o.sourceTimeSec) : o.channel;
+    const opinionRank = stance => stance === "단순언급" ? 1 : 0;
     let suggestTimer = null;
     let suggestions = [];
     let activeSuggestion = -1;
@@ -240,25 +293,39 @@
         .map(item => item.row);
     }
 
+    function renderChips(label, rows) {
+      const fallback = ["삼성전자", "SK하이닉스", "엔비디아", "현대차", "마이크론", "테슬라", "애플", "한화에어로스페이스"].map(name => ({ name }));
+      const chips = (rows?.length ? rows : fallback).slice(0, 8);
+      chipLabelEl.textContent = label || "최근 많이 언급된 종목";
+      chipsEl.innerHTML = chips.map(row => `<button class="example" type="button">${esc(row.name || row)}</button>`).join("");
+    }
+
+    async function loadChips({ query = "", label = "" } = {}) {
+      if (isFileMode) {
+        renderChips(label || "검색 예시", null);
+        return;
+      }
+      try {
+        const qs = query ? `?q=${encodeURIComponent(query)}` : "";
+        const data = await fetch(`/api/chips${qs}`).then(r => r.json());
+        renderChips(label || data.label, data.chips);
+      } catch {
+        renderChips(label || "검색 예시", null);
+      }
+    }
+
     async function loadStatus() {
       if (isFileMode) {
+        statusEl.classList.add("show");
         statusEl.textContent = "종목 추천은 바로 가능해요. 의견 분석은 종목검색실행.command로 서버를 켠 뒤 사용해 주세요.";
         return;
       }
       try {
         const data = await fetch("/api/status").then(r => r.json());
-        const stockMaster = data.stockMaster;
-        const usStockMaster = data.usStockMaster;
-        const stockText = stockMaster?.cached
-          ? ` · KRX 종목 ${stockMaster.count}개${stockMaster.baseDate ? `(${stockMaster.baseDate})` : ""}`
-          : "";
-        const usStockText = usStockMaster?.cached
-          ? ` · 미국 종목 ${usStockMaster.count}개`
-          : "";
-        statusEl.textContent = data.ready
-          ? `최근 ${data.lookbackDays}일 · 자막 영상 ${data.videoCount}개 검색 가능${stockText}${usStockText} · ${data.model}`
-          : "검색 데이터가 아직 없어요. 인덱스 갱신이 필요합니다.";
+        statusEl.textContent = data.ready ? "" : "검색 데이터가 아직 없어요. 인덱스 갱신이 필요합니다.";
+        statusEl.classList.toggle("show", !data.ready);
       } catch {
+        statusEl.classList.add("show");
         statusEl.textContent = "검색 서버에 연결할 수 없어요.";
       }
     }
@@ -278,23 +345,31 @@
         }
         if (data.errors?.length) {
           result.innerHTML = `<div class="empty"><b>${esc(data.query)}</b> 관련 영상 ${esc(data.matchedVideos || 0)}개를 찾았지만 분석에 실패했어요.<br>${esc(data.errors[0])}</div>`;
+          loadChips({ label: "검색 가능한 인기 종목" });
           return;
         }
         result.innerHTML = `<div class="empty"><b>${esc(data.query)}</b>을(를) 명확히 평가한 최근 유튜버 의견을 찾지 못했어요.<br>띄어쓰기를 바꾸거나 회사의 정식 종목명으로 다시 검색해 보세요.</div>`;
+        loadChips({ label: "검색 가능한 인기 종목" });
         return;
       }
       const c = data.counts;
-      const cards = data.opinions.map(o => `
+      const opinions = data.opinions
+        .map((opinion, order) => ({ ...opinion, order }))
+        .sort((a, b) => opinionRank(a.stance) - opinionRank(b.stance) || a.order - b.order);
+      const cards = opinions.map(o => `
         <article class="card">
           <div class="card-head">
             <span class="channel">${esc(o.channel)}</span>
             <span class="badge ${stanceClass(o.stance)}">${esc(o.stance)}</span>
           </div>
           <p class="opinion">${esc(o.summary)}</p>
-          <p class="evidence">${esc(o.evidence)}</p>
-          <div class="video">
+          <div class="field-label evidence-label">근거</div>
+          <p class="evidence">${esc(o.evidence)}
+            <a class="source-chip" href="${esc(sourceUrl(o))}" target="_blank" rel="noopener" title="${esc(o.channel)} · ${esc(dateText(o.publishedAt))} · 조회 ${esc(viewsText(o.views))}">${esc(sourceLabel(o))}</a>
+          </p>
+          <div class="source-actions">
             <span>${esc(dateText(o.publishedAt))} · 조회 ${esc(viewsText(o.views))}</span>
-            <a href="${esc(o.url)}" target="_blank" rel="noopener">원본 영상 보기 ↗</a>
+            <a class="original-link" href="${esc(o.url)}" target="_blank" rel="noopener">원본 영상 보기 ↗</a>
           </div>
         </article>`).join("");
       result.innerHTML = `
@@ -313,6 +388,7 @@
           </div>
         </div>
         <div class="cards">${cards}</div>`;
+      if (done) loadChips({ query:data.query, label:"함께 언급된 종목" });
     }
 
     function hideSuggestions() {
@@ -472,7 +548,11 @@
     document.addEventListener("click", e => {
       if (!form.contains(e.target)) hideSuggestions();
     });
-    document.querySelectorAll(".example").forEach(btn => btn.addEventListener("click", () => search(btn.textContent)));
+    chipsEl.addEventListener("click", e => {
+      const button = e.target.closest(".example");
+      if (button) search(button.textContent);
+    });
+    loadChips();
     loadStatus();
   </script>
 </body>

@@ -99,6 +99,7 @@ def recent_uploads(channel, lookback_days=None, max_results=15):
 LAST_TRANSCRIPT_ERROR = None
 LAST_TRANSCRIPT_SOURCE = None
 LAST_TRANSCRIPT_FROM_CACHE = False
+LAST_TRANSCRIPT_SEGMENTS = None
 _LAST_UPSTREAM_REQUEST_AT = 0.0
 
 
@@ -164,7 +165,8 @@ def _pace_upstream():
 
 def _supadata_transcript(video_id):
     """Supadata API로 자막 가져오기 (차단 우회 + 자막 없으면 AI 받아쓰기)."""
-    global LAST_TRANSCRIPT_ERROR
+    global LAST_TRANSCRIPT_ERROR, LAST_TRANSCRIPT_SEGMENTS
+    LAST_TRANSCRIPT_SEGMENTS = None
     try:
         r = requests.get("https://api.supadata.ai/v1/transcript",
                          params={"url": f"https://www.youtube.com/watch?v={video_id}"},
@@ -174,6 +176,19 @@ def _supadata_transcript(video_id):
             return None
         content = r.json().get("content")
         if isinstance(content, list):
+            segments = []
+            for seg in content:
+                text = str(seg.get("text") or "").strip()
+                if not text:
+                    continue
+                start = seg.get("start") or seg.get("offset") or seg.get("startSec")
+                try:
+                    start_sec = float(start)
+                except (TypeError, ValueError):
+                    start_sec = None
+                if start_sec is not None:
+                    segments.append({"startSec": start_sec, "text": text})
+            LAST_TRANSCRIPT_SEGMENTS = segments or None
             return " ".join(seg.get("text", "") for seg in content).strip() or None
         if isinstance(content, str):
             return content.strip() or None
@@ -186,13 +201,22 @@ def _supadata_transcript(video_id):
 
 def _free_transcript(video_id):
     """무료 youtube-transcript-api (0.x/1.x). 차단되면 실패."""
-    global LAST_TRANSCRIPT_ERROR
+    global LAST_TRANSCRIPT_ERROR, LAST_TRANSCRIPT_SEGMENTS
+    LAST_TRANSCRIPT_SEGMENTS = None
     try:
         try:
             fetched = YouTubeTranscriptApi().fetch(video_id, languages=config.TRANSCRIPT_LANGS)
+            LAST_TRANSCRIPT_SEGMENTS = [
+                {"startSec": float(getattr(s, "start", 0)), "text": s.text}
+                for s in fetched if getattr(s, "text", "")
+            ]
             return " ".join(s.text for s in fetched)
         except AttributeError:
             data = YouTubeTranscriptApi.get_transcript(video_id, languages=config.TRANSCRIPT_LANGS)
+            LAST_TRANSCRIPT_SEGMENTS = [
+                {"startSec": float(x.get("start", 0)), "text": x.get("text", "")}
+                for x in data if x.get("text")
+            ]
             return " ".join(x["text"] for x in data)
     except Exception as e:
         LAST_TRANSCRIPT_ERROR = f"{type(e).__name__}: {str(e)[:140]}"
@@ -239,27 +263,47 @@ def _pick_caption_track(tracks):
     return best(lambda t: True)
 
 
-def _parse_caption_xml(xml):
+def _xml_attr(tag, name):
+    import re
+    m = re.search(rf'\b{name}="([^"]+)"', tag)
+    return m.group(1) if m else None
+
+
+def _parse_caption_xml_segments(xml):
     import re
     import html
-    parts = []
-    for m in re.finditer(r"<p[^>]*>([\s\S]*?)</p>", xml):       # srv3: <p t=..><s>..</s></p>
-        inner = m.group(1)
+    segments = []
+    for m in re.finditer(r"(<p[^>]*>)([\s\S]*?)</p>", xml):       # srv3: <p t=..><s>..</s></p>
+        tag, inner = m.group(1), m.group(2)
         ss = re.findall(r"<s[^>]*>([^<]*)</s>", inner)
         text = "".join(ss) if ss else re.sub(r"<[^>]+>", "", inner)
         text = html.unescape(text).replace("\n", " ").strip()
         if text:
-            parts.append(text)
-    if not parts:
-        for m in re.finditer(r"<text[^>]*>([\s\S]*?)</text>", xml):  # 기본: <text start=..>..</text>
-            text = html.unescape(re.sub(r"<[^>]+>", "", m.group(1))).replace("\n", " ").strip()
+            try:
+                start_sec = float(_xml_attr(tag, "t") or 0) / 1000
+            except ValueError:
+                start_sec = 0
+            segments.append({"startSec": start_sec, "text": text})
+    if not segments:
+        for m in re.finditer(r"(<text[^>]*>)([\s\S]*?)</text>", xml):  # 기본: <text start=..>..</text>
+            tag, inner = m.group(1), m.group(2)
+            text = html.unescape(re.sub(r"<[^>]+>", "", inner)).replace("\n", " ").strip()
             if text:
-                parts.append(text)
-    return " ".join(parts).strip()
+                try:
+                    start_sec = float(_xml_attr(tag, "start") or 0)
+                except ValueError:
+                    start_sec = 0
+                segments.append({"startSec": start_sec, "text": text})
+    return segments
+
+
+def _parse_caption_xml(xml):
+    return " ".join(seg["text"] for seg in _parse_caption_xml_segments(xml)).strip()
 
 
 def _innertube_transcript(video_id):
-    global LAST_TRANSCRIPT_ERROR
+    global LAST_TRANSCRIPT_ERROR, LAST_TRANSCRIPT_SEGMENTS
+    LAST_TRANSCRIPT_SEGMENTS = None
     try:
         tracks = _innertube_caption_tracks(video_id)
         if not tracks:
@@ -270,7 +314,8 @@ def _innertube_transcript(video_id):
         if not url:
             return None
         xml = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=15).text
-        return _parse_caption_xml(xml) or None
+        LAST_TRANSCRIPT_SEGMENTS = _parse_caption_xml_segments(xml)
+        return " ".join(seg["text"] for seg in LAST_TRANSCRIPT_SEGMENTS).strip() or None
     except Exception as e:
         LAST_TRANSCRIPT_ERROR = f"InnerTube 오류: {str(e)[:140]}"
         return None
@@ -282,10 +327,11 @@ def fetch_transcript(video_id, force=False):
     순서: 성공 캐시 → 수동 자막 → InnerTube → Supadata → 무료 라이브러리.
     성공 자막은 영구 캐시하고, 실패는 일정 시간 캐시해 반복 요청을 막는다.
     """
-    global LAST_TRANSCRIPT_ERROR, LAST_TRANSCRIPT_SOURCE, LAST_TRANSCRIPT_FROM_CACHE
+    global LAST_TRANSCRIPT_ERROR, LAST_TRANSCRIPT_SOURCE, LAST_TRANSCRIPT_FROM_CACHE, LAST_TRANSCRIPT_SEGMENTS
     LAST_TRANSCRIPT_ERROR = None
     LAST_TRANSCRIPT_SOURCE = None
     LAST_TRANSCRIPT_FROM_CACHE = False
+    LAST_TRANSCRIPT_SEGMENTS = None
 
     if not force and not config.FORCE_TRANSCRIPT_REFRESH:
         hit, text = _cached_transcript(video_id)
@@ -293,6 +339,7 @@ def fetch_transcript(video_id, force=False):
             cached = _read_cache(video_id) or {}
             LAST_TRANSCRIPT_SOURCE = cached.get("source", "cache")
             LAST_TRANSCRIPT_ERROR = cached.get("error")
+            LAST_TRANSCRIPT_SEGMENTS = cached.get("segments")
             LAST_TRANSCRIPT_FROM_CACHE = True
             return text
 
@@ -319,6 +366,7 @@ def fetch_transcript(video_id, force=False):
     if text:
         _write_cache(video_id, {
             "status": "ok", "source": source, "fetchedAt": now, "text": text,
+            "segments": LAST_TRANSCRIPT_SEGMENTS or [],
         })
         LAST_TRANSCRIPT_SOURCE = source
         LAST_TRANSCRIPT_ERROR = None

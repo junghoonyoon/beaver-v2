@@ -11,7 +11,7 @@ import krx_listed
 import us_listed
 
 KST = ZoneInfo("Asia/Seoul")
-_STOCK_CACHE_VERSION = 3
+_STOCK_CACHE_VERSION = 5
 CHOSEONG = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ"
 INITIAL_CHARS = set(CHOSEONG)
 
@@ -197,8 +197,22 @@ def is_initial_query(value):
     return bool(value) and all(ch in INITIAL_CHARS for ch in value)
 
 
+def _has_hangul(value):
+    return bool(re.search(r"[가-힣]", str(value or "")))
+
+
+def _display_name(stock):
+    """미국 주요 종목은 공식 영문명 대신 앱 사용자에게 익숙한 한국어 이름을 보여준다."""
+    code = str(stock.get("code") or "").strip().upper()
+    for alias in us_listed.US_KOREAN_ALIASES.get(code, []):
+        if _has_hangul(alias):
+            return alias
+    return stock.get("name", "")
+
+
 def _stock_aliases(stock):
     aliases = [
+        _display_name(stock),
         stock["name"],
         stock.get("code", ""),
         stock.get("isin", ""),
@@ -295,7 +309,7 @@ def suggest_stocks(query, limit=None):
         score, match_type, matched_text = matched
         aliases = _stock_aliases(stock)
         rows.append((score, order, {
-            "name": stock["name"],
+            "name": _display_name(stock),
             "code": stock.get("code", ""),
             "market": stock.get("market", ""),
             "isin": stock.get("isin", ""),
@@ -341,6 +355,126 @@ def query_aliases(query):
     return out
 
 
+def _chip_candidate_stocks():
+    """칩은 검색 성공률이 높은 주요 종목 풀에서 고른다."""
+    rows = []
+    seen = set()
+    known_keys = {compact(name) for name in KNOWN_ALIASES}
+    for stock in stock_master():
+        names = [stock.get("name", ""), *_stock_aliases(stock), *stock.get("keywords", [])]
+        if stock in FALLBACK_STOCK_MASTER or any(compact(name) in known_keys for name in names):
+            key = compact(stock.get("code") or stock.get("name"))
+            if key and key not in seen:
+                seen.add(key)
+                rows.append(stock)
+    return rows
+
+
+def _chip_row(stock, score=0):
+    return {
+        "name": _display_name(stock),
+        "code": stock.get("code", ""),
+        "market": stock.get("market", ""),
+        "score": round(score, 3),
+    }
+
+
+def _unique_chip_rows(rows, limit):
+    out = []
+    seen = set()
+    for row in rows:
+        key = compact(row.get("name") or row.get("code"))
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        out.append(row)
+        if len(out) >= limit:
+            break
+    return out
+
+
+def _video_mentions_stock(video, stock):
+    aliases = _stock_aliases(stock)
+    title = video.get("title", "")
+    text = transcript_text(video["videoId"])
+    title_count = match_count(title, aliases)
+    text_count = match_count(text, aliases)
+    return title_count, text_count
+
+
+def popular_chips(limit=8):
+    """검색 전 노출: 최근 많이 언급된 종목."""
+    cache_key = (
+        config.SEARCH_INDEX_JSON.stat().st_mtime if config.SEARCH_INDEX_JSON.exists() else None,
+        limit,
+    )
+    cached_key = getattr(popular_chips, "_cached_key", None)
+    cached = getattr(popular_chips, "_cached", None)
+    if cached_key == cache_key and cached is not None:
+        return cached
+
+    scores = []
+    videos = load_index().get("videos", [])
+    for stock in _chip_candidate_stocks():
+        channels = set()
+        title_hits = 0
+        text_hits = 0
+        views = 0
+        latest = ""
+        for video in videos:
+            title_count, text_count = _video_mentions_stock(video, stock)
+            if not title_count and not text_count:
+                continue
+            channels.add(video.get("channel", ""))
+            title_hits += title_count
+            text_hits += text_count
+            views += int(video.get("views") or 0)
+            latest = max(latest, video.get("publishedAt", ""))
+        if not channels:
+            continue
+        score = len(channels) * 10 + title_hits * 4 + min(text_hits, 12) + min(views / 100000, 8)
+        scores.append((score, latest, stock.get("name", ""), stock))
+
+    ranked = sorted(scores, key=lambda row: (row[0], row[1], row[2], row[3].get("code", "")), reverse=True)
+    rows = _unique_chip_rows([_chip_row(stock, score) for score, _, _, stock in ranked], limit)
+    popular_chips._cached_key = cache_key
+    popular_chips._cached = rows
+    return rows
+
+
+def related_chips(query, limit=8):
+    """검색 후 노출: 같은 영상에서 함께 언급된 종목."""
+    query_key = compact(query)
+    query_names = {compact(name) for name in query_aliases(query)}
+    videos = find_videos(query, max_youtubers=config.SEARCH_MAX_YOUTUBERS)
+    scores = []
+    for stock in _chip_candidate_stocks():
+        stock_names = {compact(name) for name in _stock_aliases(stock)}
+        if query_key in stock_names or query_names & stock_names:
+            continue
+        channels = set()
+        title_hits = 0
+        text_hits = 0
+        views = 0
+        latest = ""
+        for video in videos:
+            title_count, text_count = _video_mentions_stock(video, stock)
+            if not title_count and not text_count:
+                continue
+            channels.add(video.get("channel", ""))
+            title_hits += title_count
+            text_hits += text_count
+            views += int(video.get("views") or 0)
+            latest = max(latest, video.get("publishedAt", ""))
+        if not channels:
+            continue
+        score = len(channels) * 10 + title_hits * 4 + min(text_hits, 12) + min(views / 100000, 8)
+        scores.append((score, latest, stock.get("name", ""), stock))
+    ranked = sorted(scores, key=lambda row: (row[0], row[1], row[2], row[3].get("code", "")), reverse=True)
+    rows = _unique_chip_rows([_chip_row(stock, score) for score, _, _, stock in ranked], limit)
+    return rows or popular_chips(limit)
+
+
 def transcript_text(video_id):
     path = config.TRANSCRIPT_CACHE_DIR / f"{video_id}.json"
     if not path.exists():
@@ -350,6 +484,38 @@ def transcript_text(video_id):
     except (OSError, ValueError):
         return ""
     return data.get("text", "") if data.get("status") == "ok" else ""
+
+
+def transcript_segments(video_id):
+    """자막 문장별 시작 시간을 반환한다. 기존 캐시에 없으면 한 번 보강한다."""
+    path = config.TRANSCRIPT_CACHE_DIR / f"{video_id}.json"
+    data = {}
+    if path.exists():
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            data = {}
+    if data.get("status") == "ok" and data.get("segments"):
+        return data.get("segments", [])
+    if data.get("status") != "ok" or not data.get("text"):
+        return []
+
+    try:
+        import youtube
+        youtube.fetch_transcript(video_id, force=True)
+        refreshed = json.loads(path.read_text(encoding="utf-8"))
+        if refreshed.get("status") == "ok":
+            return refreshed.get("segments", [])
+        if data.get("status") == "ok" and data.get("text"):
+            path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+        return []
+    except Exception:
+        if data.get("status") == "ok" and data.get("text"):
+            try:
+                path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+            except OSError:
+                pass
+        return []
 
 
 def match_count(text, aliases):
@@ -495,6 +661,39 @@ def _analysis_inputs(video, query):
     return aliases, context, context_hash, path
 
 
+def _evidence_terms(evidence):
+    terms = []
+    for term in re.findall(r"[0-9A-Za-z가-힣]{2,}", evidence or ""):
+        key = compact(term)
+        if len(key) >= 2 and key not in {"있습니다", "것으로", "통해", "대한", "또한", "예상됩니다"}:
+            terms.append(key)
+    return set(terms)
+
+
+def source_time_sec(video_id, aliases, evidence):
+    segments = transcript_segments(video_id)
+    if not segments:
+        return None
+    alias_keys = [compact(alias) for alias in aliases if compact(alias)]
+    terms = _evidence_terms(evidence)
+    best = None
+    for order, segment in enumerate(segments):
+        text = segment.get("text", "")
+        key = compact(text)
+        if not key or not any(alias in key for alias in alias_keys):
+            continue
+        overlap = sum(1 for term in terms if term in key)
+        score = overlap * 10 + min(len(key), 80) / 80
+        try:
+            start_sec = float(segment.get("startSec"))
+        except (TypeError, ValueError):
+            continue
+        candidate = (score, -order, start_sec)
+        if best is None or candidate > best:
+            best = candidate
+    return round(best[2]) if best else None
+
+
 def cached_match(video, query):
     """AI 호출 없이 기존 종목 분석 캐시만 읽는다."""
     _, _, context_hash, path = _analysis_inputs(video, query)
@@ -522,6 +721,7 @@ def analyze_match(video, query):
         return cached_data, True
 
     data = analyze.analyze_stock_opinion(query, aliases, context)
+    data["sourceTimeSec"] = source_time_sec(video["videoId"], aliases, data.get("evidence", ""))
     config.STOCK_ANALYSIS_CACHE_DIR.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps({
@@ -562,6 +762,7 @@ def opinion_from_result(video, result, cached):
         "stance": result["stance"],
         "summary": result["summary"],
         "evidence": result["evidence"],
+        "sourceTimeSec": result.get("sourceTimeSec"),
         "cached": cached,
     }
 
@@ -569,8 +770,19 @@ def opinion_from_result(video, result, cached):
 def add_opinion(search_result, opinion):
     if not opinion:
         return
+    opinion["_order"] = len(search_result["opinions"])
     search_result["opinions"].append(opinion)
     search_result["counts"][opinion["stance"]] += 1
+
+
+def sort_opinions(search_result):
+    """긍정/부정/신중처럼 판단이 있는 결과를 먼저, 단순언급은 마지막에 둔다."""
+    stance_rank = {"긍정": 0, "부정": 0, "신중": 0, "단순언급": 1}
+    search_result["opinions"].sort(
+        key=lambda opinion: (stance_rank.get(opinion.get("stance"), 0), opinion.get("_order", 0))
+    )
+    for opinion in search_result["opinions"]:
+        opinion.pop("_order", None)
 
 
 def search_stock(query):
@@ -596,5 +808,6 @@ def search_stock(query):
             continue
         add_opinion(search_result, opinion_from_result(video, result, cached))
         search_result["processedVideos"] += 1
+    sort_opinions(search_result)
     search_result["done"] = True
     return search_result

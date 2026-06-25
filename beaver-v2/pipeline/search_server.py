@@ -62,7 +62,20 @@ def _snapshot(job_id):
         if not job:
             return None
         # JSON 왕복으로 브라우저에 줄 수 있는 안전한 복사본을 만든다.
-        return json.loads(json.dumps(job["result"], ensure_ascii=False))
+        payload = json.loads(json.dumps(job["result"], ensure_ascii=False))
+    _sort_snapshot_opinions(payload)
+    return payload
+
+
+def _sort_snapshot_opinions(payload):
+    """진행 중 응답도 실제 판단을 먼저 보여주고 단순언급은 아래로 보낸다."""
+    stance_rank = {"긍정": 0, "부정": 0, "신중": 0, "단순언급": 1}
+    opinions = payload.get("opinions") or []
+    for idx, opinion in enumerate(opinions):
+        opinion.setdefault("_order", idx)
+    opinions.sort(key=lambda opinion: (stance_rank.get(opinion.get("stance"), 0), opinion.get("_order", 0)))
+    for opinion in opinions:
+        opinion.pop("_order", None)
 
 
 def _trim_jobs():
@@ -200,6 +213,19 @@ class Handler(BaseHTTPRequestHandler):
             return
         if parsed.path == "/api/us-stocks/status":
             self._json(us_listed.cache_status())
+            return
+        if parsed.path == "/api/chips":
+            query = parse_qs(parsed.query).get("q", [""])[0].strip()
+            if query:
+                self._json({
+                    "label": "함께 언급된 종목",
+                    "chips": stock_search.related_chips(query),
+                })
+            else:
+                self._json({
+                    "label": "최근 많이 언급된 종목",
+                    "chips": stock_search.popular_chips(),
+                })
             return
         if parsed.path == "/api/search":
             query = parse_qs(parsed.query).get("q", [""])[0].strip()

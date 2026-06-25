@@ -96,12 +96,20 @@ class StockSearchTest(unittest.TestCase):
         self.write_us_stocks([
             {"code": "INTC", "market": "NASDAQ", "name": "Intel Corporation", "english": "Intel Corporation",
              "corpName": "Intel Corporation", "aliases": ["INTC", "Intel Corporation", "인텔", "Intel"], "source": "NASDAQ_TRADER"},
+            {"code": "NVDA", "market": "NASDAQ", "name": "NVIDIA Corporation", "english": "NVIDIA Corporation",
+             "corpName": "NVIDIA Corporation", "aliases": ["NVDA", "NVIDIA Corporation", "엔비디아", "NVIDIA"], "source": "NASDAQ_TRADER"},
         ])
         first = stock_search.suggest_stocks("인텔")[0]
-        self.assertEqual(first["name"], "Intel Corporation")
+        self.assertEqual(first["name"], "인텔")
         self.assertEqual(first["code"], "INTC")
         self.assertEqual(first["market"], "NASDAQ")
         self.assertEqual(first["source"], "NASDAQ_TRADER")
+        self.assertIn("Intel Corporation", first["aliases"])
+
+        nvidia = stock_search.suggest_stocks("nvidia")[0]
+        self.assertEqual(nvidia["name"], "엔비디아")
+        self.assertEqual(nvidia["code"], "NVDA")
+        self.assertIn("NVIDIA Corporation", nvidia["aliases"])
 
     def test_suggest_stocks_uses_name_prefix_only(self):
         names = [row["name"] for row in stock_search.suggest_stocks("나")]
@@ -175,6 +183,17 @@ class StockSearchTest(unittest.TestCase):
         self.assertEqual(data["analyzedVideos"], 2)
         self.assertEqual(len(data["opinions"]), 3)
         self.assertEqual(analyze_call.call_count, 2)
+
+    def test_sort_opinions_puts_mentions_last(self):
+        data = {"opinions": [], "counts": {"긍정": 0, "신중": 0, "부정": 0, "단순언급": 0}}
+        stock_search.add_opinion(data, {"stance": "단순언급", "channel": "A"})
+        stock_search.add_opinion(data, {"stance": "긍정", "channel": "B"})
+        stock_search.add_opinion(data, {"stance": "부정", "channel": "C"})
+
+        stock_search.sort_opinions(data)
+
+        self.assertEqual([row["channel"] for row in data["opinions"]], ["B", "C", "A"])
+        self.assertNotIn("_order", data["opinions"][0])
 
 
 if __name__ == "__main__":
