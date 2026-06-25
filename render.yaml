@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: beaver-stock-search
+    env: python
+    plan: free
+    autoDeploy: true
+    buildCommand: cd beaver-v2/pipeline && pip install -r requirements.txt
+    startCommand: cd beaver-v2/pipeline && python sync_search_index.py && python search_server.py
+    envVars:
+      - key: ANALYSIS_PROVIDER
+        value: openrouter
+      - key: OPENROUTER_MODEL
+        value: google/gemini-2.5-flash
+      - key: YOUTUBE_API_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: SUPADATA_API_KEY
+        sync: false
+      - key: KRX_API_KEY
+        sync: false

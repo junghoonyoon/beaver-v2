@@ -1,0 +1,8 @@
+.DS_Store
+설정.txt
+pipeline/.env
+pipeline/.venv/
+pipeline/__pycache__/
+pipeline/audit/
+pipeline/cache/
+pipeline/*.log

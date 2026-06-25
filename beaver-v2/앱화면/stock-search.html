@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>이 종목, 유튜버들은 어떻게 볼까?</title>
+  <style>
+    :root {
+      --ink:#171717; --body:#5f6368; --muted:#8b9098; --line:#e2e4e8;
+      --canvas:#f7f8fa; --card:#fff; --blue:#1267e5; --blue-wash:#eaf2ff;
+      --pos:#168a46; --pos-bg:#e8f6ed; --neu:#8a6915; --neu-bg:#fbf4df;
+      --neg:#c7352d; --neg-bg:#fdecea; --mention:#60646c; --mention-bg:#f0f1f3;
+      --shadow:0 12px 30px rgba(20,28,45,.08);
+    }
+    * { box-sizing:border-box }
+    ::selection { background:rgba(18,103,229,.14); color:var(--ink) }
+    body {
+      margin:0; min-height:100vh; color:var(--ink);
+      font-family:Inter,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",sans-serif;
+      background:#fff;
+    }
+    button,input { font:inherit }
+    .page { width:min(760px,calc(100% - 28px)); margin:0 auto; padding:70px 0 80px }
+    .brand { color:var(--blue); font-size:13px; font-weight:800; letter-spacing:.08em }
+    h1 { margin:12px 0 10px; font-size:clamp(30px,6vw,48px); line-height:1.12; letter-spacing:-.045em }
+    .lead { margin:0; color:var(--body); font-size:16px; line-height:1.65 }
+    .search {
+      position:relative; margin-top:30px; display:flex; gap:10px; padding:8px;
+      border:1px solid var(--line); border-radius:16px; background:var(--card); box-shadow:var(--shadow);
+    }
+    .search input {
+      width:100%; min-width:0; border:0; outline:0; padding:12px 14px;
+      color:var(--ink); background:transparent; font-size:17px;
+    }
+    .search button {
+      flex:0 0 auto; border:0; border-radius:11px; padding:0 22px;
+      background:var(--blue); color:#fff; font-weight:750; cursor:pointer;
+    }
+    .search button:disabled { opacity:.55; cursor:wait }
+    .suggestions {
+      display:none; position:absolute; z-index:20; left:0; right:0; top:calc(100% + 8px);
+      overflow:auto; max-height:430px; border:1px solid #dfe3ea; border-radius:14px;
+      background:#fff; box-shadow:0 16px 40px rgba(20,28,45,.1); padding:10px 0;
+    }
+    .suggestions.show { display:flex; flex-direction:column; gap:8px }
+    .suggestion {
+      appearance:none; -webkit-appearance:none;
+      display:grid; grid-template-columns:92px minmax(0,1fr) 78px; align-items:center; gap:18px;
+      width:100%; border:0; border-radius:0; padding:13px 20px;
+      background:#fff !important; color:var(--ink); text-align:left; cursor:pointer;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .suggestion:hover,.suggestion.active { background:#f7f9fc !important }
+    .suggestion-code { color:#70757d; font-size:16px; font-weight:500; line-height:1.3; letter-spacing:.02em; font-variant-numeric:tabular-nums }
+    .suggestion-name { min-width:0; color:#14161a; font-size:16px; font-weight:700; line-height:1.3; word-break:keep-all }
+    .suggestion-name .match { color:var(--blue); font-weight:800 }
+    .suggestion-market { color:#70757d; font-size:15px; font-weight:600; line-height:1.3; text-align:right; white-space:nowrap }
+    .examples { display:flex; flex-wrap:wrap; gap:8px; margin-top:14px }
+    .example {
+      border:1px solid var(--line); border-radius:999px; padding:7px 12px;
+      background:rgba(255,255,255,.75); color:var(--body); cursor:pointer;
+    }
+    .status { margin-top:18px; color:var(--muted); font-size:13px }
+    .loading {
+      display:none; margin-top:34px; padding:28px; text-align:center;
+      border:1px solid var(--line); border-radius:18px; background:var(--card);
+    }
+    .loading.show { display:block }
+    .spinner {
+      width:28px; height:28px; margin:0 auto 12px; border:3px solid #dce8fb;
+      border-top-color:var(--blue); border-radius:50%; animation:spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform:rotate(360deg) } }
+    .result { margin-top:38px }
+    .result:empty { display:none }
+    .summary {
+      padding:22px; border:1px solid var(--line); border-radius:18px;
+      background:var(--card); box-shadow:var(--shadow);
+    }
+    .summary h2 { margin:0; font-size:26px; letter-spacing:-.025em }
+    .summary-meta { margin-top:8px; color:var(--body); font-size:14px }
+    .counts { display:flex; flex-wrap:wrap; gap:8px; margin-top:18px }
+    .count { border-radius:999px; padding:7px 11px; font-size:13px; font-weight:750 }
+    .count.pos,.badge.pos { color:var(--pos); background:var(--pos-bg) }
+    .count.neu,.badge.neu { color:var(--neu); background:var(--neu-bg) }
+    .count.neg,.badge.neg { color:var(--neg); background:var(--neg-bg) }
+    .count.mention,.badge.mention { color:var(--mention); background:var(--mention-bg) }
+    .cards { display:grid; gap:12px; margin-top:16px }
+    .card { padding:20px; border:1px solid var(--line); border-radius:16px; background:var(--card) }
+    .card-head { display:flex; align-items:center; gap:10px }
+    .channel { font-size:16px; font-weight:800 }
+    .badge { margin-left:auto; border-radius:999px; padding:6px 10px; font-size:12px; font-weight:800 }
+    .opinion { margin:14px 0 0; font-size:16px; font-weight:700; line-height:1.55; word-break:keep-all }
+    .evidence { margin:8px 0 0; color:var(--body); font-size:14px; line-height:1.6; word-break:keep-all }
+    .video {
+      display:flex; justify-content:space-between; gap:12px; margin-top:15px;
+      padding-top:13px; border-top:1px solid #f0f1f3; color:var(--muted); font-size:12px;
+    }
+    .video a { color:var(--blue); font-weight:700; text-decoration:none }
+    .empty,.error {
+      padding:24px; border:1px solid var(--line); border-radius:16px; background:var(--card);
+      color:var(--body); line-height:1.6;
+    }
+    .error { color:var(--neg); border-color:#f2c8c5 }
+    .foot { margin-top:28px; color:var(--muted); font-size:12px; line-height:1.6 }
+    @media (max-width:560px) {
+      .page { padding-top:40px }
+      .search { flex-direction:column }
+      .search button { height:48px }
+      .suggestion { grid-template-columns:72px minmax(0,1fr) 64px; gap:10px; padding:12px 14px }
+      .suggestion-code,.suggestion-name,.suggestion-market { font-size:14px }
+      .video { flex-direction:column }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="brand">BEAVER STOCK SEARCH</div>
+    <h1>궁금한 종목,<br>유튜버들은 어떻게 볼까요?</h1>
+    <p class="lead">최근 영상 자막에서 해당 종목을 실제로 언급한 유튜버를 찾고,<br>긍정·신중·부정 의견과 근거를 한눈에 정리해드려요.</p>
+
+    <form class="search" id="form">
+      <input id="query" autocomplete="off" placeholder="예: 삼성전자, SK하이닉스, 엔비디아" aria-label="종목명">
+      <button id="submit" type="submit">의견 찾기</button>
+      <div class="suggestions" id="suggestions" role="listbox" aria-label="종목 추천"></div>
+    </form>
+    <div class="examples">
+      <button class="example" type="button">삼성전자</button>
+      <button class="example" type="button">SK하이닉스</button>
+      <button class="example" type="button">엔비디아</button>
+      <button class="example" type="button">현대차</button>
+    </div>
+    <div class="status" id="status">검색 인덱스를 확인하는 중이에요…</div>
+
+    <section class="loading" id="loading">
+      <div class="spinner"></div>
+      <b id="loadingTitle">관련 영상을 읽고 있어요</b>
+      <div id="loadingText" style="margin-top:7px;color:var(--muted);font-size:13px">분석이 끝난 유튜버 의견부터 바로 보여드릴게요.</div>
+    </section>
+    <section class="result" id="result"></section>
+
+    <p class="foot">유튜버의 공개 영상 의견을 요약한 참고 자료이며 투자 권유가 아닙니다. 의견의 정확한 맥락은 원본 영상을 확인해 주세요.</p>
+  </main>
+  <script>
+    const $ = id => document.getElementById(id);
+    const form = $("form"), input = $("query"), submit = $("submit");
+    const loading = $("loading"), loadingTitle = $("loadingTitle"), loadingText = $("loadingText");
+    const result = $("result"), statusEl = $("status"), suggestionsEl = $("suggestions");
+    const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const stanceClass = stance => ({긍정:"pos",신중:"neu",부정:"neg",단순언급:"mention"}[stance] || "mention");
+    const serverRequiredMessage = "의견 분석은 종목검색실행.command를 실행한 뒤 http://127.0.0.1:8765 주소에서 사용해 주세요.";
+    const isFileMode = location.protocol === "file:";
+    const localStocks = [
+      ["삼성전자","005930","KOSPI",["삼전"],"Samsung Electronics",["갤럭시","Galaxy","반도체","메모리"]], ["삼성전자우","005935","KOSPI",["삼전우"],"",[]],
+      ["삼성SDS","018260","KOSPI",["삼성에스디에스"]], ["삼성전기","009150","KOSPI",[]],
+      ["삼성SDI","006400","KOSPI",["삼성에스디아이"]], ["삼성바이오로직스","207940","KOSPI",["삼바"]],
+      ["삼성물산","028260","KOSPI",[]], ["삼성생명","032830","KOSPI",[]],
+      ["삼성화재","000810","KOSPI",[]], ["삼성중공업","010140","KOSPI",[]], ["삼성증권","016360","KOSPI",[]],
+      ["삼성카드","029780","KOSPI",[],"Samsung Card",[]], ["삼성E&A","028050","KOSPI",["삼성엔지니어링","삼성이앤에이"],"Samsung E&A",[]],
+      ["LS","006260","KOSPI",["엘에스"],"LS",[]], ["LS ELECTRIC","010120","KOSPI",["LS일렉트릭","LS 일렉트릭","엘에스일렉트릭"],"LS ELECTRIC",["전력기기","전력설비","변압기"]],
+      ["LS에코에너지","229640","KOSPI",["LS 에코에너지","엘에스에코에너지"],"LS Eco Energy",["전선"]],
+      ["LS마린솔루션","060370","KOSDAQ",["LS 마린솔루션","엘에스마린솔루션"],"LS Marine Solution",["해저케이블"]],
+      ["LS네트웍스","000680","KOSPI",["LS 네트웍스","엘에스네트웍스"],"LS Networks",[]],
+      ["LS머트리얼즈","417200","KOSDAQ",["LS 머트리얼즈","엘에스머트리얼즈"],"LS Materials",["2차전지"]],
+      ["SK하이닉스","000660","KOSPI",["SK 하이닉스","하이닉스"],"SK hynix",["HBM","메모리","반도체"]], ["SK이노베이션","096770","KOSPI",["SK 이노베이션"]],
+      ["SK텔레콤","017670","KOSPI",["SK 텔레콤"]], ["SK스퀘어","402340","KOSPI",["SK 스퀘어"]],
+      ["현대차","005380","KOSPI",["현대자동차"],"Hyundai Motor",["제네시스","Genesis","자동차"]], ["현대모비스","012330","KOSPI",[]], ["현대글로비스","086280","KOSPI",[]],
+      ["기아","000270","KOSPI",["기아차"],"Kia",["자동차"]], ["NAVER","035420","KOSPI",["네이버"],"NAVER",["라인","웹툰","클라우드"]],
+      ["카카오","035720","KOSPI",[],"Kakao",["카톡","카카오톡","모빌리티"]], ["카카오뱅크","323410","KOSPI",[]], ["카카오페이","377300","KOSPI",[]],
+      ["LG전자","066570","KOSPI",["엘지전자"],"LG Electronics",["가전","전장"]], ["LG에너지솔루션","373220","KOSPI",["LG엔솔","엘지엔솔"],"LG Energy Solution",["배터리","2차전지"]],
+      ["LG화학","051910","KOSPI",["엘지화학"]], ["POSCO홀딩스","005490","KOSPI",["포스코홀딩스","포스코"]],
+      ["셀트리온","068270","KOSPI",[]], ["HLB","028300","KOSDAQ",["에이치엘비"]],
+      ["나노신소재","121600","KOSDAQ",[]], ["나노팀","417010","KOSDAQ",[]], ["나무가","190510","KOSDAQ",[]],
+      ["나스미디어","089600","KOSDAQ",[]], ["나이스정보통신","036800","KOSDAQ",["NICE정보통신"]],
+      ["나이스디앤비","130580","KOSDAQ",["NICE디앤비"]], ["나우IB","293580","KOSDAQ",["나우아이비"]],
+      ["나라엠앤디","051490","KOSDAQ",[]], ["나라셀라","405920","KOSDAQ",[]], ["나인테크","267320","KOSDAQ",[]],
+      ["에코프로","086520","KOSDAQ",[]], ["에코프로비엠","247540","KOSDAQ",[]], ["알테오젠","196170","KOSDAQ",[]],
+      ["엔비디아","NVDA","NASDAQ",["NVIDIA"],"NVIDIA",["GPU","AI","젠슨황"]], ["테슬라","TSLA","NASDAQ",["TESLA"],"Tesla",["전기차","일론머스크"]],
+      ["애플","AAPL","NASDAQ",["APPLE"],"Apple",["아이폰","iPhone"]], ["마이크로소프트","MSFT","NASDAQ",["Microsoft"],"Microsoft",["MS","Azure","오픈AI"]],
+      ["알파벳","GOOGL","NASDAQ",["구글","Google"],"Alphabet",["유튜브","YouTube","검색"]], ["마이크론","MU","NASDAQ",["마이크론테크놀로지","Micron"],"Micron",["메모리","반도체","DRAM"]],
+      ["Intel Corporation","INTC","NASDAQ",["인텔","Intel"],"Intel Corporation",["CPU","반도체"]],
+      ["Advanced Micro Devices","AMD","NASDAQ",["AMD","에이엠디"],"Advanced Micro Devices",["CPU","GPU","반도체"]],
+      ["Palantir Technologies Inc.","PLTR","NASDAQ",["팔란티어","Palantir"],"Palantir Technologies Inc.",["AI","데이터"]],
+      ["Meta Platforms Inc.","META","NASDAQ",["메타","페이스북","인스타그램"],"Meta Platforms Inc.",["SNS","AI"]],
+      ["Amazon.com Inc.","AMZN","NASDAQ",["아마존","AWS"],"Amazon.com Inc.",["클라우드","이커머스"]],
+      ["Netflix Inc.","NFLX","NASDAQ",["넷플릭스"],"Netflix Inc.",["OTT","스트리밍"]]
+    ].map(([name, code, market, aliases = [], english = "", keywords = []]) => ({ name, code, market, english, keywords, aliases:[name, code, english, ...aliases].filter(Boolean) }));
+    const dateText = value => {
+      const d = new Date(value);
+      return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("ko-KR",{year:"numeric",month:"short",day:"numeric"});
+    };
+    const viewsText = n => n >= 10000 ? `${(n/10000).toFixed(1)}만회` : `${n}회`;
+    let suggestTimer = null;
+    let suggestions = [];
+    let activeSuggestion = -1;
+    let activeSearchToken = 0;
+
+    const choseong = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ";
+    const compact = value => String(value ?? "").replace(/[^0-9A-Za-z가-힣ㄱ-ㅎㅏ-ㅣ]/g, "").toLowerCase();
+    const initials = value => Array.from(String(value ?? "")).map(ch => {
+      const code = ch.charCodeAt(0);
+      if (code >= 0xac00 && code <= 0xd7a3) return choseong[Math.floor((code - 0xac00) / 588)];
+      if (choseong.includes(ch)) return ch;
+      return /[0-9a-z]/i.test(ch) ? ch.toLowerCase() : "";
+    }).join("");
+    const isInitialQuery = value => {
+      const q = compact(value);
+      return !!q && Array.from(q).every(ch => choseong.includes(ch));
+    };
+    const scoreTerm = (q, term, exact, prefix, contains) => {
+      const key = compact(term);
+      if (!key) return null;
+      if (key === q) return exact;
+      if (key.startsWith(q)) return prefix;
+      if (key.includes(q)) return contains;
+      return null;
+    };
+    function scoreStock(row, query) {
+      const q = compact(query);
+      const candidates = [];
+      const push = (score, type, matched) => { if (score !== null) candidates.push({ score, type, matched }); };
+      push(scoreTerm(q, row.name, 0, 10, 70), "종목명", row.name);
+      if (isInitialQuery(q)) push(scoreTerm(q, initials(row.name), 20, 20, 85), "초성", initials(row.name));
+      push(scoreTerm(q, row.code, 1, 30, 95), "종목코드", row.code);
+      push(scoreTerm(q, row.english, 2, 40, 90), "영문명", row.english);
+      row.aliases.forEach(alias => push(scoreTerm(q, alias, 3, 50, 100), "별칭", alias));
+      row.keywords.forEach(keyword => push(scoreTerm(q, keyword, 4, 60, 110), "키워드", keyword));
+      return candidates.sort((a, b) => a.score - b.score)[0] || null;
+    }
+    function localSuggest(query) {
+      if (!compact(query)) return [];
+      return localStocks
+        .map((row, order) => {
+          const matched = scoreStock(row, query);
+          if (!matched) return null;
+          return { ...matched, order, row:{ ...row, matchType:matched.type, matched:matched.matched, score:matched.score } };
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.score - b.score || a.order - b.order)
+        .map(item => item.row);
+    }
+
+    async function loadStatus() {
+      if (isFileMode) {
+        statusEl.textContent = "종목 추천은 바로 가능해요. 의견 분석은 종목검색실행.command로 서버를 켠 뒤 사용해 주세요.";
+        return;
+      }
+      try {
+        const data = await fetch("/api/status").then(r => r.json());
+        const stockMaster = data.stockMaster;
+        const usStockMaster = data.usStockMaster;
+        const stockText = stockMaster?.cached
+          ? ` · KRX 종목 ${stockMaster.count}개${stockMaster.baseDate ? `(${stockMaster.baseDate})` : ""}`
+          : "";
+        const usStockText = usStockMaster?.cached
+          ? ` · 미국 종목 ${usStockMaster.count}개`
+          : "";
+        statusEl.textContent = data.ready
+          ? `최근 ${data.lookbackDays}일 · 자막 영상 ${data.videoCount}개 검색 가능${stockText}${usStockText} · ${data.model}`
+          : "검색 데이터가 아직 없어요. 인덱스 갱신이 필요합니다.";
+      } catch {
+        statusEl.textContent = "검색 서버에 연결할 수 없어요.";
+      }
+    }
+
+    function render(data) {
+      const done = data.done !== false;
+      if (!data.opinions.length) {
+        if (!done) {
+          result.innerHTML = `
+            <div class="summary">
+              <h2>${esc(data.query)}</h2>
+              <div class="summary-meta">
+                관련 영상 ${esc(data.matchedVideos)}개 발견 · ${esc(data.currentStatus || "분석을 준비 중이에요.")}
+              </div>
+            </div>`;
+          return;
+        }
+        if (data.errors?.length) {
+          result.innerHTML = `<div class="empty"><b>${esc(data.query)}</b> 관련 영상 ${esc(data.matchedVideos || 0)}개를 찾았지만 분석에 실패했어요.<br>${esc(data.errors[0])}</div>`;
+          return;
+        }
+        result.innerHTML = `<div class="empty"><b>${esc(data.query)}</b>을(를) 명확히 평가한 최근 유튜버 의견을 찾지 못했어요.<br>띄어쓰기를 바꾸거나 회사의 정식 종목명으로 다시 검색해 보세요.</div>`;
+        return;
+      }
+      const c = data.counts;
+      const cards = data.opinions.map(o => `
+        <article class="card">
+          <div class="card-head">
+            <span class="channel">${esc(o.channel)}</span>
+            <span class="badge ${stanceClass(o.stance)}">${esc(o.stance)}</span>
+          </div>
+          <p class="opinion">${esc(o.summary)}</p>
+          <p class="evidence">${esc(o.evidence)}</p>
+          <div class="video">
+            <span>${esc(dateText(o.publishedAt))} · 조회 ${esc(viewsText(o.views))}</span>
+            <a href="${esc(o.url)}" target="_blank" rel="noopener">원본 영상 보기 ↗</a>
+          </div>
+        </article>`).join("");
+      result.innerHTML = `
+        <div class="summary">
+          <h2>${esc(data.query)}</h2>
+          <div class="summary-meta">
+            관련 유튜버 ${data.opinions.length}명 · 자막 일치 영상 ${data.matchedVideos}개
+            ${data.matchedVideos > data.analyzedVideos ? ` · 빠른 분석 ${data.analyzedVideos}개 우선` : ""}
+            ${!done && data.currentStatus ? ` · ${esc(data.currentStatus)}` : ""}
+          </div>
+          <div class="counts">
+            ${c.긍정 ? `<span class="count pos">긍정 ${c.긍정}</span>` : ""}
+            ${c.신중 ? `<span class="count neu">신중 ${c.신중}</span>` : ""}
+            ${c.부정 ? `<span class="count neg">부정 ${c.부정}</span>` : ""}
+            ${c.단순언급 ? `<span class="count mention">단순 언급 ${c.단순언급}</span>` : ""}
+          </div>
+        </div>
+        <div class="cards">${cards}</div>`;
+    }
+
+    function hideSuggestions() {
+      suggestionsEl.classList.remove("show");
+      suggestionsEl.innerHTML = "";
+      suggestions = [];
+      activeSuggestion = -1;
+    }
+
+    function highlightName(name, query) {
+      const q = String(query ?? "").trim();
+      if (!q) return esc(name);
+      const lower = name.toLowerCase(), ql = q.toLowerCase();
+      if (lower.startsWith(ql)) {
+        return `<span class="match">${esc(name.slice(0, q.length))}</span>${esc(name.slice(q.length))}`;
+      }
+      const at = lower.indexOf(ql);
+      if (at >= 0) {
+        return `${esc(name.slice(0, at))}<span class="match">${esc(name.slice(at, at + q.length))}</span>${esc(name.slice(at + q.length))}`;
+      }
+      return esc(name);
+    }
+    function renderSuggestions(rows) {
+      suggestions = rows || [];
+      activeSuggestion = -1;
+      if (!suggestions.length) {
+        hideSuggestions();
+        return;
+      }
+      const q = input.value;
+      suggestionsEl.innerHTML = suggestions.map((row, idx) => `
+          <button class="suggestion" type="button" data-index="${idx}" role="option">
+            <span class="suggestion-code">${esc(row.code || row.isin || "")}</span>
+            <span class="suggestion-name">${highlightName(row.name, q)}</span>
+            <span class="suggestion-market">${esc(row.market || "")}</span>
+          </button>`).join("");
+      suggestionsEl.classList.add("show");
+    }
+
+    async function loadSuggestions(query) {
+      query = query.trim();
+      if (!query) {
+        hideSuggestions();
+        return;
+      }
+      try {
+        if (isFileMode) {
+          renderSuggestions(localSuggest(query));
+          return;
+        }
+        const data = await fetch(`/api/suggest?q=${encodeURIComponent(query)}`).then(r => r.json());
+        if (input.value.trim() === query) renderSuggestions(data.suggestions || []);
+      } catch {
+        renderSuggestions(localSuggest(query));
+      }
+    }
+
+    function chooseSuggestion(index) {
+      const row = suggestions[index];
+      if (!row) return;
+      input.value = row.name;
+      hideSuggestions();
+      search(row.name);
+    }
+
+    function suggestionForSubmit(query) {
+      query = query.trim();
+      const rows = suggestions.length ? suggestions : localSuggest(query);
+      if (!rows.length) return null;
+      const q = compact(query);
+      return rows.find(row => compact(row.name) === q || compact(row.code) === q) || rows[0];
+    }
+
+    function setActiveSuggestion(next) {
+      activeSuggestion = next;
+      suggestionsEl.querySelectorAll(".suggestion").forEach((el, idx) => {
+        el.classList.toggle("active", idx === activeSuggestion);
+      });
+    }
+
+    async function search(query) {
+      query = query.trim();
+      if (query.length < 2) return;
+      hideSuggestions();
+      const token = ++activeSearchToken;
+      input.value = query; submit.disabled = true; loading.classList.add("show"); result.innerHTML = "";
+      loadingTitle.textContent = "관련 영상을 찾고 있어요";
+      loadingText.textContent = "분석이 끝난 유튜버 의견부터 바로 보여드릴게요.";
+      try {
+        if (isFileMode) throw new Error(serverRequiredMessage);
+        const response = await fetch(`/api/search/start?q=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "검색에 실패했어요.");
+        render(data);
+        if (!data.jobId) throw new Error("검색 작업을 시작하지 못했어요.");
+        await pollSearch(data.jobId, token);
+      } catch (error) {
+        const message = error.message === "Failed to fetch" ? serverRequiredMessage : error.message;
+        result.innerHTML = `<div class="error">${esc(message)}</div>`;
+      } finally {
+        if (token === activeSearchToken) {
+          submit.disabled = false; loading.classList.remove("show");
+        }
+      }
+    }
+
+    async function pollSearch(jobId, token) {
+      while (token === activeSearchToken) {
+        await new Promise(resolve => setTimeout(resolve, 700));
+        const response = await fetch(`/api/search/progress?id=${encodeURIComponent(jobId)}`);
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "검색 진행상황을 읽지 못했어요.");
+        if (token !== activeSearchToken) return;
+        loadingTitle.textContent = data.done ? "분석이 끝났어요" : "유튜버 의견을 분석 중이에요";
+        loadingText.textContent = data.currentStatus || "분석 결과를 정리하고 있어요.";
+        render(data);
+        if (data.done) return;
+      }
+    }
+    form.addEventListener("submit", e => {
+      e.preventDefault();
+      if (activeSuggestion >= 0) {
+        chooseSuggestion(activeSuggestion);
+        return;
+      }
+      const row = suggestionForSubmit(input.value);
+      if (row) {
+        input.value = row.name;
+        hideSuggestions();
+        search(row.name);
+      } else {
+        search(input.value);
+      }
+    });
+    input.addEventListener("input", () => {
+      clearTimeout(suggestTimer);
+      suggestTimer = setTimeout(() => loadSuggestions(input.value), 120);
+    });
+    input.addEventListener("keydown", e => {
+      if (!suggestions.length) return;
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setActiveSuggestion((activeSuggestion + 1) % suggestions.length);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setActiveSuggestion((activeSuggestion - 1 + suggestions.length) % suggestions.length);
+      } else if (e.key === "Escape") {
+        hideSuggestions();
+      }
+    });
+    suggestionsEl.addEventListener("mousedown", e => {
+      const button = e.target.closest(".suggestion");
+      if (!button) return;
+      e.preventDefault();
+      chooseSuggestion(Number(button.dataset.index));
+    });
+    document.addEventListener("click", e => {
+      if (!form.contains(e.target)) hideSuggestions();
+    });
+    document.querySelectorAll(".example").forEach(btn => btn.addEventListener("click", () => search(btn.textContent)));
+    loadStatus();
+  </script>
+</body>
+</html>

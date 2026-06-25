@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.beaver.stocksearch</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/jay/Documents/지금사도될까요?/beaver-v2/터미널없이_실행관리/run_search_server_foreground.sh</string>
+  </array>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>KeepAlive</key>
+  <true/>
+
+  <key>StandardOutPath</key>
+  <string>/Users/jay/Documents/지금사도될까요?/beaver-v2/pipeline/cache/launchd.out.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/Users/jay/Documents/지금사도될까요?/beaver-v2/pipeline/cache/launchd.err.log</string>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/jay/Documents/지금사도될까요?/beaver-v2/pipeline</string>
+</dict>
+</plist>
