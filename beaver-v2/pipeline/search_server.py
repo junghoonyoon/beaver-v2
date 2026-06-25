@@ -34,6 +34,28 @@ class SearchServer(ThreadingHTTPServer):
     allow_reuse_address = True
 
 
+def refresh_search_index_async():
+    """검색 인덱스가 없을 때 서버를 먼저 열고 백그라운드에서 만든다."""
+    if config.SEARCH_INDEX_JSON.exists():
+        return
+    if not config.YOUTUBE_API_KEY:
+        print("⚠️ 유튜브키가 없어 검색 인덱스를 백그라운드 갱신하지 못해요.")
+        return
+    ready = [channel for channel in config.CHANNELS if channel.get("channelId")]
+    if not ready:
+        print("⚠️ 사용 가능한 채널 ID가 없어 검색 인덱스를 갱신하지 못해요.")
+        return
+
+    def worker():
+        try:
+            print("검색 인덱스가 없어 백그라운드에서 갱신합니다.")
+            stock_search.sync_index(ready)
+        except Exception as exc:
+            print(f"⚠️ 검색 인덱스 백그라운드 갱신 실패: {exc}")
+
+    threading.Thread(target=worker, daemon=True).start()
+
+
 def _snapshot(job_id):
     with JOBS_LOCK:
         job = JOBS.get(job_id)
@@ -222,8 +244,8 @@ class Handler(BaseHTTPRequestHandler):
 
 def main():
     if not config.SEARCH_INDEX_JSON.exists():
-        print("❌ 검색 인덱스가 없어요. 먼저 sync_search_index.py를 실행해 주세요.")
-        return 1
+        print("⚠️ 검색 인덱스가 없어 빈 상태로 서버를 먼저 시작합니다.")
+        refresh_search_index_async()
     krx_listed.refresh_if_needed_async()
     us_listed.refresh_if_needed_async()
     try:

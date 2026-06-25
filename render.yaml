@@ -5,7 +5,7 @@ services:
     plan: free
     autoDeploy: true
     buildCommand: cd beaver-v2/pipeline && pip install -r requirements.txt
-    startCommand: cd beaver-v2/pipeline && python sync_search_index.py && python search_server.py
+    startCommand: cd beaver-v2/pipeline && python search_server.py
     envVars:
       - key: ANALYSIS_PROVIDER
         value: openrouter
