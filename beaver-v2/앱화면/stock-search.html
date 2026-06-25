@@ -376,8 +376,7 @@
         <div class="summary">
           <h2>${esc(data.query)}</h2>
           <div class="summary-meta">
-            관련 유튜버 ${data.opinions.length}명 · 자막 일치 영상 ${data.matchedVideos}개
-            ${data.matchedVideos > data.analyzedVideos ? ` · 빠른 분석 ${data.analyzedVideos}개 우선` : ""}
+            최근 영상 ${data.matchedVideos}개에서 ${esc(data.query)}가 언급됐고, ${data.opinions.length}명의 의견을 정리했어요.
             ${!done && data.currentStatus ? ` · ${esc(data.currentStatus)}` : ""}
           </div>
           <div class="counts">
