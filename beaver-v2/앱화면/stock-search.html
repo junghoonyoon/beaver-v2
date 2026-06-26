@@ -3,8 +3,16 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>이 종목, 유튜버들은 어떻게 볼까?</title>
+  <title>이 종목 어때?</title>
   <style>
+    @font-face {
+      font-family:"GmarketSansBold";
+      src:url("https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansBold.woff") format("woff");
+      font-weight:700;
+      font-style:normal;
+      font-display:swap;
+    }
+
     :root {
       --ink:#171717; --body:#5f6368; --muted:#8b9098; --line:#e2e4e8;
       --canvas:#f7f8fa; --card:#fff; --blue:#1267e5; --blue-wash:#eaf2ff;
@@ -21,8 +29,21 @@
     }
     button,input { font:inherit }
     .page { width:min(760px,calc(100% - 28px)); margin:0 auto; padding:70px 0 80px }
-    .brand { color:var(--blue); font-size:13px; font-weight:800; letter-spacing:.08em }
-    h1 { margin:12px 0 10px; font-size:clamp(30px,6vw,48px); line-height:1.12; letter-spacing:-.045em }
+    .brand { display:inline-flex; align-items:center; gap:9px; color:var(--blue); font-size:20px; font-weight:850; letter-spacing:-.1px }
+    .brand-mark {
+      position:relative; display:grid; place-items:center; width:36px; height:25px;
+      border-radius:10px / 8px; background:var(--blue); color:#fff; font-size:19px; font-weight:900;
+      line-height:1; box-shadow:0 8px 18px rgba(18,103,229,.22);
+    }
+    .brand-mark::before {
+      content:""; position:absolute; inset:1px 2px 2px; border-radius:9px / 7px;
+      background:linear-gradient(180deg,rgba(255,255,255,.1),rgba(255,255,255,0));
+      pointer-events:none;
+    }
+    .brand-mark span { position:relative; z-index:1; transform:translateY(-1px) }
+    .brand-name { white-space:nowrap; font-family:"GmarketSansBold","Apple SD Gothic Neo",sans-serif; transform:translateY(1px) }
+    .brand-name strong { font-weight:700 }
+    h1 { margin:24px 0 18px; font-size:clamp(30px,6vw,44px); line-height:1.2; letter-spacing:.2px }
     .lead { margin:0; color:var(--body); font-size:16px; line-height:1.65 }
     .search {
       position:sticky; top:12px; z-index:30; margin-top:30px; display:flex; gap:10px; padding:8px;
@@ -144,12 +165,15 @@
 </head>
 <body>
   <main class="page">
-    <div class="brand">BEAVER STOCK SEARCH</div>
-    <h1>궁금한 종목,<br>유튜버들은 어떻게 볼까요?</h1>
-    <p class="lead">최근 2주 업로드 영상에서 종목을 실제로 언급한 유튜버를 찾고,<br>긍정·신중·부정 의견과 근거를 한눈에 정리해드려요.</p>
+    <div class="brand" aria-label="이 종목 어때?">
+      <span class="brand-mark" aria-hidden="true"><span>?</span></span>
+      <span class="brand-name">이 종목 <strong>어때?</strong></span>
+    </div>
+    <h1>주식·투자 키워드,<br>유튜버 의견으로 요즘 흐름 파악하기</h1>
+    <p class="lead">최근 2주 업로드 영상에서 종목·ETF·섹터·테마를 실제로 언급한 유튜버를 찾고,<br>긍정·신중·부정 의견과 근거를 한눈에 정리해드려요.</p>
 
     <form class="search" id="form">
-      <input id="query" autocomplete="off" placeholder="예: 삼성전자, SK하이닉스, 엔비디아" aria-label="종목명">
+      <input id="query" autocomplete="off" placeholder="예: 삼성전자, 엔비디아, 반도체 ETF" aria-label="종목명">
       <button id="submit" type="submit">의견 찾기</button>
       <div class="suggestions" id="suggestions" role="listbox" aria-label="종목 추천"></div>
     </form>
@@ -348,7 +372,7 @@
           loadChips({ label: "검색 가능한 인기 종목" });
           return;
         }
-        result.innerHTML = `<div class="empty"><b>${esc(data.query)}</b>을(를) 명확히 평가한 최근 유튜버 의견을 찾지 못했어요.<br>띄어쓰기를 바꾸거나 회사의 정식 종목명으로 다시 검색해 보세요.</div>`;
+        result.innerHTML = `<div class="empty"><b>${esc(data.query)}</b>을(를) 명확히 평가한 최근 유튜버 의견을 찾지 못했어요.<br>다른 표기, 티커, 회사명으로도 검색해 보세요.</div>`;
         loadChips({ label: "검색 가능한 인기 종목" });
         return;
       }
@@ -448,17 +472,11 @@
     function chooseSuggestion(index) {
       const row = suggestions[index];
       if (!row) return;
-      input.value = row.name;
+      const typed = input.value.trim();
+      const query = compact(typed) && compact(typed) === compact(row.code) ? row.code : row.name;
+      input.value = query;
       hideSuggestions();
-      search(row.name);
-    }
-
-    function suggestionForSubmit(query) {
-      query = query.trim();
-      const rows = suggestions.length ? suggestions : localSuggest(query);
-      if (!rows.length) return null;
-      const q = compact(query);
-      return rows.find(row => compact(row.name) === q || compact(row.code) === q) || rows[0];
+      search(query);
     }
 
     function setActiveSuggestion(next) {
@@ -513,14 +531,7 @@
         chooseSuggestion(activeSuggestion);
         return;
       }
-      const row = suggestionForSubmit(input.value);
-      if (row) {
-        input.value = row.name;
-        hideSuggestions();
-        search(row.name);
-      } else {
-        search(input.value);
-      }
+      search(input.value);
     });
     input.addEventListener("input", () => {
       clearTimeout(suggestTimer);

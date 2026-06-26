@@ -18,6 +18,11 @@ STARTUP_REFRESH_ENABLED = os.environ.get(
     "STARTUP_REFRESH_ENABLED",
     "0" if IS_RENDER else "1",
 ) == "1"
+STARTUP_SEARCH_REFRESH_ENABLED = os.environ.get(
+    "STARTUP_SEARCH_REFRESH_ENABLED",
+    "1" if STARTUP_REFRESH_ENABLED else "0",
+) == "1"
+STARTUP_STOCK_REFRESH_ENABLED = os.environ.get("STARTUP_STOCK_REFRESH_ENABLED", "1") == "1"
 
 # ── API 키 (환경변수에서) ──
 YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY", "")

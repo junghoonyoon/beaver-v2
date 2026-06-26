@@ -11,6 +11,10 @@ services:
         value: openrouter
       - key: OPENROUTER_MODEL
         value: google/gemini-2.5-flash
+      - key: STARTUP_SEARCH_REFRESH_ENABLED
+        value: "0"
+      - key: STARTUP_STOCK_REFRESH_ENABLED
+        value: "1"
       - key: YOUTUBE_API_KEY
         sync: false
       - key: OPENROUTER_API_KEY
