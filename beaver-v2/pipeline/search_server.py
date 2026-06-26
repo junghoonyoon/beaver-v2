@@ -68,12 +68,11 @@ def _snapshot(job_id):
 
 
 def _sort_snapshot_opinions(payload):
-    """진행 중 응답도 실제 판단을 먼저 보여주고 단순언급은 아래로 보낸다."""
-    stance_rank = {"긍정": 0, "부정": 0, "신중": 0, "단순언급": 1}
+    """진행 중 응답도 최종 응답과 같은 순서로 보여준다."""
     opinions = payload.get("opinions") or []
     for idx, opinion in enumerate(opinions):
         opinion.setdefault("_order", idx)
-    opinions.sort(key=lambda opinion: (stance_rank.get(opinion.get("stance"), 0), opinion.get("_order", 0)))
+    opinions.sort(key=stock_search.opinion_sort_key)
     for opinion in opinions:
         opinion.pop("_order", None)
 

@@ -184,15 +184,21 @@ class StockSearchTest(unittest.TestCase):
         self.assertEqual(len(data["opinions"]), 3)
         self.assertEqual(analyze_call.call_count, 2)
 
-    def test_sort_opinions_puts_mentions_last(self):
+    def test_sort_opinions_uses_latest_first_and_puts_mentions_last(self):
         data = {"opinions": [], "counts": {"긍정": 0, "신중": 0, "부정": 0, "단순언급": 0}}
-        stock_search.add_opinion(data, {"stance": "단순언급", "channel": "A"})
-        stock_search.add_opinion(data, {"stance": "긍정", "channel": "B"})
-        stock_search.add_opinion(data, {"stance": "부정", "channel": "C"})
+        stock_search.add_opinion(data, {
+            "stance": "단순언급", "channel": "A", "publishedAt": "2026-06-26T15:00:00+09:00", "views": 1,
+        })
+        stock_search.add_opinion(data, {
+            "stance": "긍정", "channel": "B", "publishedAt": "2026-06-25T20:00:37+09:00", "views": 116403,
+        })
+        stock_search.add_opinion(data, {
+            "stance": "부정", "channel": "C", "publishedAt": "2026-06-26T14:51:15+09:00", "views": 167,
+        })
 
         stock_search.sort_opinions(data)
 
-        self.assertEqual([row["channel"] for row in data["opinions"]], ["B", "C", "A"])
+        self.assertEqual([row["channel"] for row in data["opinions"]], ["C", "B", "A"])
         self.assertNotIn("_order", data["opinions"][0])
 
 

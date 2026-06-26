@@ -775,11 +775,24 @@ def add_opinion(search_result, opinion):
     search_result["counts"][opinion["stance"]] += 1
 
 
+def _published_sort_value(opinion):
+    value = opinion.get("publishedAt") or ""
+    try:
+        return datetime.datetime.fromisoformat(value).timestamp()
+    except (TypeError, ValueError):
+        return 0
+
+
+def opinion_sort_key(opinion):
+    """판단이 있는 최신 의견을 먼저 보여주고, 단순언급은 마지막에 둔다."""
+    mention_rank = 1 if opinion.get("stance") == "단순언급" else 0
+    return (mention_rank, -_published_sort_value(opinion), -int(opinion.get("views") or 0), opinion.get("_order", 0))
+
+
 def sort_opinions(search_result):
-    """긍정/부정/신중처럼 판단이 있는 결과를 먼저, 단순언급은 마지막에 둔다."""
-    stance_rank = {"긍정": 0, "부정": 0, "신중": 0, "단순언급": 1}
+    """판단이 있는 최신 의견을 먼저 보여주고, 단순언급은 마지막에 둔다."""
     search_result["opinions"].sort(
-        key=lambda opinion: (stance_rank.get(opinion.get("stance"), 0), opinion.get("_order", 0))
+        key=opinion_sort_key
     )
     for opinion in search_result["opinions"]:
         opinion.pop("_order", None)
