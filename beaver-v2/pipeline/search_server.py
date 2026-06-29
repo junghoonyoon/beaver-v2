@@ -62,6 +62,10 @@ def _index_age_seconds(index):
 def _is_search_index_stale(index):
     if not index.get("videos"):
         return True
+    if index.get("lookbackDays") != config.SEARCH_LOOKBACK_DAYS:
+        return True
+    if index.get("maxVideosPerChannel") != config.SEARCH_MAX_VIDEOS_PER_CHANNEL:
+        return True
     age = _index_age_seconds(index)
     if age is None:
         return True
@@ -267,6 +271,7 @@ class Handler(BaseHTTPRequestHandler):
                 "videoCount": len(index.get("videos", [])),
                 "updatedAt": index.get("updatedAt"),
                 "lookbackDays": index.get("lookbackDays", config.SEARCH_LOOKBACK_DAYS),
+                "maxVideosPerChannel": index.get("maxVideosPerChannel"),
                 "analysisProvider": provider,
                 "model": model,
                 "searchRefresh": search_refresh_status(index),

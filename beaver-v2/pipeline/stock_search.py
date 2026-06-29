@@ -568,6 +568,7 @@ def save_index(videos):
     payload = {
         "updatedAt": datetime.datetime.now(KST).isoformat(),
         "lookbackDays": config.SEARCH_LOOKBACK_DAYS,
+        "maxVideosPerChannel": config.SEARCH_MAX_VIDEOS_PER_CHANNEL,
         "videos": videos,
     }
     tmp = config.SEARCH_INDEX_JSON.with_suffix(".tmp")
