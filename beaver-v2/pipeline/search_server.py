@@ -307,7 +307,8 @@ class Handler(BaseHTTPRequestHandler):
             return
         if parsed.path == "/api/market-rankings":
             try:
-                self._json(market_rankings.rankings())
+                force = parse_qs(parsed.query).get("force", [""])[0] in ("1", "true", "yes")
+                self._json(market_rankings.rankings(force=force))
             except Exception as exc:
                 self._json({"error": str(exc)}, 500)
             return

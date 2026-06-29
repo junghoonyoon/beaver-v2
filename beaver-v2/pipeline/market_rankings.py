@@ -319,6 +319,11 @@ def load_cache():
 
 def cache_is_fresh():
     payload = load_cache()
+    markets = payload.get("markets") or {}
+    for market in ("kr", "us"):
+        data = markets.get(market) or {}
+        if data.get("error") or data.get("source") == "fallback":
+            return False
     fetched_at = payload.get("fetchedAt")
     if not fetched_at:
         return False
