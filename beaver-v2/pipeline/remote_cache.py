@@ -47,7 +47,7 @@ def download_bytes(remote_path):
     except requests.RequestException as exc:
         print(f"  ⚠️ Supabase 캐시 다운로드 실패({remote_path}): {str(exc)[:120]}")
         return None
-    if response.status_code == 404:
+    if response.status_code == 404 or (response.status_code == 400 and "not_found" in response.text):
         return None
     if not response.ok:
         print(f"  ⚠️ Supabase 캐시 다운로드 실패({remote_path}): {response.status_code} {response.text[:120]}")

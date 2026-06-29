@@ -18,6 +18,7 @@ load_settings()
 
 import config  # noqa: E402
 import krx_listed  # noqa: E402
+import market_rankings  # noqa: E402
 import stock_search  # noqa: E402
 import us_listed  # noqa: E402
 
@@ -303,6 +304,12 @@ class Handler(BaseHTTPRequestHandler):
                     "label": "최근 많이 언급된 종목",
                     "chips": stock_search.popular_chips(),
                 })
+            return
+        if parsed.path == "/api/market-rankings":
+            try:
+                self._json(market_rankings.rankings())
+            except Exception as exc:
+                self._json({"error": str(exc)}, 500)
             return
         if parsed.path == "/api/search":
             query = parse_qs(parsed.query).get("q", [""])[0].strip()

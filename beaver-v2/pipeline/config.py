@@ -37,7 +37,12 @@ KRX_LISTED_API_URL = os.environ.get(
     "KRX_LISTED_API_URL",
     "https://apis.data.go.kr/1160100/service/GetKrxListedInfoService/getItemInfo",
 )
+KRX_STOCK_PRICE_API_URL = os.environ.get(
+    "KRX_STOCK_PRICE_API_URL",
+    "https://apis.data.go.kr/1160100/service/GetStockSecuritiesInfoService/getStockPriceInfo",
+)
 KRX_LISTED_REFRESH_HOURS = int(os.environ.get("KRX_LISTED_REFRESH_HOURS", "24"))
+MARKET_RANKINGS_REFRESH_HOURS = int(os.environ.get("MARKET_RANKINGS_REFRESH_HOURS", "6"))
 US_LISTED_REFRESH_HOURS = int(os.environ.get("US_LISTED_REFRESH_HOURS", "24"))
 NASDAQ_LISTED_URL = os.environ.get(
     "NASDAQ_LISTED_URL",

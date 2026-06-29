@@ -76,14 +76,34 @@
     .suggestion-name { min-width:0; color:#14161a; font-size:16px; font-weight:700; line-height:1.3; word-break:keep-all }
     .suggestion-name .match { color:var(--blue); font-weight:800 }
     .suggestion-market { color:#70757d; font-size:15px; font-weight:600; line-height:1.3; text-align:right; white-space:nowrap }
-    .chip-block { margin-top:14px }
-    .chip-label { display:none }
-    .examples { display:flex; flex-wrap:wrap; gap:8px }
-    .example {
-      border:1px solid var(--line); border-radius:999px; padding:7px 12px;
-      background:rgba(255,255,255,.75); color:var(--body); cursor:pointer;
-      white-space:nowrap;
+    .market-panel { margin-top:20px }
+    .market-tabs {
+      display:flex; width:100%; gap:3px; padding:3px;
+      border:1px solid #eceff3; border-radius:999px; background:#f5f6f8;
     }
+    .market-tab {
+      appearance:none; flex:1 1 0; min-width:0; border:0; border-radius:999px; padding:7px 13px;
+      background:transparent; color:#8b9098; font-size:13px; font-weight:700; cursor:pointer;
+    }
+    .market-tab.active { background:#fff; color:var(--ink); box-shadow:0 1px 3px rgba(20,28,45,.08) }
+    .rank-caption { margin:13px 0 8px; color:var(--muted); font-size:12px; font-weight:700 }
+    .rank-list {
+      display:grid; gap:0; overflow:hidden; border:0; border-radius:12px;
+      background:#fff;
+    }
+    .rank-item {
+      appearance:none; display:grid; grid-template-columns:24px minmax(0,1fr); align-items:center; gap:12px;
+      width:100%; border:0; border-bottom:1px solid #edf0f3; padding:10px 0;
+      background:#fff; color:var(--ink); text-align:left; cursor:pointer;
+    }
+    .rank-item:last-child { border-bottom:0 }
+    .rank-item:hover { background:#f7f9fc }
+    .rank-no { color:#7aa7f2; font-size:14px; font-weight:750; text-align:right; font-variant-numeric:tabular-nums }
+    .rank-body { display:block; min-width:0 }
+    .rank-name { display:block; min-width:0; color:#30343b; font-size:15px; font-weight:650; line-height:1.35 }
+    .rank-meta { display:block; margin-top:3px; color:#8b9098; font-size:11px; font-weight:600; line-height:1.25 }
+    .rank-market { display:none }
+    .market-panel.hide { display:none }
     .status { display:none; margin-top:10px; color:var(--muted); font-size:13px }
     .status.show { display:block }
     .loading {
@@ -148,16 +168,10 @@
       .search { top:10px; gap:6px; padding:6px }
       .search input { padding:10px 10px; font-size:16px }
       .search button { min-height:46px; padding:0 14px; font-size:15px; white-space:nowrap }
-      .chip-block {
-        width:calc(100% + 28px); margin-left:-14px; padding-left:14px;
-        overflow:hidden;
-      }
-      .examples {
-        flex-wrap:nowrap; overflow-x:auto; overscroll-behavior-x:contain;
-        scroll-snap-type:x proximity; padding:0 14px 4px 0; -webkit-overflow-scrolling:touch;
-      }
-      .examples::-webkit-scrollbar { display:none }
-      .example { flex:0 0 auto; scroll-snap-align:start }
+      .market-panel { margin-top:18px }
+      .market-tab { font-size:13px; padding:7px 11px }
+      .rank-item { grid-template-columns:22px minmax(0,1fr); gap:10px; padding:10px 0 }
+      .rank-name { font-size:15px }
       .suggestion { grid-template-columns:72px minmax(0,1fr) 64px; gap:10px; padding:12px 14px }
       .suggestion-code,.suggestion-name,.suggestion-market { font-size:14px }
     }
@@ -177,15 +191,14 @@
       <button id="submit" type="submit">의견 찾기</button>
       <div class="suggestions" id="suggestions" role="listbox" aria-label="종목 추천"></div>
     </form>
-    <div class="chip-block">
-      <div class="chip-label" id="chipLabel">최근 많이 언급된 종목</div>
-      <div class="examples" id="chips">
-        <button class="example" type="button">삼성전자</button>
-        <button class="example" type="button">SK하이닉스</button>
-        <button class="example" type="button">엔비디아</button>
-        <button class="example" type="button">현대차</button>
+    <section class="market-panel" id="marketPanel" aria-label="상위 종목">
+      <div class="market-tabs" role="tablist" aria-label="시장 선택">
+        <button class="market-tab active" type="button" data-market="kr" role="tab" aria-selected="true">국내주식</button>
+        <button class="market-tab" type="button" data-market="us" role="tab" aria-selected="false">미국주식</button>
       </div>
-    </div>
+      <div class="rank-caption" id="rankCaption">시가총액 상위 10</div>
+      <div class="rank-list" id="rankList"></div>
+    </section>
     <div class="status" id="status">검색 인덱스를 확인하는 중이에요…</div>
 
     <section class="loading" id="loading">
@@ -202,7 +215,7 @@
     const form = $("form"), input = $("query"), submit = $("submit");
     const loading = $("loading"), loadingTitle = $("loadingTitle"), loadingText = $("loadingText");
     const result = $("result"), statusEl = $("status"), suggestionsEl = $("suggestions");
-    const chipsEl = $("chips"), chipLabelEl = $("chipLabel");
+    const marketPanel = $("marketPanel"), rankListEl = $("rankList"), rankCaption = $("rankCaption");
     const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const stanceClass = stance => ({긍정:"pos",신중:"neu",부정:"neg",단순언급:"mention"}[stance] || "mention");
     const serverRequiredMessage = "의견 분석은 종목검색실행.command를 실행한 뒤 http://127.0.0.1:8765 주소에서 사용해 주세요.";
@@ -344,24 +357,67 @@
         .map(item => item.row);
     }
 
-    function renderChips(label, rows) {
-      const fallback = ["삼성전자", "SK하이닉스", "엔비디아", "현대차", "마이크론", "테슬라", "애플", "한화에어로스페이스"].map(name => ({ name }));
-      const chips = (rows?.length ? rows : fallback).slice(0, 8);
-      chipLabelEl.textContent = label || "최근 많이 언급된 종목";
-      chipsEl.innerHTML = chips.map(row => `<button class="example" type="button">${esc(row.name || row)}</button>`).join("");
+    const rankingStocks = {
+      kr: [
+        { name:"삼성전자" },
+        { name:"SK하이닉스" },
+        { name:"LG에너지솔루션" },
+        { name:"삼성바이오로직스" },
+        { name:"현대차" },
+        { name:"기아" },
+        { name:"셀트리온" },
+        { name:"KB금융" },
+        { name:"NAVER" },
+        { name:"POSCO홀딩스" }
+      ],
+      us: [
+        { name:"엔비디아" },
+        { name:"마이크로소프트" },
+        { name:"애플" },
+        { name:"아마존" },
+        { name:"알파벳" },
+        { name:"메타" },
+        { name:"브로드컴" },
+        { name:"테슬라" },
+        { name:"버크셔해서웨이" },
+        { name:"일라이릴리" }
+      ]
+    };
+    let rankingData = {
+      markets: {
+        kr: { rows: rankingStocks.kr, source: "fallback" },
+        us: { rows: rankingStocks.us, source: "fallback" }
+      }
+    };
+    let activeMarket = "kr";
+
+    function renderRanking(market = "kr") {
+      activeMarket = market;
+      const marketData = (rankingData.markets || {})[market] || {};
+      const rows = marketData.rows?.length ? marketData.rows : (rankingStocks[market] || rankingStocks.kr);
+      const baseDate = String(marketData.baseDate || "");
+      const dateLabel = baseDate.length === 8 ? `${baseDate.slice(0, 4)}.${baseDate.slice(4, 6)}.${baseDate.slice(6, 8)}` : "";
+      rankCaption.textContent = `시가총액 상위 10${dateLabel ? ` · 기준일 ${dateLabel}` : ""}`;
+      rankListEl.innerHTML = rows.map((row, idx) => `
+        <button class="rank-item" type="button" data-query="${esc(row.query || row.name)}">
+          <span class="rank-no">${idx + 1}</span>
+          <span class="rank-body">
+            <span class="rank-name">${esc(row.name)}</span>
+            ${row.marketCapText || row.code ? `<span class="rank-meta">${esc([row.code, row.marketCapText].filter(Boolean).join(" · "))}</span>` : ""}
+          </span>
+        </button>`).join("");
     }
 
-    async function loadChips({ query = "", label = "" } = {}) {
-      if (isFileMode) {
-        renderChips(label || "검색 예시", null);
-        return;
-      }
+    async function loadRanking() {
+      if (isFileMode) return;
       try {
-        const qs = query ? `?q=${encodeURIComponent(query)}` : "";
-        const data = await fetch(`/api/chips${qs}`).then(r => r.json());
-        renderChips(label || data.label, data.chips);
+        const data = await fetch("/api/market-rankings").then(r => r.json());
+        if (data.markets) {
+          rankingData = data;
+          renderRanking(activeMarket);
+        }
       } catch {
-        renderChips(label || "검색 예시", null);
+        renderRanking(activeMarket);
       }
     }
 
@@ -396,11 +452,9 @@
         }
         if (data.errors?.length) {
           result.innerHTML = `<div class="empty"><b>${esc(data.query)}</b> 관련 영상 ${esc(data.matchedVideos || 0)}개를 찾았지만 분석에 실패했어요.<br>${esc(data.errors[0])}</div>`;
-          loadChips({ label: "검색 가능한 인기 종목" });
           return;
         }
         result.innerHTML = `<div class="empty"><b>${esc(data.query)}</b>을(를) 명확히 평가한 최근 유튜버 의견을 찾지 못했어요.<br>다른 표기, 티커, 회사명으로도 검색해 보세요.</div>`;
-        loadChips({ label: "검색 가능한 인기 종목" });
         return;
       }
       const c = data.counts;
@@ -443,7 +497,6 @@
           </div>
         </div>
         <div class="cards">${cards}</div>`;
-      if (done) loadChips({ query:data.query, label:"함께 언급된 종목" });
     }
 
     function hideSuggestions() {
@@ -524,6 +577,7 @@
       hideSuggestions();
       const token = ++activeSearchToken;
       input.value = query; submit.disabled = true; loading.classList.add("show"); result.innerHTML = "";
+      marketPanel.classList.add("hide");
       loadingTitle.textContent = "관련 영상을 찾고 있어요";
       loadingText.textContent = "분석이 끝난 유튜버 의견부터 바로 보여드릴게요.";
       try {
@@ -590,11 +644,22 @@
     document.addEventListener("click", e => {
       if (!form.contains(e.target)) hideSuggestions();
     });
-    chipsEl.addEventListener("click", e => {
-      const button = e.target.closest(".example");
-      if (button) search(button.textContent);
+    marketPanel.addEventListener("click", e => {
+      const tab = e.target.closest(".market-tab");
+      if (tab) {
+        marketPanel.querySelectorAll(".market-tab").forEach(item => {
+          const active = item === tab;
+          item.classList.toggle("active", active);
+          item.setAttribute("aria-selected", String(active));
+        });
+        renderRanking(tab.dataset.market);
+        return;
+      }
+      const item = e.target.closest(".rank-item");
+      if (item) search(item.dataset.query);
     });
-    loadChips();
+    renderRanking("kr");
+    loadRanking();
     loadStatus();
   </script>
 </body>
