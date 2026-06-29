@@ -784,13 +784,13 @@ def _published_sort_value(opinion):
 
 
 def opinion_sort_key(opinion):
-    """판단이 있는 최신 의견을 먼저 보여주고, 단순언급은 마지막에 둔다."""
+    """업로드 최신순을 우선하고, 같은 시간일 때만 판단 의견을 먼저 둔다."""
     mention_rank = 1 if opinion.get("stance") == "단순언급" else 0
-    return (mention_rank, -_published_sort_value(opinion), -int(opinion.get("views") or 0), opinion.get("_order", 0))
+    return (-_published_sort_value(opinion), mention_rank, -int(opinion.get("views") or 0), opinion.get("_order", 0))
 
 
 def sort_opinions(search_result):
-    """판단이 있는 최신 의견을 먼저 보여주고, 단순언급은 마지막에 둔다."""
+    """업로드 최신순을 우선하고, 같은 시간일 때만 판단 의견을 먼저 둔다."""
     search_result["opinions"].sort(
         key=opinion_sort_key
     )

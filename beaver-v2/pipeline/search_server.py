@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """종목 검색 화면과 로컬 검색 API를 제공한다."""
+import datetime
 import json
 import mimetypes
 import os
@@ -28,32 +29,99 @@ PUBLIC_HOST = os.environ.get("SEARCH_PUBLIC_HOST", HOST)
 JOBS = {}
 JOBS_LOCK = threading.Lock()
 MAX_JOBS = 20
+SEARCH_REFRESH_STATE = {
+    "running": False,
+    "lastStartedAt": None,
+    "lastFinishedAt": None,
+    "lastError": "",
+}
+SEARCH_REFRESH_LOCK = threading.Lock()
 
 
 class SearchServer(ThreadingHTTPServer):
     allow_reuse_address = True
 
 
-def refresh_search_index_async():
-    """검색 인덱스가 없을 때 서버를 먼저 열고 백그라운드에서 만든다."""
-    if config.SEARCH_INDEX_JSON.exists():
-        return
+def _ready_channels():
+    return [channel for channel in config.CHANNELS if channel.get("channelId")]
+
+
+def _index_age_seconds(index):
+    updated_at = index.get("updatedAt")
+    if not updated_at:
+        return None
+    try:
+        updated = datetime.datetime.fromisoformat(updated_at)
+    except (TypeError, ValueError):
+        return None
+    if updated.tzinfo is None:
+        updated = updated.replace(tzinfo=stock_search.KST)
+    return max(0, (datetime.datetime.now(stock_search.KST) - updated).total_seconds())
+
+
+def _is_search_index_stale(index):
+    if not index.get("videos"):
+        return True
+    age = _index_age_seconds(index)
+    if age is None:
+        return True
+    return age >= config.SEARCH_INDEX_REFRESH_HOURS * 3600
+
+
+def search_refresh_status(index=None):
+    index = index or stock_search.load_index()
+    age = _index_age_seconds(index)
+    with SEARCH_REFRESH_LOCK:
+        state = dict(SEARCH_REFRESH_STATE)
+    state.update({
+        "enabled": config.SEARCH_INDEX_AUTO_REFRESH_ENABLED,
+        "refreshHours": config.SEARCH_INDEX_REFRESH_HOURS,
+        "ageSeconds": age,
+        "stale": _is_search_index_stale(index),
+    })
+    return state
+
+
+def refresh_search_index_async(force=False, reason=""):
+    """오래된 검색 인덱스를 서버는 살려둔 채 백그라운드에서 갱신한다."""
+    if not force and not config.SEARCH_INDEX_AUTO_REFRESH_ENABLED:
+        return False
+    index = stock_search.load_index()
+    if not force and not _is_search_index_stale(index):
+        return False
     if not config.YOUTUBE_API_KEY:
         print("⚠️ 유튜브키가 없어 검색 인덱스를 백그라운드 갱신하지 못해요.")
-        return
-    ready = [channel for channel in config.CHANNELS if channel.get("channelId")]
+        return False
+    ready = _ready_channels()
     if not ready:
         print("⚠️ 사용 가능한 채널 ID가 없어 검색 인덱스를 갱신하지 못해요.")
-        return
+        return False
+
+    with SEARCH_REFRESH_LOCK:
+        if SEARCH_REFRESH_STATE["running"]:
+            return False
+        SEARCH_REFRESH_STATE.update({
+            "running": True,
+            "lastStartedAt": datetime.datetime.now(stock_search.KST).isoformat(),
+            "lastError": "",
+        })
 
     def worker():
         try:
-            print("검색 인덱스가 없어 백그라운드에서 갱신합니다.")
+            why = f" ({reason})" if reason else ""
+            print(f"검색 인덱스를 백그라운드에서 갱신합니다{why}.")
             stock_search.sync_index(ready)
         except Exception as exc:
+            with SEARCH_REFRESH_LOCK:
+                SEARCH_REFRESH_STATE["lastError"] = str(exc)[:200]
             print(f"⚠️ 검색 인덱스 백그라운드 갱신 실패: {exc}")
+        finally:
+            with SEARCH_REFRESH_LOCK:
+                SEARCH_REFRESH_STATE["running"] = False
+                SEARCH_REFRESH_STATE["lastFinishedAt"] = datetime.datetime.now(stock_search.KST).isoformat()
 
     threading.Thread(target=worker, daemon=True).start()
+    return True
 
 
 def _snapshot(job_id):
@@ -191,6 +259,7 @@ class Handler(BaseHTTPRequestHandler):
         parsed = urlparse(self.path)
         if parsed.path == "/api/status":
             index = stock_search.load_index()
+            refresh_search_index_async(reason="status")
             provider = config.ANALYSIS_PROVIDER.lower()
             model = config.OPENROUTER_MODEL if provider == "openrouter" else config.OLLAMA_MODEL
             self._json({
@@ -200,6 +269,7 @@ class Handler(BaseHTTPRequestHandler):
                 "lookbackDays": index.get("lookbackDays", config.SEARCH_LOOKBACK_DAYS),
                 "analysisProvider": provider,
                 "model": model,
+                "searchRefresh": search_refresh_status(index),
                 "stockMaster": krx_listed.cache_status(),
                 "usStockMaster": us_listed.cache_status(),
             })
@@ -232,6 +302,7 @@ class Handler(BaseHTTPRequestHandler):
                 self._json({"error": "종목명을 두 글자 이상 입력해 주세요."}, 400)
                 return
             try:
+                refresh_search_index_async(reason="search")
                 self._json(stock_search.search_stock(query))
             except Exception as exc:
                 self._json({"error": str(exc)}, 500)
@@ -242,6 +313,7 @@ class Handler(BaseHTTPRequestHandler):
                 self._json({"error": "종목명을 두 글자 이상 입력해 주세요."}, 400)
                 return
             try:
+                refresh_search_index_async(reason="search/start")
                 self._json(start_search_job(query))
             except Exception as exc:
                 self._json({"error": str(exc)}, 500)
@@ -268,10 +340,13 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main():
-    if not config.SEARCH_INDEX_JSON.exists():
+    index = stock_search.load_index()
+    if not index.get("videos"):
         print("⚠️ 검색 인덱스가 없어 빈 상태로 서버를 먼저 시작합니다.")
-        if config.STARTUP_SEARCH_REFRESH_ENABLED:
-            refresh_search_index_async()
+    elif _is_search_index_stale(index):
+        print("⚠️ 검색 인덱스가 오래되어 기존 데이터로 서버를 먼저 시작합니다.")
+    if config.STARTUP_SEARCH_REFRESH_ENABLED:
+        refresh_search_index_async(reason="startup")
     if config.STARTUP_STOCK_REFRESH_ENABLED:
         krx_listed.refresh_if_needed_async()
         us_listed.refresh_if_needed_async()

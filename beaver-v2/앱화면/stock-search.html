@@ -407,8 +407,8 @@
       const opinions = data.opinions
         .map((opinion, order) => ({ ...opinion, order }))
         .sort((a, b) =>
-          opinionRank(a.stance) - opinionRank(b.stance) ||
           opinionTime(b.publishedAt) - opinionTime(a.publishedAt) ||
+          opinionRank(a.stance) - opinionRank(b.stance) ||
           (b.views || 0) - (a.views || 0) ||
           a.order - b.order
         );
