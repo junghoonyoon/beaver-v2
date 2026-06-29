@@ -701,14 +701,14 @@ def _fallback_search_matches(query, aliases, existing_ids):
         if int(video.get("views") or 0) < config.SEARCH_FALLBACK_MIN_VIEWS:
             continue
         text = youtube.fetch_transcript(video["videoId"])
+        if not text:
+            continue
         row = _index_video_row(
             video,
             text=text,
             channel_type=channel_type_by_id.get(video.get("channelId")),
             fallback=True,
         )
-        if not text:
-            row["transcriptError"] = youtube.LAST_TRANSCRIPT_ERROR or ""
         match = _video_match_row(row, aliases)
         if match:
             out.append(match)
@@ -818,10 +818,10 @@ def analyze_match(video, query):
     aliases, context, context_hash, path = _analysis_inputs(video, query)
     if not context.strip() and match_count(video.get("title", ""), aliases):
         return {
-            "mentioned": True,
+            "mentioned": False,
             "stance": "단순언급",
-            "summary": f"제목에서 {query}를 다뤘지만 자막을 가져오지 못해 세부 의견은 확인되지 않았습니다.",
-            "evidence": "자막 수집에 실패해 제목과 영상 메타데이터 기준으로만 노출합니다.",
+            "summary": "",
+            "evidence": "",
             "sourceTimeSec": None,
         }, False
     cached_data, cached = _read_cached_analysis(path, context_hash)

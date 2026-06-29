@@ -159,7 +159,7 @@ class StockSearchTest(unittest.TestCase):
         self.assertTrue(second_cached)
         analyze_call.assert_called_once()
 
-    def test_analyze_match_falls_back_to_title_when_transcript_is_missing(self):
+    def test_analyze_match_ignores_title_only_when_transcript_is_missing(self):
         video = {
             "videoId": "v1",
             "_text": "",
@@ -169,7 +169,7 @@ class StockSearchTest(unittest.TestCase):
         result, cached = stock_search.analyze_match(video, "현대차")
 
         self.assertFalse(cached)
-        self.assertTrue(result["mentioned"])
+        self.assertFalse(result["mentioned"])
         self.assertEqual(result["stance"], "단순언급")
 
     def test_find_videos_uses_youtube_fallback_when_results_are_stale(self):
@@ -202,7 +202,7 @@ class StockSearchTest(unittest.TestCase):
 
         self.assertEqual({row["videoId"] for row in found}, {"old", "new"})
 
-    def test_find_videos_keeps_transcript_matches_before_title_only_fallback(self):
+    def test_find_videos_skips_title_only_fallback_without_transcript(self):
         videos = [
             {"videoId": "old", "channel": "A", "title": "삼성전자 전망", "publishedAt": "2026-06-20T10:00:00+09:00",
              "views": 30, "url": "old"},
@@ -230,7 +230,7 @@ class StockSearchTest(unittest.TestCase):
                 mock.patch("youtube.fetch_transcript", return_value=None):
             found = stock_search.find_videos("삼성전자")
 
-        self.assertEqual([row["videoId"] for row in found], ["old", "new"])
+        self.assertEqual([row["videoId"] for row in found], ["old"])
 
     def test_search_stock_only_generates_for_fast_limit_but_uses_extra_cache(self):
         videos = [
