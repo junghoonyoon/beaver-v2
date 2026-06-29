@@ -157,6 +157,19 @@ class StockSearchTest(unittest.TestCase):
         self.assertTrue(second_cached)
         analyze_call.assert_called_once()
 
+    def test_analyze_match_falls_back_to_title_when_transcript_is_missing(self):
+        video = {
+            "videoId": "v1",
+            "_text": "",
+            "title": "현대차 주가 빠진 진짜 이유",
+        }
+
+        result, cached = stock_search.analyze_match(video, "현대차")
+
+        self.assertFalse(cached)
+        self.assertTrue(result["mentioned"])
+        self.assertEqual(result["stance"], "단순언급")
+
     def test_search_stock_only_generates_for_fast_limit_but_uses_extra_cache(self):
         videos = [
             {"videoId": "a", "channel": "A", "title": "삼성전자", "publishedAt": "2026-06-24",

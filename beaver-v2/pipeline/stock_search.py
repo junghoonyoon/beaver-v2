@@ -12,6 +12,7 @@ import us_listed
 
 KST = ZoneInfo("Asia/Seoul")
 _STOCK_CACHE_VERSION = 5
+_SEARCH_INDEX_VERSION = 2
 CHOSEONG = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ"
 INITIAL_CHARS = set(CHOSEONG)
 
@@ -566,6 +567,7 @@ def load_index():
 def save_index(videos):
     config.CACHE_DIR.mkdir(parents=True, exist_ok=True)
     payload = {
+        "version": _SEARCH_INDEX_VERSION,
         "updatedAt": datetime.datetime.now(KST).isoformat(),
         "lookbackDays": config.SEARCH_LOOKBACK_DAYS,
         "maxVideosPerChannel": config.SEARCH_MAX_VIDEOS_PER_CHANNEL,
@@ -599,7 +601,6 @@ def sync_index(channels):
             text = youtube.fetch_transcript(video["videoId"])
             if not text:
                 print(f"      자막 없음 · {video['title'][:36]}")
-                continue
             videos.append({
                 "videoId": video["videoId"],
                 "channel": video["channel"],
@@ -609,11 +610,14 @@ def sync_index(channels):
                 "views": video["views"],
                 "durationSec": video["durationSec"],
                 "url": video["url"],
-                "transcriptChars": len(text),
+                "transcriptChars": len(text or ""),
+                "transcriptStatus": "ok" if text else "missing",
+                "transcriptError": "" if text else (youtube.LAST_TRANSCRIPT_ERROR or ""),
             })
-    videos.sort(key=lambda row: row["publishedAt"], reverse=True)
+    videos.sort(key=lambda row: (row["publishedAt"], row.get("transcriptStatus") == "ok"), reverse=True)
     payload = save_index(videos)
-    print(f"\n✅ 검색 인덱스 생성: 자막 영상 {len(videos)}개 · 최근 {config.SEARCH_LOOKBACK_DAYS}일")
+    with_transcript = sum(1 for row in videos if row.get("transcriptStatus") == "ok")
+    print(f"\n✅ 검색 인덱스 생성: 영상 {len(videos)}개 · 자막 {with_transcript}개 · 최근 {config.SEARCH_LOOKBACK_DAYS}일")
     if failed_channels:
         print("   건너뛴 채널:", ", ".join(failed_channels))
     return payload
@@ -717,6 +721,14 @@ def analyze_match(video, query):
     import analyze
 
     aliases, context, context_hash, path = _analysis_inputs(video, query)
+    if not context.strip() and match_count(video.get("title", ""), aliases):
+        return {
+            "mentioned": True,
+            "stance": "단순언급",
+            "summary": f"제목에서 {query}를 다뤘지만 자막을 가져오지 못해 세부 의견은 확인되지 않았습니다.",
+            "evidence": "자막 수집에 실패해 제목과 영상 메타데이터 기준으로만 노출합니다.",
+            "sourceTimeSec": None,
+        }, False
     cached_data, cached = _read_cached_analysis(path, context_hash)
     if cached:
         return cached_data, True

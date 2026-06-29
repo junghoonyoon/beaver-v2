@@ -62,6 +62,8 @@ def _index_age_seconds(index):
 def _is_search_index_stale(index):
     if not index.get("videos"):
         return True
+    if index.get("version") != stock_search._SEARCH_INDEX_VERSION:
+        return True
     if index.get("lookbackDays") != config.SEARCH_LOOKBACK_DAYS:
         return True
     if index.get("maxVideosPerChannel") != config.SEARCH_MAX_VIDEOS_PER_CHANNEL:
@@ -268,6 +270,7 @@ class Handler(BaseHTTPRequestHandler):
             model = config.OPENROUTER_MODEL if provider == "openrouter" else config.OLLAMA_MODEL
             self._json({
                 "ready": bool(index.get("videos")),
+                "indexVersion": index.get("version"),
                 "videoCount": len(index.get("videos", [])),
                 "updatedAt": index.get("updatedAt"),
                 "lookbackDays": index.get("lookbackDays", config.SEARCH_LOOKBACK_DAYS),
