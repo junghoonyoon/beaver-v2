@@ -263,7 +263,7 @@
       return `${Math.floor(diffMs / day)}일 전`;
     };
     const viewsText = n => n >= 10000 ? `${(n/10000).toFixed(1)}만회` : `${n}회`;
-    const hasSourceTime = value => Number.isFinite(Number(value));
+    const hasSourceTime = value => value !== null && value !== undefined && value !== "" && Number.isFinite(Number(value));
     const sourceTimeText = value => {
       const sec = Math.max(0, Math.floor(Number(value)));
       const hour = Math.floor(sec / 3600);

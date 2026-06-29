@@ -202,6 +202,36 @@ class StockSearchTest(unittest.TestCase):
 
         self.assertEqual({row["videoId"] for row in found}, {"old", "new"})
 
+    def test_find_videos_keeps_transcript_matches_before_title_only_fallback(self):
+        videos = [
+            {"videoId": "old", "channel": "A", "title": "삼성전자 전망", "publishedAt": "2026-06-20T10:00:00+09:00",
+             "views": 30, "url": "old"},
+        ]
+        self.write_transcript("old", "삼성전자 실적 개선")
+        self.write_index(videos)
+        fallback = [{
+            "videoId": "new",
+            "channel": "B",
+            "channelId": "UCb",
+            "title": "삼성전자 방금 나온 새 분석",
+            "publishedAt": datetime.datetime(2026, 6, 29, 12, 0, 0, tzinfo=stock_search.KST),
+            "views": 100,
+            "durationSec": 100,
+            "url": "new",
+        }]
+
+        with mock.patch.object(config, "SEARCH_FALLBACK_ENABLED", True), \
+                mock.patch.object(config, "YOUTUBE_API_KEY", "key"), \
+                mock.patch.object(config, "SEARCH_FALLBACK_RECENT_HOURS", 24), \
+                mock.patch.object(config, "SEARCH_FALLBACK_MAX_RESULTS", 5), \
+                mock.patch.object(config, "SEARCH_FALLBACK_MIN_VIEWS", 0), \
+                mock.patch.object(config, "SEARCH_FALLBACK_ORDER", "relevance"), \
+                mock.patch("youtube.search_videos", return_value=fallback), \
+                mock.patch("youtube.fetch_transcript", return_value=None):
+            found = stock_search.find_videos("삼성전자")
+
+        self.assertEqual([row["videoId"] for row in found], ["old", "new"])
+
     def test_search_stock_only_generates_for_fast_limit_but_uses_extra_cache(self):
         videos = [
             {"videoId": "a", "channel": "A", "title": "삼성전자", "publishedAt": "2026-06-24",

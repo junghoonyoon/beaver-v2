@@ -650,6 +650,7 @@ def _video_match_row(video, aliases):
     row["_text"] = text
     row["matchCount"] = count
     row["titleMatch"] = bool(title_count)
+    row["hasTranscriptText"] = bool(text.strip())
     return row
 
 
@@ -728,7 +729,13 @@ def find_videos(query, max_youtubers=None):
         existing_ids = {row["videoId"] for row in matches}
         matches.extend(_fallback_search_matches(query, aliases, existing_ids))
     matches.sort(
-        key=lambda row: (row["titleMatch"], row["matchCount"], row["publishedAt"], row["views"]),
+        key=lambda row: (
+            row.get("hasTranscriptText", False),
+            row["titleMatch"],
+            row["matchCount"],
+            row["publishedAt"],
+            row["views"],
+        ),
         reverse=True,
     )
     # 결과는 유튜버별 대표 영상 1개만 사용한다.
