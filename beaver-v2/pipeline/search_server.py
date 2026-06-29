@@ -168,6 +168,7 @@ def _run_search_job(job_id, query, videos, finalize=True):
     if not videos:
         with JOBS_LOCK:
             result = JOBS[job_id]["result"]
+            result["primaryDone"] = True
             if finalize and not result.get("fallbackRunning"):
                 result["done"] = True
                 result["running"] = False
@@ -208,6 +209,7 @@ def _run_search_job(job_id, query, videos, finalize=True):
 
     with JOBS_LOCK:
         result = JOBS[job_id]["result"]
+        result["primaryDone"] = True
         if finalize or not result.get("fallbackRunning"):
             result["done"] = True
             result["running"] = False
@@ -239,10 +241,31 @@ def _run_fallback_job(job_id, query, existing_videos):
             result = JOBS.get(job_id, {}).get("result")
             if result is not None:
                 result["fallbackRunning"] = False
-                result["done"] = True
-                result["running"] = False
+                if result.get("primaryDone"):
+                    result["done"] = True
+                    result["running"] = False
                 result["currentChannel"] = ""
-                result["currentStatus"] = "분석이 끝났어요."
+                result["currentStatus"] = (
+                    "분석이 끝났어요."
+                    if result.get("done")
+                    else "기본 후보 의견을 분석 중이에요."
+                )
+
+
+def _wait_for_first_search_update(job_id, timeout_seconds=1.0):
+    """첫 응답이 빈 화면으로 깜빡이지 않도록 짧게만 진행 상황을 기다린다."""
+    deadline = time.monotonic() + timeout_seconds
+    while time.monotonic() < deadline:
+        with JOBS_LOCK:
+            result = JOBS.get(job_id, {}).get("result")
+            if not result:
+                return
+            if (
+                    result.get("opinions") or
+                    result.get("processedVideos") or
+                    (result.get("done") and result.get("primaryDone"))):
+                return
+        time.sleep(0.05)
 
 
 def start_search_job(query):
@@ -255,6 +278,7 @@ def start_search_job(query):
         "done": False,
         "running": True,
         "fallbackRunning": fallback_running,
+        "primaryDone": False,
         "currentChannel": "",
         "currentStatus": "검색을 시작했어요.",
     })
@@ -270,6 +294,7 @@ def start_search_job(query):
     if fallback_running:
         fallback_thread = threading.Thread(target=_run_fallback_job, args=(job_id, query, videos), daemon=True)
         fallback_thread.start()
+    _wait_for_first_search_update(job_id)
     return _snapshot(job_id)
 
 

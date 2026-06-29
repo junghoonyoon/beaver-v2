@@ -64,6 +64,7 @@ KNOWN_ALIASES = {
     "LG전자": ["LG전자", "엘지전자"],
     "LG에너지솔루션": ["LG에너지솔루션", "엘지에너지솔루션", "LG엔솔", "엘지엔솔"],
     "LG화학": ["LG화학", "엘지화학"],
+    "LG씨엔에스": ["LG CNS", "LGCNS", "LG씨엔에스", "엘지씨엔에스"],
     "한화에어로스페이스": ["한화에어로스페이스", "한화에어로"],
     "나노신소재": ["나노신소재"],
     "나노팀": ["나노팀"],
@@ -527,9 +528,25 @@ def transcript_segments(video_id):
         return []
 
 
+def _is_short_ticker_alias(alias):
+    raw = str(alias or "").strip()
+    key = compact(alias)
+    return raw.lower() == key and 1 < len(key) <= 5 and key.isascii() and key.isalnum()
+
+
+def _ticker_alias_count(text, alias):
+    return len(re.findall(rf"(?<![0-9A-Za-z]){re.escape(alias)}(?![0-9A-Za-z])", text, flags=re.IGNORECASE))
+
+
 def match_count(text, aliases):
     normalized = compact(text)
-    return sum(normalized.count(compact(alias)) for alias in aliases)
+    count = 0
+    for alias in aliases:
+        if _is_short_ticker_alias(alias):
+            count += _ticker_alias_count(text, compact(alias))
+        else:
+            count += normalized.count(compact(alias))
+    return count
 
 
 def extract_context(text, aliases, window=None, max_chars=None, max_spans=None):
@@ -543,13 +560,20 @@ def extract_context(text, aliases, window=None, max_chars=None, max_spans=None):
         needle = alias.lower().strip()
         if not needle:
             continue
-        start = 0
-        while len(spans) < max_spans:
-            at = lowered.find(needle, start)
-            if at < 0:
-                break
-            spans.append((max(0, at - window), min(len(text), at + len(needle) + window)))
-            start = at + len(needle)
+        if _is_short_ticker_alias(alias):
+            pattern = re.compile(rf"(?<![0-9A-Za-z]){re.escape(compact(alias))}(?![0-9A-Za-z])", re.IGNORECASE)
+            for match in pattern.finditer(text):
+                if len(spans) >= max_spans:
+                    break
+                spans.append((max(0, match.start() - window), min(len(text), match.end() + window)))
+        else:
+            start = 0
+            while len(spans) < max_spans:
+                at = lowered.find(needle, start)
+                if at < 0:
+                    break
+                spans.append((max(0, at - window), min(len(text), at + len(needle) + window)))
+                start = at + len(needle)
     if not spans:
         # 띄어쓰기 차이로만 매칭된 경우 문맥 위치를 찾기 어려우므로 제한된 전체 자막 사용.
         return text[:max_chars]

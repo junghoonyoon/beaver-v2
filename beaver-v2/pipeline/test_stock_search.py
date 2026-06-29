@@ -67,6 +67,16 @@ class StockSearchTest(unittest.TestCase):
         self.assertIn("하이닉스", aliases)
         self.assertGreater(stock_search.match_count("오늘 SK 하이닉스를 봅니다", aliases), 0)
 
+    def test_short_us_ticker_does_not_match_inside_english_words(self):
+        self.write_us_stocks([
+            {"code": "LLY", "market": "NYSE", "name": "Eli Lilly and Company", "english": "Eli Lilly and Company",
+             "corpName": "Eli Lilly and Company", "aliases": ["LLY", "Eli Lilly and Company", "일라이릴리"], "source": "NASDAQ"},
+        ])
+        aliases = stock_search.query_aliases("일라이릴리")
+        self.assertIn("LLY", aliases)
+        self.assertEqual(stock_search.match_count("Never really not justice.", aliases), 0)
+        self.assertGreater(stock_search.match_count("LLY earnings look strong.", aliases), 0)
+
     def test_suggest_stocks_returns_samsung_group_candidates(self):
         names = [row["name"] for row in stock_search.suggest_stocks("삼성")]
         self.assertGreaterEqual(len(names), 4)
@@ -93,6 +103,18 @@ class StockSearchTest(unittest.TestCase):
         self.assertEqual(first["code"], "123450")
         self.assertEqual(first["isin"], "KR7123450000")
         self.assertEqual(first["source"], "KRX")
+
+    def test_lg_cns_aliases_match_krx_name(self):
+        self.write_krx_stocks([
+            {"baseDate": "20260624", "code": "064400", "isin": "KR7064400005", "market": "KOSPI",
+             "name": "LG씨엔에스", "corpName": "(주)엘지씨엔에스", "aliases": ["(주)엘지씨엔에스"], "source": "KRX"},
+        ])
+        first = stock_search.suggest_stocks("LG CNS")[0]
+        self.assertEqual(first["name"], "LG씨엔에스")
+        self.assertEqual(first["code"], "064400")
+        self.assertIn("LG CNS", stock_search.query_aliases("LG CNS"))
+        self.assertIn("엘지씨엔에스", stock_search.query_aliases("lg cns"))
+        self.assertGreater(stock_search.match_count("LG CNS도 데이터센터 수혜를 봅니다.", stock_search.query_aliases("LG CNS")), 0)
 
     def test_suggest_stocks_uses_us_cache_and_korean_aliases(self):
         self.write_us_stocks([

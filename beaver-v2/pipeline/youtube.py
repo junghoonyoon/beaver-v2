@@ -190,7 +190,19 @@ def _cached_transcript(video_id):
         age = datetime.datetime.now(datetime.timezone.utc) - failed_at
     except (KeyError, ValueError, TypeError):
         return False, None
-    ttl = datetime.timedelta(hours=config.TRANSCRIPT_FAILURE_TTL_HOURS)
+    error = str(cached.get("error") or "")
+    transient_markers = (
+        "자막 트랙을 못 찾음",
+        "RequestBlocked",
+        "limit-exceeded",
+        "429",
+    )
+    ttl_hours = (
+        config.TRANSCRIPT_TRANSIENT_FAILURE_TTL_HOURS
+        if any(marker in error for marker in transient_markers)
+        else config.TRANSCRIPT_FAILURE_TTL_HOURS
+    )
+    ttl = datetime.timedelta(hours=ttl_hours)
     return (True, None) if age < ttl else (False, None)
 
 

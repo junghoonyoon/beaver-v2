@@ -128,7 +128,11 @@
     .summary-meta { margin-top:12px; color:var(--body); font-size:14px; line-height:1.6 }
     .summary-period { color:var(--blue); font-weight:800 }
     .counts { display:flex; flex-wrap:wrap; gap:9px; margin-top:18px }
-    .count { border-radius:999px; padding:6px 10px; font-size:13px; font-weight:750 }
+    .count {
+      appearance:none; border:0; border-radius:999px; padding:6px 10px;
+      font-size:13px; font-weight:750; cursor:pointer;
+    }
+    .count:hover { filter:brightness(.98) }
     .count.pos,.badge.pos { color:var(--pos); background:var(--pos-bg) }
     .count.neu,.badge.neu { color:var(--neu); background:var(--neu-bg) }
     .count.neg,.badge.neg { color:var(--neg); background:var(--neg-bg) }
@@ -225,6 +229,20 @@
     const marketPanel = $("marketPanel"), rankListEl = $("rankList"), rankCaption = $("rankCaption");
     const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const stanceClass = stance => ({긍정:"pos",신중:"neu",부정:"neg",단순언급:"mention"}[stance] || "mention");
+    const stanceShortLabel = stance => ({긍정:"긍정",신중:"신중",부정:"부정",단순언급:"언급"}[stance] || stance);
+    const includesAny = (text, words) => words.some(word => text.includes(word));
+    const stanceReason = opinion => {
+      const text = `${opinion.summary || ""} ${opinion.evidence || ""}`;
+      if (opinion.stance === "단순언급") return "뉴스 소개 수준";
+      if (includesAny(text, ["고평가", "밸류", "valuation", "PER", "멀티플", "선반영", "부담"])) return "밸류 부담 언급";
+      if (includesAny(text, ["실적", "어닝", "매출", "영업이익", "서프라이즈", "호실적"])) return opinion.stance === "부정" ? "실적 둔화 우려" : "실적 개선 기대";
+      if (includesAny(text, ["공급 부족", "수요", "업황", "메모리", "HBM", "반도체"])) return opinion.stance === "부정" ? "업황 악화 우려" : "업황 개선 기대";
+      if (includesAny(text, ["저평가", "싸다", "할인", "재평가"])) return "저평가 언급";
+      if (includesAny(text, ["하락", "부진", "악화", "둔화", "리스크", "회피", "매도"])) return "리스크 우려";
+      if (includesAny(text, ["관망", "확인", "조건", "보유", "지켜"])) return "추가 확인 필요";
+      return {긍정:"상승 요인 언급",신중:"신중 접근 언급",부정:"하락 요인 언급"}[opinion.stance] || "의견 언급";
+    };
+    const stanceBadgeLabel = opinion => `${stanceShortLabel(opinion.stance)} · ${stanceReason(opinion)}`;
     const serverRequiredMessage = "의견 분석은 종목검색실행.command를 실행한 뒤 http://127.0.0.1:8765 주소에서 사용해 주세요.";
     const isFileMode = location.protocol === "file:";
     const localStocks = [
@@ -318,6 +336,8 @@
     let suggestions = [];
     let activeSuggestion = -1;
     let activeSearchToken = 0;
+    let activeSearchQuery = "";
+    let activeSearchDone = true;
 
     const choseong = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ";
     const compact = value => String(value ?? "").replace(/[^0-9A-Za-z가-힣ㄱ-ㅎㅏ-ㅣ]/g, "").toLowerCase();
@@ -448,17 +468,24 @@
       const done = data.done !== false;
       if (!data.opinions.length) {
         if (!done) {
+          const candidateText = data.matchedVideos
+            ? `후보 영상 ${esc(data.matchedVideos)}개 확인 중`
+            : "최근 영상 확인 중";
           result.innerHTML = `
             <div class="summary">
               <h2>${esc(data.query)}</h2>
               <div class="summary-meta">
-                관련 영상 ${esc(data.matchedVideos)}개 발견 · ${esc(data.currentStatus || "분석을 준비 중이에요.")}
+                ${candidateText} · 실제 투자 의견인지 검증하고 있어요 · ${esc(data.currentStatus || "분석을 준비 중이에요.")}
               </div>
             </div>`;
           return;
         }
         if (data.errors?.length) {
           result.innerHTML = `<div class="empty"><b>${esc(data.query)}</b> 관련 영상 ${esc(data.matchedVideos || 0)}개를 찾았지만 분석에 실패했어요.<br>${esc(data.errors[0])}</div>`;
+          return;
+        }
+        if (data.matchedVideos > 0) {
+          result.innerHTML = `<div class="empty"><b>${esc(data.query)}</b> 언급 후보 영상 ${esc(data.matchedVideos)}개를 확인했지만, 긍정·신중·부정으로 정리할 만한 명확한 의견은 없었어요.<br>제목이나 자막의 단순 언급은 의견 카드로 노출하지 않습니다.</div>`;
           return;
         }
         result.innerHTML = `<div class="empty"><b>${esc(data.query)}</b>을(를) 명확히 평가한 최근 유튜버 의견을 찾지 못했어요.<br>다른 표기, 티커, 회사명으로도 검색해 보세요.</div>`;
@@ -474,10 +501,10 @@
           a.order - b.order
         );
       const cards = opinions.map(o => `
-        <article class="card">
+        <article class="card" data-stance="${esc(o.stance)}">
           <div class="card-head">
             <div class="video-meta" title="${esc(dateText(o.publishedAt))}">${esc(relativeDateText(o.publishedAt))} 업로드 · 조회 ${esc(viewsText(o.views))}</div>
-            <span class="badge ${stanceClass(o.stance)}">${esc(o.stance)}</span>
+            <span class="badge ${stanceClass(o.stance)}">${esc(stanceBadgeLabel(o))}</span>
           </div>
           <div class="opinion-block">
             <a class="channel" href="${esc(o.url)}" target="_blank" rel="noopener">${esc(o.channel)}</a>
@@ -497,10 +524,10 @@
             ${!done && data.currentStatus ? ` · ${esc(data.currentStatus)}` : ""}
           </div>
           <div class="counts">
-            ${c.긍정 ? `<span class="count pos">긍정 ${c.긍정}</span>` : ""}
-            ${c.신중 ? `<span class="count neu">신중 ${c.신중}</span>` : ""}
-            ${c.부정 ? `<span class="count neg">부정 ${c.부정}</span>` : ""}
-            ${c.단순언급 ? `<span class="count mention">단순 언급 ${c.단순언급}</span>` : ""}
+            ${c.긍정 ? `<button class="count pos" type="button" data-stance="긍정">긍정 평가 ${c.긍정}</button>` : ""}
+            ${c.신중 ? `<button class="count neu" type="button" data-stance="신중">신중 평가 ${c.신중}</button>` : ""}
+            ${c.부정 ? `<button class="count neg" type="button" data-stance="부정">부정 평가 ${c.부정}</button>` : ""}
+            ${c.단순언급 ? `<button class="count mention" type="button" data-stance="단순언급">단순 언급 ${c.단순언급}</button>` : ""}
           </div>
         </div>
         <div class="cards">${cards}</div>`;
@@ -580,6 +607,8 @@
 
     function showHome() {
       activeSearchToken++;
+      activeSearchQuery = "";
+      activeSearchDone = true;
       input.value = "";
       submit.disabled = false;
       loading.classList.remove("show");
@@ -594,8 +623,15 @@
     async function search(query) {
       query = query.trim();
       if (query.length < 2) return;
+      if (!activeSearchDone && compact(query) === compact(activeSearchQuery)) {
+        loading.classList.add("show");
+        loadingText.textContent = "이미 같은 종목 의견을 분석 중이에요.";
+        return;
+      }
       hideSuggestions();
       const token = ++activeSearchToken;
+      activeSearchQuery = query;
+      activeSearchDone = false;
       input.value = query; submit.disabled = true; loading.classList.add("show"); result.innerHTML = "";
       heroCopy.classList.add("hide");
       marketPanel.classList.add("hide");
@@ -614,6 +650,7 @@
         result.innerHTML = `<div class="error">${esc(message)}</div>`;
       } finally {
         if (token === activeSearchToken) {
+          activeSearchDone = true;
           submit.disabled = false; loading.classList.remove("show");
         }
       }
@@ -629,10 +666,6 @@
         loadingTitle.textContent = data.done ? "분석이 끝났어요" : "유튜버 의견을 분석 중이에요";
         loadingText.textContent = data.currentStatus || "분석 결과를 정리하고 있어요.";
         render(data);
-        if (data.opinions?.length) {
-          loading.classList.remove("show");
-          submit.disabled = false;
-        }
         if (data.done) return;
       }
     }
@@ -683,6 +716,13 @@
       }
       const item = e.target.closest(".rank-item");
       if (item) search(item.dataset.query);
+    });
+    result.addEventListener("click", e => {
+      const count = e.target.closest(".count[data-stance]");
+      if (!count) return;
+      const card = [...result.querySelectorAll(".card[data-stance]")]
+        .find(item => item.dataset.stance === count.dataset.stance);
+      if (card) card.scrollIntoView({ behavior:"smooth", block:"start" });
     });
     renderRanking("kr");
     loadRanking();

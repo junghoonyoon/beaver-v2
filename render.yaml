@@ -16,7 +16,9 @@ services:
       - key: SEARCH_INDEX_REFRESH_HOURS
         value: "3"
       - key: SEARCH_MAX_VIDEOS_PER_CHANNEL
-        value: "5"
+        value: "15"
+      - key: TRANSCRIPT_TRANSIENT_FAILURE_TTL_HOURS
+        value: "2"
       - key: SUPABASE_STORAGE_BUCKET
         value: beaver-cache
       - key: STARTUP_STOCK_REFRESH_ENABLED
