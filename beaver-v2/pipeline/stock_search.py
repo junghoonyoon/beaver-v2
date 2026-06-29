@@ -759,18 +759,7 @@ def _fallback_search_matches(query, aliases, existing_ids):
     return out
 
 
-def find_videos(query, max_youtubers=None):
-    aliases = query_aliases(query)
-    if not aliases:
-        return []
-    matches = []
-    for video in load_index().get("videos", []):
-        row = _video_match_row(video, aliases)
-        if row:
-            matches.append(row)
-    if _needs_search_fallback(matches):
-        existing_ids = {row["videoId"] for row in matches}
-        matches.extend(_fallback_search_matches(query, aliases, existing_ids))
+def _sort_and_limit_matches(matches, max_youtubers=None):
     matches.sort(
         key=lambda row: (
             row.get("hasTranscriptText", False),
@@ -789,6 +778,40 @@ def find_videos(query, max_youtubers=None):
         if len(best) >= limit:
             break
     return list(best.values())
+
+
+def find_videos(query, max_youtubers=None, include_fallback=True):
+    aliases = query_aliases(query)
+    if not aliases:
+        return []
+    matches = []
+    for video in load_index().get("videos", []):
+        row = _video_match_row(video, aliases)
+        if row:
+            matches.append(row)
+    if include_fallback and _needs_search_fallback(matches):
+        existing_ids = {row["videoId"] for row in matches}
+        matches.extend(_fallback_search_matches(query, aliases, existing_ids))
+    return _sort_and_limit_matches(matches, max_youtubers=max_youtubers)
+
+
+def needs_search_fallback(videos):
+    return _needs_search_fallback(videos)
+
+
+def fallback_videos(query, existing_videos, max_youtubers=None):
+    aliases = query_aliases(query)
+    if not aliases:
+        return []
+    existing_ids = {row["videoId"] for row in existing_videos}
+    existing_channels = {row["channel"] for row in existing_videos}
+    matches = _fallback_search_matches(query, aliases, existing_ids)
+    matches = [row for row in matches if row["channel"] not in existing_channels]
+    limit = max_youtubers or config.SEARCH_MAX_YOUTUBERS
+    remaining = max(0, limit - len(existing_channels))
+    if not remaining:
+        return []
+    return _sort_and_limit_matches(matches, max_youtubers=remaining)
 
 
 def _stock_cache_path(video_id, query):
@@ -844,6 +867,8 @@ def cached_match(video, query):
 
 
 def _read_cached_analysis(path, context_hash):
+    if not path.exists() and not config.FORCE_ANALYSIS_REFRESH:
+        remote_cache.download_to_file(f"stock_analysis/{path.name}", path)
     if path.exists() and not config.FORCE_ANALYSIS_REFRESH:
         try:
             cached = json.loads(path.read_text(encoding="utf-8"))
@@ -882,6 +907,7 @@ def analyze_match(video, query):
         "data": data,
     }, ensure_ascii=False), encoding="utf-8")
     tmp.replace(path)
+    remote_cache.upload_file(f"stock_analysis/{path.name}", path)
     return data, False
 
 

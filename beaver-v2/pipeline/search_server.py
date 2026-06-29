@@ -160,24 +160,24 @@ def _trim_jobs():
         JOBS.pop(old_id, None)
 
 
-def _run_search_job(job_id, query, videos):
+def _run_search_job(job_id, query, videos, finalize=True):
     with JOBS_LOCK:
         result = JOBS[job_id]["result"]
         result["currentStatus"] = "관련 영상을 고르는 중이에요."
 
-    analysis_limit = result["analysisLimit"]
     if not videos:
         with JOBS_LOCK:
             result = JOBS[job_id]["result"]
-            result["done"] = True
-            result["running"] = False
+            if finalize and not result.get("fallbackRunning"):
+                result["done"] = True
+                result["running"] = False
             result["currentStatus"] = "최근 영상에서 이 종목 언급을 찾지 못했어요."
         return
 
-    for idx, video in enumerate(videos):
-        generate = idx < analysis_limit
+    for video in videos:
         with JOBS_LOCK:
             result = JOBS[job_id]["result"]
+            generate = result["analyzedVideos"] < config.SEARCH_MAX_ANALYZED_VIDEOS
             result["currentChannel"] = video["channel"]
             result["currentStatus"] = (
                 f"{video['channel']} 의견을 분석 중이에요."
@@ -208,20 +208,53 @@ def _run_search_job(job_id, query, videos):
 
     with JOBS_LOCK:
         result = JOBS[job_id]["result"]
-        result["done"] = True
-        result["running"] = False
+        if finalize or not result.get("fallbackRunning"):
+            result["done"] = True
+            result["running"] = False
         result["currentChannel"] = ""
-        result["currentStatus"] = "분석이 끝났어요."
+        result["currentStatus"] = "분석이 끝났어요." if result["done"] else "최신 영상을 보강 중이에요."
+
+
+def _run_fallback_job(job_id, query, existing_videos):
+    try:
+        videos = stock_search.fallback_videos(query, existing_videos)
+        with JOBS_LOCK:
+            result = JOBS[job_id]["result"]
+            seen = JOBS[job_id].setdefault("videoIds", {row["videoId"] for row in existing_videos})
+            fresh = [row for row in videos if row["videoId"] not in seen]
+            for row in fresh:
+                seen.add(row["videoId"])
+            result["matchedVideos"] += len(fresh)
+            result["analysisLimit"] = max(1, min(result["matchedVideos"], config.SEARCH_MAX_ANALYZED_VIDEOS))
+            result["currentStatus"] = "최신 영상 보강 결과를 확인 중이에요." if fresh else result.get("currentStatus", "")
+        if fresh:
+            _run_search_job(job_id, query, fresh, finalize=False)
+    except Exception as exc:
+        with JOBS_LOCK:
+            result = JOBS.get(job_id, {}).get("result")
+            if result is not None:
+                result["errors"].append(f"최신 영상 보강: {str(exc)[:120]}")
+    finally:
+        with JOBS_LOCK:
+            result = JOBS.get(job_id, {}).get("result")
+            if result is not None:
+                result["fallbackRunning"] = False
+                result["done"] = True
+                result["running"] = False
+                result["currentChannel"] = ""
+                result["currentStatus"] = "분석이 끝났어요."
 
 
 def start_search_job(query):
-    videos = stock_search.find_videos(query)
+    videos = stock_search.find_videos(query, include_fallback=False)
+    fallback_running = stock_search.needs_search_fallback(videos)
     job_id = uuid.uuid4().hex[:12]
     result = stock_search.base_search_result(query, videos)
     result.update({
         "jobId": job_id,
         "done": False,
         "running": True,
+        "fallbackRunning": fallback_running,
         "currentChannel": "",
         "currentStatus": "검색을 시작했어요.",
     })
@@ -229,10 +262,14 @@ def start_search_job(query):
         JOBS[job_id] = {
             "startedAt": time.time(),
             "result": result,
+            "videoIds": {row["videoId"] for row in videos},
         }
         _trim_jobs()
-    thread = threading.Thread(target=_run_search_job, args=(job_id, query, videos), daemon=True)
+    thread = threading.Thread(target=_run_search_job, args=(job_id, query, videos, not fallback_running), daemon=True)
     thread.start()
+    if fallback_running:
+        fallback_thread = threading.Thread(target=_run_fallback_job, args=(job_id, query, videos), daemon=True)
+        fallback_thread.start()
     return _snapshot(job_id)
 
 

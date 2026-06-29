@@ -629,6 +629,10 @@
         loadingTitle.textContent = data.done ? "분석이 끝났어요" : "유튜버 의견을 분석 중이에요";
         loadingText.textContent = data.currentStatus || "분석 결과를 정리하고 있어요.";
         render(data);
+        if (data.opinions?.length) {
+          loading.classList.remove("show");
+          submit.disabled = false;
+        }
         if (data.done) return;
       }
     }

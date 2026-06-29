@@ -33,6 +33,15 @@ def main():
         if uploaded and uploaded % 50 == 0:
             print(f"  · {uploaded}개 업로드")
 
+    for path in sorted(config.STOCK_ANALYSIS_CACHE_DIR.glob("*.json")):
+        remote_path = f"stock_analysis/{path.name}"
+        if remote_cache.upload_file(remote_path, path):
+            uploaded += 1
+        else:
+            failed += 1
+        if uploaded and uploaded % 50 == 0:
+            print(f"  · {uploaded}개 업로드")
+
     print(f"\n완료: 업로드 {uploaded}개 · 실패 {failed}개")
     return 1 if failed else 0
 
