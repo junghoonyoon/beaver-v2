@@ -13,6 +13,7 @@ MANUAL_TRANSCRIPT_DIR = CACHE_DIR / "manual_transcripts"
 SEARCH_INDEX_JSON = CACHE_DIR / "search_index.json"
 KRX_LISTED_JSON = CACHE_DIR / "krx_listed_stocks.json"
 US_LISTED_JSON = CACHE_DIR / "us_listed_stocks.json"
+SUPABASE_STORAGE_BUCKET = os.environ.get("SUPABASE_STORAGE_BUCKET", "beaver-cache")
 IS_RENDER = bool(os.environ.get("RENDER") or os.environ.get("RENDER_SERVICE_ID"))
 STARTUP_REFRESH_ENABLED = os.environ.get(
     "STARTUP_REFRESH_ENABLED",
@@ -29,6 +30,9 @@ YOUTUBE_API_KEY = os.environ.get("YOUTUBE_API_KEY", "")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 SUPADATA_API_KEY = os.environ.get("SUPADATA_API_KEY", "")  # 무료 경로 실패 시 유료 fallback
 KRX_API_KEY = os.environ.get("KRX_API_KEY", "")
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "")
+SUPABASE_CACHE_ENABLED = os.environ.get("SUPABASE_CACHE_ENABLED", "1") == "1"
 KRX_LISTED_API_URL = os.environ.get(
     "KRX_LISTED_API_URL",
     "https://apis.data.go.kr/1160100/service/GetKrxListedInfoService/getItemInfo",

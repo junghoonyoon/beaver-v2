@@ -3,16 +3,20 @@ import datetime
 import hashlib
 import json
 import re
+import time
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import config
 import krx_listed
+import remote_cache
 import us_listed
 
 KST = ZoneInfo("Asia/Seoul")
 _STOCK_CACHE_VERSION = 5
 _SEARCH_INDEX_VERSION = 2
+_REMOTE_INDEX_CHECK_INTERVAL_SECONDS = 60
+_REMOTE_INDEX_CHECKED_AT = 0
 CHOSEONG = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ"
 INITIAL_CHARS = set(CHOSEONG)
 
@@ -479,6 +483,8 @@ def related_chips(query, limit=8):
 def transcript_text(video_id):
     path = config.TRANSCRIPT_CACHE_DIR / f"{video_id}.json"
     if not path.exists():
+        remote_cache.download_to_file(f"transcripts/{video_id}.json", path)
+    if not path.exists():
         return ""
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
@@ -490,6 +496,8 @@ def transcript_text(video_id):
 def transcript_segments(video_id):
     """자막 문장별 시작 시간을 반환한다. 기존 캐시에 없으면 한 번 보강한다."""
     path = config.TRANSCRIPT_CACHE_DIR / f"{video_id}.json"
+    if not path.exists():
+        remote_cache.download_to_file(f"transcripts/{video_id}.json", path)
     data = {}
     if path.exists():
         try:
@@ -556,12 +564,46 @@ def extract_context(text, aliases, window=None, max_chars=None, max_spans=None):
 
 
 def load_index():
+    _sync_remote_index_if_needed()
     if not config.SEARCH_INDEX_JSON.exists():
         return {"updatedAt": None, "videos": []}
     try:
         return json.loads(config.SEARCH_INDEX_JSON.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return {"updatedAt": None, "videos": []}
+
+
+def _sync_remote_index_if_needed(force=False):
+    global _REMOTE_INDEX_CHECKED_AT
+    now = time.monotonic()
+    if not force and now - _REMOTE_INDEX_CHECKED_AT < _REMOTE_INDEX_CHECK_INTERVAL_SECONDS:
+        return
+    _REMOTE_INDEX_CHECKED_AT = now
+    remote_index = remote_cache.download_json("search_index.json")
+    if remote_index:
+        local_index = None
+        if config.SEARCH_INDEX_JSON.exists():
+            try:
+                local_index = json.loads(config.SEARCH_INDEX_JSON.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                local_index = None
+        if _remote_index_is_newer(remote_index, local_index):
+            config.CACHE_DIR.mkdir(parents=True, exist_ok=True)
+            tmp = config.SEARCH_INDEX_JSON.with_suffix(".tmp")
+            tmp.write_text(json.dumps(remote_index, ensure_ascii=False, indent=2), encoding="utf-8")
+            tmp.replace(config.SEARCH_INDEX_JSON)
+
+
+def _remote_index_is_newer(remote_index, local_index):
+    if not local_index:
+        return True
+    remote_updated = remote_index.get("updatedAt")
+    local_updated = local_index.get("updatedAt")
+    if not local_updated:
+        return True
+    if not remote_updated:
+        return False
+    return remote_updated > local_updated
 
 
 def save_index(videos):
@@ -576,6 +618,7 @@ def save_index(videos):
     tmp = config.SEARCH_INDEX_JSON.with_suffix(".tmp")
     tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     tmp.replace(config.SEARCH_INDEX_JSON)
+    remote_cache.upload_json("search_index.json", payload)
     return payload
 
 

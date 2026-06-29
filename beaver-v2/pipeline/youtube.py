@@ -9,6 +9,7 @@ import requests
 from youtube_transcript_api import YouTubeTranscriptApi
 
 import config
+import remote_cache
 
 API = "https://www.googleapis.com/youtube/v3"
 KST = ZoneInfo("Asia/Seoul")
@@ -158,6 +159,8 @@ def _cache_path(video_id):
 def _read_cache(video_id):
     path = _cache_path(video_id)
     if not path.exists():
+        remote_cache.download_to_file(f"transcripts/{video_id}.json", path)
+    if not path.exists():
         return None
     try:
         return json.loads(path.read_text(encoding="utf-8"))
@@ -171,6 +174,7 @@ def _write_cache(video_id, payload):
     tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
     tmp.replace(path)
+    remote_cache.upload_file(f"transcripts/{video_id}.json", path)
 
 
 def _cached_transcript(video_id):

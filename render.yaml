@@ -17,6 +17,8 @@ services:
         value: "3"
       - key: SEARCH_MAX_VIDEOS_PER_CHANNEL
         value: "5"
+      - key: SUPABASE_STORAGE_BUCKET
+        value: beaver-cache
       - key: STARTUP_STOCK_REFRESH_ENABLED
         value: "1"
       - key: YOUTUBE_API_KEY
@@ -26,4 +28,8 @@ services:
       - key: SUPADATA_API_KEY
         sync: false
       - key: KRX_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
