@@ -623,22 +623,110 @@ def sync_index(channels):
     return payload
 
 
+def _index_video_row(video, text="", channel_type=None, fallback=False):
+    return {
+        "videoId": video["videoId"],
+        "channel": video["channel"],
+        "channelType": channel_type,
+        "title": video["title"],
+        "publishedAt": video["publishedAt"].isoformat() if hasattr(video["publishedAt"], "isoformat") else video["publishedAt"],
+        "views": video.get("views", 0),
+        "durationSec": video.get("durationSec", 0),
+        "url": video.get("url") or f"https://www.youtube.com/watch?v={video['videoId']}",
+        "transcriptChars": len(text or ""),
+        "transcriptStatus": "ok" if text else "missing",
+        "transcriptError": "",
+        "fallback": fallback,
+    }
+
+
+def _video_match_row(video, aliases):
+    text = transcript_text(video["videoId"])
+    count = match_count(text, aliases)
+    title_count = match_count(video.get("title", ""), aliases)
+    if count <= 0 and title_count <= 0:
+        return None
+    row = dict(video)
+    row["_text"] = text
+    row["matchCount"] = count
+    row["titleMatch"] = bool(title_count)
+    return row
+
+
+def _latest_published_at(rows):
+    latest = None
+    for row in rows:
+        try:
+            published = datetime.datetime.fromisoformat(row.get("publishedAt", ""))
+        except (TypeError, ValueError):
+            continue
+        if published.tzinfo is None:
+            published = published.replace(tzinfo=KST)
+        latest = published if latest is None or published > latest else latest
+    return latest
+
+
+def _needs_search_fallback(matches):
+    if not config.SEARCH_FALLBACK_ENABLED or not config.YOUTUBE_API_KEY:
+        return False
+    title_matches = [row for row in matches if row.get("titleMatch")]
+    if len(title_matches) < config.SEARCH_FALLBACK_MIN_RESULTS:
+        return True
+    latest = _latest_published_at(title_matches)
+    if latest is None:
+        return True
+    age = datetime.datetime.now(KST) - latest.astimezone(KST)
+    return age >= datetime.timedelta(hours=config.SEARCH_FALLBACK_RECENT_HOURS)
+
+
+def _fallback_search_matches(query, aliases, existing_ids):
+    import youtube
+
+    channel_type_by_id = {row.get("channelId"): row.get("type") for row in config.CHANNELS if row.get("channelId")}
+    out = []
+    try:
+        videos = youtube.search_videos(
+            query,
+            lookback_days=config.SEARCH_LOOKBACK_DAYS,
+            max_results=config.SEARCH_FALLBACK_MAX_RESULTS,
+            order=config.SEARCH_FALLBACK_ORDER,
+        )
+    except Exception as exc:
+        print(f"  ⚠️ YouTube 검색 보강 실패: {str(exc)[:100]}")
+        return []
+    for video in videos:
+        if video["videoId"] in existing_ids:
+            continue
+        if int(video.get("views") or 0) < config.SEARCH_FALLBACK_MIN_VIEWS:
+            continue
+        text = youtube.fetch_transcript(video["videoId"])
+        row = _index_video_row(
+            video,
+            text=text,
+            channel_type=channel_type_by_id.get(video.get("channelId")),
+            fallback=True,
+        )
+        if not text:
+            row["transcriptError"] = youtube.LAST_TRANSCRIPT_ERROR or ""
+        match = _video_match_row(row, aliases)
+        if match:
+            out.append(match)
+            existing_ids.add(video["videoId"])
+    return out
+
+
 def find_videos(query, max_youtubers=None):
     aliases = query_aliases(query)
     if not aliases:
         return []
     matches = []
     for video in load_index().get("videos", []):
-        text = transcript_text(video["videoId"])
-        count = match_count(text, aliases)
-        title_count = match_count(video.get("title", ""), aliases)
-        if count <= 0 and title_count <= 0:
-            continue
-        row = dict(video)
-        row["_text"] = text
-        row["matchCount"] = count
-        row["titleMatch"] = bool(title_count)
-        matches.append(row)
+        row = _video_match_row(video, aliases)
+        if row:
+            matches.append(row)
+    if _needs_search_fallback(matches):
+        existing_ids = {row["videoId"] for row in matches}
+        matches.extend(_fallback_search_matches(query, aliases, existing_ids))
     matches.sort(
         key=lambda row: (row["titleMatch"], row["matchCount"], row["publishedAt"], row["views"]),
         reverse=True,

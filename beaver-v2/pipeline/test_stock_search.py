@@ -1,3 +1,4 @@
+import datetime
 import json
 import tempfile
 import unittest
@@ -24,6 +25,7 @@ class StockSearchTest(unittest.TestCase):
             mock.patch.object(config, "SEARCH_CONTEXT_WINDOW", 450),
             mock.patch.object(config, "SEARCH_CONTEXT_MAX_CHARS", 4000),
             mock.patch.object(config, "SEARCH_CONTEXT_MAX_SPANS", 4),
+            mock.patch.object(config, "SEARCH_FALLBACK_ENABLED", False),
             mock.patch.object(config, "FORCE_ANALYSIS_REFRESH", False),
         ]
         for patch in self.patches:
@@ -169,6 +171,36 @@ class StockSearchTest(unittest.TestCase):
         self.assertFalse(cached)
         self.assertTrue(result["mentioned"])
         self.assertEqual(result["stance"], "단순언급")
+
+    def test_find_videos_uses_youtube_fallback_when_results_are_stale(self):
+        videos = [
+            {"videoId": "old", "channel": "A", "title": "현대차 전망", "publishedAt": "2026-06-20T10:00:00+09:00",
+             "views": 30, "url": "old"},
+        ]
+        self.write_transcript("old", "현대차 실적 개선")
+        self.write_index(videos)
+        fallback = [{
+            "videoId": "new",
+            "channel": "B",
+            "channelId": "UCb",
+            "title": "현대차 3시간 전 새 분석",
+            "publishedAt": datetime.datetime(2026, 6, 29, 12, 0, 0, tzinfo=stock_search.KST),
+            "views": 100,
+            "durationSec": 100,
+            "url": "new",
+        }]
+
+        with mock.patch.object(config, "SEARCH_FALLBACK_ENABLED", True), \
+                mock.patch.object(config, "YOUTUBE_API_KEY", "key"), \
+                mock.patch.object(config, "SEARCH_FALLBACK_RECENT_HOURS", 24), \
+                mock.patch.object(config, "SEARCH_FALLBACK_MAX_RESULTS", 5), \
+                mock.patch.object(config, "SEARCH_FALLBACK_MIN_VIEWS", 0), \
+                mock.patch.object(config, "SEARCH_FALLBACK_ORDER", "relevance"), \
+                mock.patch("youtube.search_videos", return_value=fallback), \
+                mock.patch("youtube.fetch_transcript", return_value="현대차 새 의견"):
+            found = stock_search.find_videos("현대차")
+
+        self.assertEqual({row["videoId"] for row in found}, {"old", "new"})
 
     def test_search_stock_only_generates_for_fast_limit_but_uses_extra_cache(self):
         videos = [

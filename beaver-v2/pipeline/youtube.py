@@ -1,5 +1,6 @@
 """YouTube 데이터 수집: 오늘 업로드 메타 + 자막."""
 import datetime
+import html
 import json
 import time
 from zoneinfo import ZoneInfo
@@ -94,6 +95,53 @@ def recent_uploads(channel, lookback_days=None, max_results=15):
         v["url"] = f"https://www.youtube.com/watch?v={v['videoId']}"
         out.append(v)
     return out
+
+
+def search_videos(query, lookback_days=None, max_results=5, order=None):
+    """YouTube 검색으로 최신 후보 영상을 가져온다."""
+    days = config.SEARCH_LOOKBACK_DAYS if lookback_days is None else lookback_days
+    published_after = (
+        datetime.datetime.now(datetime.timezone.utc) -
+        datetime.timedelta(days=max(1, days))
+    ).isoformat().replace("+00:00", "Z")
+    data = _get(
+        "search",
+        part="snippet",
+        q=query,
+        type="video",
+        order=order or config.SEARCH_FALLBACK_ORDER,
+        maxResults=max_results,
+        publishedAfter=published_after,
+        regionCode="KR",
+        relevanceLanguage="ko",
+    )
+    rows = []
+    ids = []
+    for item in data.get("items", []):
+        video_id = (item.get("id") or {}).get("videoId")
+        snippet = item.get("snippet") or {}
+        published = snippet.get("publishedAt")
+        if not video_id or not published:
+            continue
+        dt = datetime.datetime.fromisoformat(published.replace("Z", "+00:00")).astimezone(KST)
+        rows.append({
+            "channel": snippet.get("channelTitle") or "",
+            "channelId": snippet.get("channelId") or "",
+            "videoId": video_id,
+            "title": html.unescape(snippet.get("title") or ""),
+            "publishedAt": dt,
+        })
+        ids.append(video_id)
+    if not rows:
+        return []
+    stats = _get("videos", part="statistics,contentDetails", id=",".join(ids))
+    by_id = {x["id"]: x for x in stats.get("items", [])}
+    for row in rows:
+        stat = by_id.get(row["videoId"], {})
+        row["views"] = int(stat.get("statistics", {}).get("viewCount", 0))
+        row["durationSec"] = _iso_duration(stat.get("contentDetails", {}).get("duration", "PT0S"))
+        row["url"] = f"https://www.youtube.com/watch?v={row['videoId']}"
+    return rows
 
 
 LAST_TRANSCRIPT_ERROR = None
