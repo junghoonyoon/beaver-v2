@@ -91,7 +91,14 @@
       background:transparent; color:#8b9098; font-size:15px; font-weight:700; cursor:pointer;
     }
     .market-tab.active { background:#fff; color:var(--ink); box-shadow:0 1px 3px rgba(20,28,45,.08) }
-    .rank-caption { margin:13px 0 12px; color:var(--muted); font-size:12px; font-weight:700 }
+    .rank-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:13px 0 12px }
+    .rank-caption { color:var(--muted); font-size:12px; font-weight:700 }
+    .rank-refresh {
+      appearance:none; border:0; padding:0; background:transparent; color:#667085;
+      font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap;
+    }
+    .rank-refresh:hover { color:var(--blue) }
+    .rank-refresh:disabled { color:#b8bec8; cursor:default }
     .rank-list {
       display:grid; gap:0; overflow:hidden; border:0; border-radius:12px;
       background:#fff;
@@ -190,6 +197,8 @@
       .search button { min-height:46px; padding:0 14px; font-size:15px; white-space:nowrap }
       .market-panel { margin-top:30px }
       .market-tab { font-size:14px; padding:8px 13px }
+      .rank-head { gap:10px }
+      .rank-refresh { font-size:12px }
       .rank-item { grid-template-columns:22px minmax(0,1fr) auto; gap:10px; padding:11px 0 }
       .rank-name { font-size:15px }
       .suggestion { grid-template-columns:72px minmax(0,1fr) 64px; gap:10px; padding:12px 14px }
@@ -218,7 +227,10 @@
         <button class="market-tab active" type="button" data-market="kr" role="tab" aria-selected="true">국내주식</button>
         <button class="market-tab" type="button" data-market="us" role="tab" aria-selected="false">미국주식</button>
       </div>
-      <div class="rank-caption" id="rankCaption">인기주식 TOP 10 · 최근 14일 유튜브 언급 기준 · 실시간 주가 흐름</div>
+      <div class="rank-head">
+        <div class="rank-caption" id="rankCaption">인기주식 TOP 10 · 최근 14일 유튜브 언급 기준 · 실시간 주가 흐름</div>
+        <button class="rank-refresh" id="rankRefreshButton" type="button">새로고침</button>
+      </div>
       <div class="rank-list" id="rankList"></div>
     </section>
     <div class="status" id="status">검색 인덱스를 확인하는 중이에요…</div>
@@ -237,7 +249,7 @@
     const form = $("form"), input = $("query"), submit = $("submit"), homeButton = $("homeButton"), heroCopy = $("heroCopy");
     const loading = $("loading"), loadingTitle = $("loadingTitle"), loadingText = $("loadingText");
     const result = $("result"), statusEl = $("status"), suggestionsEl = $("suggestions");
-    const marketPanel = $("marketPanel"), rankListEl = $("rankList"), rankCaption = $("rankCaption");
+    const marketPanel = $("marketPanel"), rankListEl = $("rankList"), rankCaption = $("rankCaption"), rankRefreshButton = $("rankRefreshButton");
     const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const stanceClass = stance => ({긍정:"pos",신중:"neu",부정:"neg",단순언급:"mention"}[stance] || "mention");
     const stanceShortLabel = stance => ({긍정:"긍정",신중:"신중",부정:"부정",단순언급:"언급"}[stance] || stance);
@@ -349,6 +361,7 @@
     let activeSearchToken = 0;
     let activeSearchQuery = "";
     let activeSearchDone = true;
+    let rankingLoading = false;
     const trackedSearchResults = new Set();
     const trackedDetailViews = new Set();
     const analytics = (() => {
@@ -476,7 +489,13 @@
       const checked = Number.isFinite(row.rawChannelCount)
         ? row.rawChannelCount
         : (Number.isFinite(row.channelCount) ? row.channelCount : null);
-      return checked ? `유튜버 <strong>${esc(checked)}명</strong> 언급` : "";
+      const analyzed = Number.isFinite(row.channelCount)
+        ? row.channelCount
+        : (Number.isFinite(row.videoCount) ? row.videoCount : null);
+      if (checked && analyzed) {
+        return `유튜버 ${esc(checked)}명 중 <strong>${esc(analyzed)}명</strong> 의견 분석`;
+      }
+      return checked ? `유튜버 ${esc(checked)}명 확인` : "";
     }
 
     function renderRanking(market = "kr") {
@@ -503,14 +522,20 @@
 
     async function loadRanking() {
       if (isFileMode) return;
+      if (rankingLoading) return;
+      rankingLoading = true;
+      rankRefreshButton.disabled = true;
       try {
-        const data = await fetch("/api/popular-stocks").then(r => r.json());
+        const data = await fetch(`/api/popular-stocks?t=${Date.now()}`).then(r => r.json());
         if (data.markets) {
           rankingData = data;
           renderRanking(activeMarket);
         }
       } catch {
         renderRanking(activeMarket);
+      } finally {
+        rankingLoading = false;
+        rankRefreshButton.disabled = false;
       }
     }
 
@@ -796,6 +821,7 @@
       if (!form.contains(e.target)) hideSuggestions();
     });
     homeButton.addEventListener("click", showHome);
+    rankRefreshButton.addEventListener("click", () => loadRanking());
     marketPanel.addEventListener("click", e => {
       const tab = e.target.closest(".market-tab");
       if (tab) {
@@ -830,6 +856,9 @@
     analytics.send("session_start");
     renderRanking("kr");
     loadRanking();
+    setInterval(() => {
+      if (!marketPanel.classList.contains("hide")) loadRanking();
+    }, 30000);
     loadStatus();
   </script>
 </body>
