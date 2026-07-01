@@ -29,6 +29,7 @@ APP_ASSETS = ROOT / "앱화면" / "assets"
 DASHBOARD_HTML = ROOT / "앱화면" / "mvp-dashboard.html"
 ROBOTS_TXT = ROOT / "앱화면" / "robots.txt"
 SITEMAP_XML = ROOT / "앱화면" / "sitemap.xml"
+GOOGLE_VERIFICATION_HTML = ROOT / "앱화면" / "google661da6d73ff97f8e.html"
 HOST = os.environ.get("SEARCH_HOST", "0.0.0.0" if os.environ.get("PORT") else "127.0.0.1")
 PORT = int(os.environ.get("SEARCH_PORT") or os.environ.get("PORT") or "8765")
 PUBLIC_HOST = os.environ.get("SEARCH_PUBLIC_HOST", HOST)
@@ -424,6 +425,9 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path == "/sitemap.xml":
             self._file_head(SITEMAP_XML)
             return
+        if parsed.path == "/google661da6d73ff97f8e.html":
+            self._file_head(GOOGLE_VERIFICATION_HTML)
+            return
         if parsed.path.startswith("/assets/"):
             path = (APP_ASSETS / parsed.path.removeprefix("/assets/")).resolve()
             if APP_ASSETS.resolve() in path.parents:
@@ -569,6 +573,9 @@ class Handler(BaseHTTPRequestHandler):
             return
         if parsed.path == "/sitemap.xml":
             self._file(SITEMAP_XML)
+            return
+        if parsed.path == "/google661da6d73ff97f8e.html":
+            self._file(GOOGLE_VERIFICATION_HTML)
             return
         if parsed.path.startswith("/assets/"):
             path = (APP_ASSETS / parsed.path.removeprefix("/assets/")).resolve()
