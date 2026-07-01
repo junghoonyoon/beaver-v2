@@ -91,13 +91,17 @@
       background:transparent; color:#8b9098; font-size:15px; font-weight:700; cursor:pointer;
     }
     .market-tab.active { background:#fff; color:var(--ink); box-shadow:0 1px 3px rgba(20,28,45,.08) }
-    .rank-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:13px 0 12px }
-    .rank-caption { color:var(--muted); font-size:12px; font-weight:700 }
+    .rank-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:20px 0 12px }
+    .rank-title-label { color:var(--ink); font-size:15px; font-weight:850; line-height:1.25; letter-spacing:0 }
+    .rank-actions { display:inline-flex; align-items:center; gap:8px; color:var(--muted); white-space:nowrap }
+    .rank-refresh-caption { font-size:12px; font-weight:500; line-height:1 }
     .rank-refresh {
-      appearance:none; border:0; padding:0; background:transparent; color:#667085;
+      appearance:none; display:inline-flex; align-items:center; gap:4px; border:0; padding:0;
+      background:transparent; color:#667085; text-decoration:underline; text-underline-offset:3px;
       font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap;
     }
-    .rank-refresh:hover { color:var(--blue) }
+    .rank-refresh-icon { font-size:13px; line-height:1 }
+    .rank-refresh:hover { color:#30343b }
     .rank-refresh:disabled { color:#b8bec8; cursor:default }
     .rank-list {
       display:grid; gap:0; overflow:hidden; border:0; border-radius:12px;
@@ -197,7 +201,8 @@
       .search button { min-height:46px; padding:0 14px; font-size:15px; white-space:nowrap }
       .market-panel { margin-top:30px }
       .market-tab { font-size:14px; padding:8px 13px }
-      .rank-head { gap:10px }
+      .rank-head { gap:10px; margin-top:18px }
+      .rank-refresh-caption { display:none }
       .rank-refresh { font-size:12px }
       .rank-item { grid-template-columns:22px minmax(0,1fr) auto; gap:10px; padding:11px 0 }
       .rank-name { font-size:15px }
@@ -228,8 +233,13 @@
         <button class="market-tab" type="button" data-market="us" role="tab" aria-selected="false">미국주식</button>
       </div>
       <div class="rank-head">
-        <div class="rank-caption" id="rankCaption">인기주식 TOP 10 · 최근 14일 유튜브 언급 기준 · 실시간 주가 흐름</div>
-        <button class="rank-refresh" id="rankRefreshButton" type="button">새로고침</button>
+        <div class="rank-title-label" id="rankTitleLabel">최근 투자 유튜브 언급 TOP 10</div>
+        <div class="rank-actions">
+          <span class="rank-refresh-caption">실시간 주가 흐름</span>
+          <button class="rank-refresh" id="rankRefreshButton" type="button">
+            <span>새로고침</span><span class="rank-refresh-icon" aria-hidden="true">↻</span>
+          </button>
+        </div>
       </div>
       <div class="rank-list" id="rankList"></div>
     </section>
@@ -249,7 +259,7 @@
     const form = $("form"), input = $("query"), submit = $("submit"), homeButton = $("homeButton"), heroCopy = $("heroCopy");
     const loading = $("loading"), loadingTitle = $("loadingTitle"), loadingText = $("loadingText");
     const result = $("result"), statusEl = $("status"), suggestionsEl = $("suggestions");
-    const marketPanel = $("marketPanel"), rankListEl = $("rankList"), rankCaption = $("rankCaption"), rankRefreshButton = $("rankRefreshButton");
+    const marketPanel = $("marketPanel"), rankListEl = $("rankList"), rankRefreshButton = $("rankRefreshButton");
     const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const stanceClass = stance => ({긍정:"pos",신중:"neu",부정:"neg",단순언급:"mention"}[stance] || "mention");
     const stanceShortLabel = stance => ({긍정:"긍정",신중:"신중",부정:"부정",단순언급:"언급"}[stance] || stance);
@@ -489,21 +499,13 @@
       const checked = Number.isFinite(row.rawChannelCount)
         ? row.rawChannelCount
         : (Number.isFinite(row.channelCount) ? row.channelCount : null);
-      const analyzed = Number.isFinite(row.channelCount)
-        ? row.channelCount
-        : (Number.isFinite(row.videoCount) ? row.videoCount : null);
-      if (checked && analyzed) {
-        return `유튜버 ${esc(checked)}명 중 <strong>${esc(analyzed)}명</strong> 의견 분석`;
-      }
-      return checked ? `유튜버 ${esc(checked)}명 확인` : "";
+      return checked ? `<strong>${esc(checked)}명</strong> 언급` : "";
     }
 
     function renderRanking(market = "kr") {
       activeMarket = market;
       const marketData = (rankingData.markets || {})[market] || {};
       const rows = marketData.rows?.length ? marketData.rows : (rankingStocks[market] || rankingStocks.kr);
-      const basis = rankingData.basis || "최근 14일 유튜브 언급 기준";
-      rankCaption.textContent = `인기주식 TOP 10 · ${basis} · 실시간 주가 흐름`;
       rankListEl.innerHTML = rows.map((row, idx) => `
         <button class="rank-item" type="button" data-query="${esc(row.query || row.name)}">
           <span class="rank-no">${idx + 1}</span>
