@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080">
+  <defs>
+    <radialGradient id="bg" cx="52%" cy="28%" r="78%">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.58" stop-color="#f6faff"/>
+      <stop offset="1" stop-color="#eaf3ff"/>
+    </radialGradient>
+    <linearGradient id="mark" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1682f4"/>
+      <stop offset="1" stop-color="#0068d8"/>
+    </linearGradient>
+    <filter id="softShadow" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="34" stdDeviation="38" flood-color="#0068d8" flood-opacity="0.24"/>
+    </filter>
+    <filter id="badgeShadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="14" stdDeviation="15" flood-color="#111827" flood-opacity="0.18"/>
+    </filter>
+    <style>
+      .font { font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Helvetica Neue", Arial, sans-serif; }
+    </style>
+  </defs>
+
+  <rect width="1080" height="1080" fill="url(#bg)"/>
+  <circle cx="540" cy="540" r="456" fill="#ffffff" opacity="0.54"/>
+
+  <g filter="url(#softShadow)">
+    <rect x="248" y="330" width="584" height="408" rx="142" fill="url(#mark)"/>
+    <rect x="272" y="352" width="536" height="236" rx="118" fill="#ffffff" opacity="0.09"/>
+  </g>
+
+  <g class="font">
+    <text x="540" y="636" fill="#ffffff" font-size="306" font-weight="900" text-anchor="middle">?</text>
+  </g>
+
+  <g filter="url(#badgeShadow)">
+    <circle cx="758" cy="720" r="92" fill="#ff0033"/>
+    <path d="M734 674 L734 766 L812 720 Z" fill="#ffffff"/>
+    <circle cx="758" cy="720" r="96" fill="none" stroke="#ffffff" stroke-width="14"/>
+  </g>
+</svg>

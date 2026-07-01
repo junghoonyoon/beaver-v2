@@ -4,11 +4,21 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="naver-site-verification" content="ddef5be53c5a428e2046ea2215b0eeb2c0ec7e67">
-  <meta name="description" content="최근 주식유투브에서 언급된 종목과 의견 흐름을 한눈에 확인하는 종목 검색 서비스입니다.">
+  <meta name="description" content="긴 주식 유튜브를 다 볼 필요 없이, 최근 2주 종목별 유튜버 의견을 긍정·신중·부정으로 빠르게 요약해 시간을 아껴드립니다.">
   <meta property="og:type" content="website">
   <meta property="og:title" content="지금사도될까요?">
-  <meta property="og:description" content="최근 주식유투브에서 언급된 종목과 의견 흐름을 한눈에 확인하세요.">
+  <meta property="og:description" content="주식 유튜브 핵심 의견을 종목별로 빠르게 요약해 영상 탐색 시간을 줄여드립니다.">
   <meta property="og:url" content="https://stockzip.kr/">
+  <meta property="og:image" content="https://stockzip.kr/assets/og-image.png">
+  <meta property="og:image:secure_url" content="https://stockzip.kr/assets/og-image.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="지금사도될까요? - 주식 유튜브 의견 요약">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="지금사도될까요?">
+  <meta name="twitter:description" content="주식 유튜브 핵심 의견을 종목별로 빠르게 요약해 영상 탐색 시간을 줄여드립니다.">
+  <meta name="twitter:image" content="https://stockzip.kr/assets/og-image.png">
   <title>지금사도될까요?</title>
   <style>
     @font-face {
@@ -36,14 +46,14 @@
     button,input { font:inherit }
     .page { width:min(760px,calc(100% - 28px)); margin:0 auto; padding:64px 0 88px }
     .brand {
-      display:inline-flex; align-items:center; gap:9px; border:0; padding:0;
-      background:transparent; color:var(--ink); font-size:18px; font-weight:800;
+      display:inline-flex; align-items:center; gap:8px; border:0; padding:0;
+      background:transparent; color:var(--ink); font-size:17px; font-weight:750;
       letter-spacing:-.1px; cursor:pointer;
     }
     .brand-mark {
-      position:relative; display:grid; place-items:center; width:32px; height:23px;
-      border-radius:9px / 7px; background:var(--blue); color:#fff; font-size:17px; font-weight:900;
-      line-height:1; box-shadow:0 8px 18px rgba(0,113,227,.18);
+      position:relative; display:grid; place-items:center; width:30px; height:22px;
+      border-radius:8px / 7px; background:var(--blue); color:#fff; font-size:16px; font-weight:900;
+      line-height:1; box-shadow:0 7px 16px rgba(0,113,227,.16);
     }
     .brand-mark::before {
       content:""; position:absolute; inset:1px 2px 2px; border-radius:9px / 7px;
@@ -51,10 +61,13 @@
       pointer-events:none;
     }
     .brand-mark span { position:relative; z-index:1; transform:translateY(-1px) }
-    .brand-name { white-space:nowrap; font-family:"GmarketSansBold","Apple SD Gothic Neo",sans-serif; transform:translateY(1px) }
+    .brand-name {
+      white-space:nowrap; font-family:Inter,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",sans-serif;
+      transform:translateY(1px)
+    }
     .brand-name strong { font-weight:700 }
     .hero-copy.hide { display:none }
-    h1 { margin:24px 0 16px; font-size:clamp(30px,5.2vw,42px); line-height:1.15; letter-spacing:0 }
+    h1 { margin:24px 0 16px; font-size:clamp(30px,5.2vw,42px); line-height:1.15; letter-spacing:0; text-wrap:balance }
     .lead { margin:0; color:var(--body); font-size:16px; line-height:1.65 }
     .search {
       position:sticky; top:12px; z-index:30; margin-top:32px; display:flex; gap:8px; padding:6px;
@@ -69,6 +82,15 @@
       flex:0 0 auto; min-height:48px; border:0; border-radius:15px; padding:0 22px;
       background:var(--blue); color:#fff; font-weight:750; cursor:pointer;
       box-shadow:0 8px 18px rgba(0,113,227,.18);
+    }
+    body.result-mode .search {
+      margin-top:28px; padding:5px; border-radius:18px;
+      box-shadow:0 8px 24px rgba(0,0,0,.055);
+    }
+    body.result-mode .search input { padding:11px 15px; font-size:16px }
+    body.result-mode .search button {
+      min-height:42px; border-radius:13px; padding:0 19px;
+      box-shadow:0 5px 14px rgba(0,113,227,.14);
     }
     .search button:disabled { opacity:.55; cursor:wait }
     .suggestions {
@@ -99,8 +121,8 @@
       background:transparent; color:#8b9098; font-size:15px; font-weight:700; cursor:pointer;
     }
     .market-tab.active { background:#fff; color:var(--ink); box-shadow:0 1px 3px rgba(20,28,45,.08) }
-    .rank-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:20px 0 12px }
-    .rank-title-label { color:var(--ink); font-size:15px; font-weight:850; line-height:1.25; letter-spacing:0 }
+    .rank-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:22px 0 14px }
+    .rank-title-label { color:var(--ink); font-size:16px; font-weight:850; line-height:1.25; letter-spacing:0 }
     .rank-actions { display:inline-flex; align-items:center; gap:8px; color:var(--muted); white-space:nowrap }
     .rank-refresh-caption { font-size:12px; font-weight:500; line-height:1 }
     .rank-refresh {
@@ -116,8 +138,8 @@
       background:#fff;
     }
     .rank-item {
-      appearance:none; display:grid; grid-template-columns:24px minmax(0,1fr) auto; align-items:center; gap:12px;
-      width:100%; border:0; border-bottom:1px solid #edf0f3; padding:11px 0;
+      appearance:none; display:grid; grid-template-columns:24px minmax(0,1fr) auto; align-items:center; gap:14px;
+      width:100%; border:0; border-bottom:1px solid #eef0f4; padding:13px 0;
       background:#fff; color:var(--ink); text-align:left; cursor:pointer;
     }
     .rank-item:last-child { border-bottom:0 }
@@ -137,6 +159,8 @@
     }
     .rank-opinion { color:#667085; font-size:12px; font-weight:500 }
     .rank-opinion strong { color:#30343b; font-weight:800 }
+    .rank-item:nth-child(-n+3) .rank-no { color:var(--blue); font-weight:850 }
+    .rank-item:nth-child(-n+3) .rank-name { color:var(--ink); font-weight:750 }
     .rank-market { display:none }
     .market-panel.hide { display:none }
     .status { display:none; margin-top:10px; color:var(--muted); font-size:13px }
@@ -156,8 +180,8 @@
     .summary h2 { margin:0; font-size:30px; letter-spacing:-.015em; line-height:1.16 }
     .share-button {
       appearance:none; flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center;
-      gap:6px; min-height:32px; border:1px solid #d8e5fb; border-radius:999px; padding:0 13px 0 12px;
-      background:#fff; color:var(--blue); font-size:13px; font-weight:750;
+      gap:5px; min-height:30px; border:1px solid #d8e5fb; border-radius:999px; padding:0 12px 0 11px;
+      background:#fff; color:var(--blue); font-size:12px; font-weight:700;
       cursor:pointer; white-space:nowrap;
     }
     .share-button::before {
@@ -190,7 +214,7 @@
       text-decoration-thickness:1px; text-underline-offset:3px;
     }
     .channel:hover { color:var(--blue) }
-    .video-meta { color:#4a4f58; font-size:15px; font-weight:500; line-height:1.35 }
+    .video-meta { color:#6f7783; font-size:14px; font-weight:500; line-height:1.35 }
     .badge { margin-left:auto; border-radius:999px; padding:6px 10px; font-size:12px; font-weight:750 }
     .field-label { margin-top:20px; color:var(--muted); font-size:11px; font-weight:750 }
     .opinion { margin:5px 0 0; font-size:18px; font-weight:700; line-height:1.58; letter-spacing:0; word-break:keep-all }
@@ -221,12 +245,15 @@
       .search { top:10px; gap:6px; padding:6px }
       .search input { padding:10px 10px; font-size:16px }
       .search button { min-height:46px; padding:0 14px; font-size:15px; white-space:nowrap }
+      body.result-mode .search { padding:5px }
+      body.result-mode .search input { padding:9px 10px; font-size:15px }
+      body.result-mode .search button { min-height:40px; padding:0 13px; font-size:14px }
       .market-panel { margin-top:30px }
       .market-tab { font-size:14px; padding:8px 13px }
-      .rank-head { gap:10px; margin-top:18px }
+      .rank-head { gap:10px; margin-top:20px }
       .rank-refresh-caption { display:none }
       .rank-refresh { font-size:12px }
-      .rank-item { grid-template-columns:22px minmax(0,1fr) auto; gap:10px; padding:11px 0 }
+      .rank-item { grid-template-columns:22px minmax(0,1fr) auto; gap:12px; padding:13px 0 }
       .rank-name { font-size:15px }
       .summary-head { align-items:flex-start; gap:10px }
       .summary h2 { font-size:24px }
@@ -243,8 +270,8 @@
       <span class="brand-name">지금사도될까요?</span>
     </button>
     <div class="hero-copy" id="heroCopy">
-      <h1>사기 전에, 유튜버 의견부터 확인하세요</h1>
-      <p class="lead">최근 2주 동안 주식 유튜버들이 이 종목을 어떻게 말했는지 긍정·신중·부정 의견으로 정리해드려요.</p>
+      <h1>사기 전에,<br>유튜버 의견부터 빠르게</h1>
+      <p class="lead">긴 주식 유튜브를 다 볼 필요 없이, 최근 2주 동안 이 종목이 어떻게 언급됐는지 긍정·신중·부정 의견으로 정리해드려요.</p>
     </div>
 
     <form class="search" id="form">
@@ -258,9 +285,9 @@
         <button class="market-tab" type="button" data-market="us" role="tab" aria-selected="false">미국주식</button>
       </div>
       <div class="rank-head">
-        <div class="rank-title-label" id="rankTitleLabel">오늘 유튜브에서 뜨거운 종목</div>
+        <div class="rank-title-label" id="rankTitleLabel">최근 2주 유튜브에서 많이 언급된 종목</div>
         <div class="rank-actions">
-          <span class="rank-refresh-caption">실시간 주가 흐름</span>
+          <span class="rank-refresh-caption">최근 14일 언급 기준</span>
           <button class="rank-refresh" id="rankRefreshButton" type="button">
             <span>새로고침</span><span class="rank-refresh-icon" aria-hidden="true">↻</span>
           </button>
@@ -579,8 +606,9 @@
     }
 
     function fillQueryFromUrl() {
-      const query = new URLSearchParams(location.search).get("q");
+      const query = (new URLSearchParams(location.search).get("q") || "").trim();
       if (query) input.value = query;
+      return query;
     }
 
     async function copyToClipboard(text) {
@@ -867,6 +895,7 @@
       activeSearchQuery = "";
       activeSearchDone = true;
       activeSharePayload = null;
+      document.body.classList.remove("result-mode");
       input.value = "";
       submit.disabled = false;
       loading.classList.remove("show");
@@ -890,6 +919,7 @@
       const token = ++activeSearchToken;
       activeSearchQuery = query;
       activeSearchDone = false;
+      document.body.classList.add("result-mode");
       input.value = query; submit.disabled = true; loading.classList.add("show"); result.innerHTML = "";
       heroCopy.classList.add("hide");
       marketPanel.classList.add("hide");
@@ -1004,13 +1034,14 @@
     });
     analytics.send("page_view");
     analytics.send("session_start");
-    fillQueryFromUrl();
+    const initialQuery = fillQueryFromUrl();
     renderRanking("kr");
     loadRanking();
     setInterval(() => {
       if (!marketPanel.classList.contains("hide")) loadRanking();
     }, 30000);
     loadStatus();
+    if (initialQuery) search(initialQuery);
   </script>
 </body>
 </html>
