@@ -20,6 +20,8 @@ EVENT_TYPES = {
     "search_result",
     "stock_detail_view",
     "video_click",
+    "share_click",
+    "share_success",
 }
 
 
@@ -112,6 +114,7 @@ def _clean_event(payload):
         "opinionCount": _safe_int(payload.get("opinionCount")),
         "durationMs": _safe_int(payload.get("durationMs")),
         "url": _short(payload.get("url"), 300),
+        "method": _short(payload.get("method"), 40),
         "label": _short(payload.get("label"), 120),
         "error": _short(payload.get("error"), 200),
     }

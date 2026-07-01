@@ -54,6 +54,22 @@ class AnalyticsTest(unittest.TestCase):
         self.assertTrue(self.events_path.exists())
         self.assertIn("삼성전자", self.events_path.read_text(encoding="utf-8"))
 
+    def test_record_share_event_keeps_method(self):
+        event = analytics.record_event({
+            "type": "share_success",
+            "userId": "u1",
+            "sessionId": "s1",
+            "query": "엔비디아",
+            "method": "clipboard",
+            "url": "https://stockzip.kr/?q=%EC%97%94%EB%B9%84%EB%94%94%EC%95%84",
+        })
+
+        saved = self.events_path.read_text(encoding="utf-8")
+        self.assertEqual(event["type"], "share_success")
+        self.assertEqual(event["method"], "clipboard")
+        self.assertIn("share_success", saved)
+        self.assertIn("clipboard", saved)
+
     def test_dashboard_metrics_counts_core_funnel(self):
         self.write_event("page_view", "u1")
         self.write_event("session_start", "u1")

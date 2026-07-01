@@ -401,6 +401,30 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _file_head(self, path):
+        if not path.exists() or not path.is_file():
+            self.send_error(404)
+            return
+        mime = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+        self.send_response(200)
+        self.send_header("Content-Type", f"{mime}; charset=utf-8" if mime.startswith("text/") else mime)
+        self.send_header("Content-Length", str(path.stat().st_size))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+
+    def do_HEAD(self):
+        parsed = urlparse(self.path)
+        if parsed.path in ("/", "/stock-search.html"):
+            self._file_head(APP_HTML)
+            return
+        if parsed.path == "/robots.txt":
+            self._file_head(ROBOTS_TXT)
+            return
+        if parsed.path == "/mvp-dashboard.html":
+            self._file_head(DASHBOARD_HTML)
+            return
+        self.send_error(404)
+
     def do_OPTIONS(self):
         parsed = urlparse(self.path)
         if parsed.path in ("/api/analytics/event", "/api/dashboard/metrics"):

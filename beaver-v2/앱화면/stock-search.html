@@ -6,10 +6,10 @@
   <meta name="naver-site-verification" content="ddef5be53c5a428e2046ea2215b0eeb2c0ec7e67">
   <meta name="description" content="최근 주식유투브에서 언급된 종목과 의견 흐름을 한눈에 확인하는 종목 검색 서비스입니다.">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="이 종목 어때?">
+  <meta property="og:title" content="지금사도될까요?">
   <meta property="og:description" content="최근 주식유투브에서 언급된 종목과 의견 흐름을 한눈에 확인하세요.">
   <meta property="og:url" content="https://stockzip.kr/">
-  <title>이 종목 어때?</title>
+  <title>지금사도될까요?</title>
   <style>
     @font-face {
       font-family:"GmarketSansBold";
@@ -20,11 +20,11 @@
     }
 
     :root {
-      --ink:#171717; --body:#5f6368; --muted:#8b9098; --line:#e2e4e8;
-      --canvas:#f7f8fa; --card:#fff; --blue:#1267e5; --blue-wash:#eaf2ff;
+      --ink:#1d1d1f; --body:#5f6368; --muted:#8b9098; --line:#e5e5ea;
+      --canvas:#f7f8fa; --card:#fff; --blue:#0071e3; --blue-wash:#eff6ff;
       --pos:#168a46; --pos-bg:#e8f6ed; --neu:#8a6915; --neu-bg:#fbf4df;
       --neg:#c7352d; --neg-bg:#fdecea; --mention:#60646c; --mention-bg:#f0f1f3;
-      --shadow:0 12px 30px rgba(20,28,45,.08);
+      --shadow:0 14px 36px rgba(0,0,0,.07);
     }
     * { box-sizing:border-box }
     ::selection { background:rgba(18,103,229,.14); color:var(--ink) }
@@ -34,16 +34,16 @@
       background:#fff;
     }
     button,input { font:inherit }
-    .page { width:min(760px,calc(100% - 28px)); margin:0 auto; padding:70px 0 80px }
+    .page { width:min(760px,calc(100% - 28px)); margin:0 auto; padding:64px 0 88px }
     .brand {
       display:inline-flex; align-items:center; gap:9px; border:0; padding:0;
-      background:transparent; color:var(--blue); font-size:20px; font-weight:850;
+      background:transparent; color:var(--ink); font-size:18px; font-weight:800;
       letter-spacing:-.1px; cursor:pointer;
     }
     .brand-mark {
-      position:relative; display:grid; place-items:center; width:36px; height:25px;
-      border-radius:10px / 8px; background:var(--blue); color:#fff; font-size:19px; font-weight:900;
-      line-height:1; box-shadow:0 8px 18px rgba(18,103,229,.22);
+      position:relative; display:grid; place-items:center; width:32px; height:23px;
+      border-radius:9px / 7px; background:var(--blue); color:#fff; font-size:17px; font-weight:900;
+      line-height:1; box-shadow:0 8px 18px rgba(0,113,227,.18);
     }
     .brand-mark::before {
       content:""; position:absolute; inset:1px 2px 2px; border-radius:9px / 7px;
@@ -54,19 +54,21 @@
     .brand-name { white-space:nowrap; font-family:"GmarketSansBold","Apple SD Gothic Neo",sans-serif; transform:translateY(1px) }
     .brand-name strong { font-weight:700 }
     .hero-copy.hide { display:none }
-    h1 { margin:24px 0 18px; font-size:clamp(28px,5.4vw,40px); line-height:1.2; letter-spacing:.2px }
+    h1 { margin:24px 0 16px; font-size:clamp(30px,5.2vw,42px); line-height:1.15; letter-spacing:0 }
     .lead { margin:0; color:var(--body); font-size:16px; line-height:1.65 }
     .search {
-      position:sticky; top:12px; z-index:30; margin-top:30px; display:flex; gap:10px; padding:8px;
-      border:1px solid var(--line); border-radius:16px; background:var(--card); box-shadow:var(--shadow);
+      position:sticky; top:12px; z-index:30; margin-top:32px; display:flex; gap:8px; padding:6px;
+      border:1px solid #dcdfe5; border-radius:20px; background:rgba(255,255,255,.94);
+      box-shadow:var(--shadow); backdrop-filter:saturate(180%) blur(16px);
     }
     .search input {
-      width:100%; min-width:0; border:0; outline:0; padding:12px 14px;
-      color:var(--ink); background:transparent; font-size:17px;
+      width:100%; min-width:0; border:0; outline:0; padding:13px 16px;
+      color:var(--ink); background:transparent; font-size:17px; letter-spacing:0;
     }
     .search button {
-      flex:0 0 auto; border:0; border-radius:11px; padding:0 22px;
+      flex:0 0 auto; min-height:48px; border:0; border-radius:15px; padding:0 22px;
       background:var(--blue); color:#fff; font-weight:750; cursor:pointer;
+      box-shadow:0 8px 18px rgba(0,113,227,.18);
     }
     .search button:disabled { opacity:.55; cursor:wait }
     .suggestions {
@@ -149,13 +151,26 @@
     }
     .result { margin-top:38px }
     .result:empty { display:none }
-    .summary { padding:6px 0 0 }
-    .summary h2 { margin:0; font-size:26px; letter-spacing:-.025em; line-height:1.22 }
-    .summary-meta { margin-top:12px; color:var(--body); font-size:14px; line-height:1.6 }
+    .summary { padding:4px 0 0 }
+    .summary-head { display:flex; align-items:flex-start; justify-content:space-between; gap:14px }
+    .summary h2 { margin:0; font-size:30px; letter-spacing:-.015em; line-height:1.16 }
+    .share-button {
+      appearance:none; flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center;
+      gap:6px; min-height:32px; border:1px solid #d8e5fb; border-radius:999px; padding:0 13px 0 12px;
+      background:#fff; color:var(--blue); font-size:13px; font-weight:750;
+      cursor:pointer; white-space:nowrap;
+    }
+    .share-button::before {
+      content:""; display:block; width:14px; height:14px; background:currentColor;
+      -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7'/%3E%3Cpath d='M12 16V4'/%3E%3Cpath d='m7 9 5-5 5 5'/%3E%3C/svg%3E") center/contain no-repeat;
+      mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7'/%3E%3Cpath d='M12 16V4'/%3E%3Cpath d='m7 9 5-5 5 5'/%3E%3C/svg%3E") center/contain no-repeat;
+    }
+    .share-button:hover { background:var(--blue-wash) }
+    .summary-meta { margin-top:12px; color:var(--body); font-size:14px; line-height:1.65 }
     .summary-period { color:var(--blue); font-weight:800 }
     .counts { display:flex; flex-wrap:wrap; gap:9px; margin-top:18px }
     .count {
-      appearance:none; border:0; border-radius:999px; padding:6px 10px;
+      appearance:none; border:0; border-radius:999px; padding:7px 11px;
       font-size:13px; font-weight:750; cursor:pointer;
     }
     .count:hover { filter:brightness(.98) }
@@ -163,28 +178,31 @@
     .count.neu,.badge.neu { color:var(--neu); background:var(--neu-bg) }
     .count.neg,.badge.neg { color:var(--neg); background:var(--neg-bg) }
     .count.mention,.badge.mention { color:var(--mention); background:var(--mention-bg) }
-    .cards { display:grid; gap:16px; margin-top:24px }
-    .card { padding:22px; border:1px solid var(--line); border-radius:16px; background:var(--card) }
-    .card-head { display:flex; align-items:center; gap:10px }
-    .opinion-block { margin-top:20px; min-width:0 }
+    .cards { display:grid; gap:18px; margin-top:26px }
+    .card {
+      padding:24px 26px 25px; border:1px solid var(--line); border-radius:18px;
+      background:var(--card); box-shadow:0 1px 0 rgba(0,0,0,.02);
+    }
+    .card-head { display:flex; align-items:center; gap:12px }
+    .opinion-block { margin-top:22px; min-width:0 }
     .channel {
       display:inline-flex; color:#6f7783; font-size:14px; font-weight:500; text-decoration:underline;
       text-decoration-thickness:1px; text-underline-offset:3px;
     }
     .channel:hover { color:var(--blue) }
-    .video-meta { color:#30343b; font-size:15px; font-weight:500; line-height:1.35 }
-    .badge { margin-left:auto; border-radius:999px; padding:6px 10px; font-size:12px; font-weight:800 }
-    .field-label { margin-top:18px; color:var(--muted); font-size:11px; font-weight:800 }
-    .opinion { margin:4px 0 0; font-size:18px; font-weight:700; line-height:1.62; word-break:keep-all }
-    .evidence-label { margin-top:15px }
-    .evidence { margin:6px 0 0; color:#4b5058; font-size:15px; line-height:1.72; word-break:keep-all }
+    .video-meta { color:#4a4f58; font-size:15px; font-weight:500; line-height:1.35 }
+    .badge { margin-left:auto; border-radius:999px; padding:6px 10px; font-size:12px; font-weight:750 }
+    .field-label { margin-top:20px; color:var(--muted); font-size:11px; font-weight:750 }
+    .opinion { margin:5px 0 0; font-size:18px; font-weight:700; line-height:1.58; letter-spacing:0; word-break:keep-all }
+    .evidence-label { margin-top:17px }
+    .evidence { margin:7px 0 0; color:#4b5058; font-size:15px; line-height:1.78; word-break:keep-all }
     .evidence-source {
       display:inline-flex; align-items:center; margin-left:6px; color:#7a8491;
       font-size:13px; font-weight:400; line-height:1; text-decoration:underline;
       text-decoration-thickness:1px; text-underline-offset:3px; white-space:nowrap;
     }
     .evidence-source:hover { color:var(--blue) }
-    .source-actions { display:flex; justify-content:flex-end; margin-top:18px }
+    .source-actions { display:flex; justify-content:flex-end; margin-top:20px }
     .source-link {
       display:inline-flex; align-items:center; justify-content:center; min-height:30px;
       border:0; border-radius:0; padding:0; background:transparent; color:var(--blue);
@@ -210,6 +228,9 @@
       .rank-refresh { font-size:12px }
       .rank-item { grid-template-columns:22px minmax(0,1fr) auto; gap:10px; padding:11px 0 }
       .rank-name { font-size:15px }
+      .summary-head { align-items:flex-start; gap:10px }
+      .summary h2 { font-size:24px }
+      .share-button { min-height:32px; padding:0 11px; font-size:12px }
       .suggestion { grid-template-columns:72px minmax(0,1fr) 64px; gap:10px; padding:12px 14px }
       .suggestion-code,.suggestion-name,.suggestion-market { font-size:14px }
     }
@@ -219,16 +240,16 @@
   <main class="page">
     <button class="brand" type="button" id="homeButton" aria-label="첫 화면으로 이동">
       <span class="brand-mark" aria-hidden="true"><span>?</span></span>
-      <span class="brand-name">이 종목 <strong>어때?</strong></span>
+      <span class="brand-name">지금사도될까요?</span>
     </button>
     <div class="hero-copy" id="heroCopy">
-      <h1>자주 보는 주식 유튜버 의견을 한눈에</h1>
-      <p class="lead">최근 2주 업로드 영상에서 종목·ETF·섹터·테마를 실제로 언급한 유튜버를 찾고,<br>긍정·신중·부정 의견과 근거를 한눈에 정리해드려요.</p>
+      <h1>사기 전에, 유튜버 의견부터 확인하세요</h1>
+      <p class="lead">최근 2주 동안 주식 유튜버들이 이 종목을 어떻게 말했는지 긍정·신중·부정 의견으로 정리해드려요.</p>
     </div>
 
     <form class="search" id="form">
       <input id="query" autocomplete="off" placeholder="예: 삼성전자, 엔비디아, 반도체 ETF" aria-label="종목명">
-      <button id="submit" type="submit">의견 찾기</button>
+      <button id="submit" type="submit">의견 확인하기</button>
       <div class="suggestions" id="suggestions" role="listbox" aria-label="종목 추천"></div>
     </form>
     <section class="market-panel" id="marketPanel" aria-label="인기주식">
@@ -237,7 +258,7 @@
         <button class="market-tab" type="button" data-market="us" role="tab" aria-selected="false">미국주식</button>
       </div>
       <div class="rank-head">
-        <div class="rank-title-label" id="rankTitleLabel">최근 주식 유튜브 언급 TOP 10</div>
+        <div class="rank-title-label" id="rankTitleLabel">오늘 유튜브에서 뜨거운 종목</div>
         <div class="rank-actions">
           <span class="rank-refresh-caption">실시간 주가 흐름</span>
           <button class="rank-refresh" id="rankRefreshButton" type="button">
@@ -376,6 +397,8 @@
     let activeSearchQuery = "";
     let activeSearchDone = true;
     let rankingLoading = false;
+    let activeSharePayload = null;
+    let shareButtonTimer = null;
     const trackedSearchResults = new Set();
     const trackedDetailViews = new Set();
     const analytics = (() => {
@@ -526,6 +549,115 @@
         </button>`).join("");
     }
 
+    function shareUrlFor(query) {
+      const url = new URL("/", location.href);
+      url.searchParams.set("q", query);
+      return url.href;
+    }
+
+    function summaryShareText(data) {
+      return `${data.query} 요약: 최근 2주 영상 ${data.matchedVideos}개에서 ${data.query} 언급 · ${data.opinions.length}명 의견`;
+    }
+
+    function sharePayloadFor(data) {
+      const text = summaryShareText(data);
+      const url = shareUrlFor(data.query);
+      return {
+        query:data.query,
+        title:`지금사도될까요? ${data.query}`,
+        text,
+        url,
+        fallbackText:`${text}\n${url}`,
+      };
+    }
+
+    function updateUrlQuery(query) {
+      if (!window.history?.replaceState) return;
+      const url = new URL(location.href);
+      url.searchParams.set("q", query);
+      history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+    }
+
+    function fillQueryFromUrl() {
+      const query = new URLSearchParams(location.search).get("q");
+      if (query) input.value = query;
+    }
+
+    async function copyToClipboard(text) {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+        return;
+      }
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.left = "-9999px";
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        if (!document.execCommand("copy")) throw new Error("클립보드 복사에 실패했어요.");
+      } finally {
+        textarea.remove();
+      }
+    }
+
+    function setShareButtonMessage(message) {
+      const button = result.querySelector(".share-button");
+      if (!button) return;
+      clearTimeout(shareButtonTimer);
+      button.textContent = message;
+      shareButtonTimer = setTimeout(() => {
+        const current = result.querySelector(".share-button");
+        if (current) current.textContent = "공유하기";
+      }, 1600);
+    }
+
+    async function shareCurrentResult() {
+      if (!activeSharePayload) return;
+      const clickMethod = navigator.share ? "web_share" : "clipboard";
+      analytics.send("share_click", {
+        query:activeSharePayload.query,
+        method:clickMethod,
+        url:activeSharePayload.url,
+      });
+      try {
+        if (navigator.share) {
+          await navigator.share({
+            title:activeSharePayload.title,
+            text:activeSharePayload.text,
+            url:activeSharePayload.url,
+          });
+          analytics.send("share_success", {
+            query:activeSharePayload.query,
+            method:"web_share",
+            url:activeSharePayload.url,
+          });
+          return;
+        }
+        await copyToClipboard(activeSharePayload.fallbackText);
+        analytics.send("share_success", {
+          query:activeSharePayload.query,
+          method:"clipboard",
+          url:activeSharePayload.url,
+        });
+        setShareButtonMessage("복사됨");
+      } catch (error) {
+        if (error?.name === "AbortError") return;
+        try {
+          await copyToClipboard(activeSharePayload.fallbackText);
+          analytics.send("share_success", {
+            query:activeSharePayload.query,
+            method:"clipboard",
+            url:activeSharePayload.url,
+          });
+          setShareButtonMessage("복사됨");
+        } catch {
+          setShareButtonMessage("복사 실패");
+        }
+      }
+    }
+
     async function loadRanking() {
       if (isFileMode) return;
       if (rankingLoading) return;
@@ -564,6 +696,7 @@
     function render(data) {
       const done = data.done !== false;
       if (!data.opinions.length) {
+        activeSharePayload = null;
         if (!done) {
           const candidateText = data.matchedVideos
             ? `후보 영상 ${esc(data.matchedVideos)}개 확인 중`
@@ -588,6 +721,7 @@
         result.innerHTML = `<div class="empty"><b>${esc(data.query)}</b>을(를) 명확히 평가한 최근 유튜버 의견을 찾지 못했어요.<br>다른 표기, 티커, 회사명으로도 검색해 보세요.</div>`;
         return;
       }
+      activeSharePayload = sharePayloadFor(data);
       const c = data.counts;
       const opinions = data.opinions
         .map((opinion, order) => ({ ...opinion, order }))
@@ -615,7 +749,10 @@
         </article>`).join("");
       result.innerHTML = `
         <div class="summary">
-          <h2>${esc(data.query)}</h2>
+          <div class="summary-head">
+            <h2>${esc(data.query)}</h2>
+            <button class="share-button" type="button" data-action="share-result" aria-label="${esc(data.query)} 공유하기">공유하기</button>
+          </div>
           <div class="summary-meta">
             <span class="summary-period">최근 2주</span> 영상 ${data.matchedVideos}개 ${esc(data.query)} 언급 · ${data.opinions.length}명 의견 <span class="summary-period">최신순</span>
             ${!done && data.currentStatus ? ` · ${esc(data.currentStatus)}` : ""}
@@ -729,6 +866,7 @@
       activeSearchToken++;
       activeSearchQuery = "";
       activeSearchDone = true;
+      activeSharePayload = null;
       input.value = "";
       submit.disabled = false;
       loading.classList.remove("show");
@@ -763,9 +901,10 @@
         const response = await fetch(`/api/search/start?q=${encodeURIComponent(query)}`);
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || "검색에 실패했어요.");
+        if (!data.jobId) throw new Error("검색 작업을 시작하지 못했어요.");
+        updateUrlQuery(query);
         render(data);
         trackSearchSnapshot(data);
-        if (!data.jobId) throw new Error("검색 작업을 시작하지 못했어요.");
         await pollSearch(data.jobId, token);
       } catch (error) {
         const message = error.message === "Failed to fetch" ? serverRequiredMessage : error.message;
@@ -844,6 +983,11 @@
     });
     result.addEventListener("click", e => {
       const link = e.target.closest("a.source-link,a.evidence-source,a.channel");
+      const shareButton = e.target.closest(".share-button[data-action='share-result']");
+      if (shareButton) {
+        shareCurrentResult();
+        return;
+      }
       if (link) {
         analytics.send("video_click", {
           query:activeSearchQuery,
@@ -860,6 +1004,7 @@
     });
     analytics.send("page_view");
     analytics.send("session_start");
+    fillQueryFromUrl();
     renderRanking("kr");
     loadRanking();
     setInterval(() => {
