@@ -434,13 +434,7 @@
       const checked = Number.isFinite(row.rawChannelCount)
         ? row.rawChannelCount
         : (Number.isFinite(row.channelCount) ? row.channelCount : null);
-      const analyzed = Number.isFinite(row.channelCount)
-        ? row.channelCount
-        : (Number.isFinite(row.videoCount) ? row.videoCount : null);
-      if (checked && analyzed) {
-        return `유튜버 ${esc(checked)}명 중 <strong>${esc(analyzed)}명</strong> 의견 분석`;
-      }
-      return checked ? `유튜버 <strong>${esc(checked)}명</strong> 확인` : "";
+      return checked ? `유튜버 <strong>${esc(checked)}명</strong> 언급` : "";
     }
 
     function renderRanking(market = "kr") {
