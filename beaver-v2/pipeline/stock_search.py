@@ -633,6 +633,8 @@ def prewarm_popular_opinion_cache(limit=None, analysis_limit=None):
                 except Exception as exc:
                     stats["errors"].append(f"{query}/{video.get('channel', '')}: {str(exc)[:120]}")
     clear_popular_stocks_cache()
+    popular_stocks(limit=limit)
+    stats["popularStocksCached"] = True
     return stats
 
 

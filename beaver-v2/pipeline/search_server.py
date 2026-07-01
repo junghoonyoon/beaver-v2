@@ -440,9 +440,7 @@ class Handler(BaseHTTPRequestHandler):
             return
         if parsed.path == "/api/popular-stocks":
             try:
-                payload = stock_search.popular_stocks()
-                prewarm_popular_async(reason="popular-stocks")
-                self._json(payload)
+                self._json(stock_search.popular_stocks())
             except Exception as exc:
                 self._json({"error": str(exc)}, 500)
             return
