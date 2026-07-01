@@ -91,7 +91,7 @@
       background:transparent; color:#8b9098; font-size:15px; font-weight:700; cursor:pointer;
     }
     .market-tab.active { background:#fff; color:var(--ink); box-shadow:0 1px 3px rgba(20,28,45,.08) }
-    .rank-caption { margin:13px 0 8px; color:var(--muted); font-size:12px; font-weight:700 }
+    .rank-caption { margin:13px 0 12px; color:var(--muted); font-size:12px; font-weight:700 }
     .rank-list {
       display:grid; gap:0; overflow:hidden; border:0; border-radius:12px;
       background:#fff;
@@ -431,12 +431,16 @@
     let activeMarket = "kr";
 
     function rankOpinionText(row) {
-      if (!Number.isFinite(row.opinionCount)) return "";
       const checked = Number.isFinite(row.rawChannelCount)
         ? row.rawChannelCount
         : (Number.isFinite(row.channelCount) ? row.channelCount : null);
-      if (!checked) return `<strong>${esc(row.opinionCount)}명</strong> 의견 채택`;
-      return `유튜버 <strong>${esc(checked)}명</strong> 확인 &gt; <strong>${esc(row.opinionCount)}명</strong> 의견 채택`;
+      const analyzed = Number.isFinite(row.channelCount)
+        ? row.channelCount
+        : (Number.isFinite(row.videoCount) ? row.videoCount : null);
+      if (checked && analyzed) {
+        return `유튜버 ${esc(checked)}명 중 <strong>${esc(analyzed)}명</strong> 의견 분석`;
+      }
+      return checked ? `유튜버 <strong>${esc(checked)}명</strong> 확인` : "";
     }
 
     function renderRanking(market = "kr") {

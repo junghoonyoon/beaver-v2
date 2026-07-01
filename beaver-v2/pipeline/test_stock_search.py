@@ -139,12 +139,13 @@ class StockSearchTest(unittest.TestCase):
         self.assertIn("유튜브 언급 기준", payload["basis"])
         self.assertEqual(payload["markets"]["kr"]["rows"][0]["name"], "삼성전자")
         self.assertEqual(payload["markets"]["kr"]["rows"][0]["videoCount"], 2)
-        self.assertEqual(payload["markets"]["kr"]["rows"][0]["opinionCount"], 0)
+        self.assertEqual(payload["markets"]["kr"]["rows"][0]["rawChannelCount"], 2)
+        self.assertNotIn("opinionCount", payload["markets"]["kr"]["rows"][0])
         self.assertEqual(payload["markets"]["us"]["rows"][0]["name"], "엔비디아")
         self.assertEqual(payload["markets"]["us"]["rows"][0]["videoCount"], 1)
-        self.assertEqual(payload["markets"]["us"]["rows"][0]["opinionCount"], 0)
+        self.assertEqual(payload["markets"]["us"]["rows"][0]["rawChannelCount"], 1)
 
-    def test_prewarm_popular_opinion_cache_populates_opinion_counts(self):
+    def test_warm_popular_stocks_cache_saves_home_payload(self):
         videos = [
             {"videoId": "kr1", "channel": "A", "title": "삼성전자 전망", "publishedAt": "2026-06-24",
              "views": 10000, "url": "kr1"},
@@ -154,24 +155,16 @@ class StockSearchTest(unittest.TestCase):
         for row in videos:
             self.write_transcript(row["videoId"], "삼성전자 실적 개선을 긍정적으로 봅니다.")
         self.write_index(videos)
-        result = {
-            "mentioned": True,
-            "stance": "긍정",
-            "summary": "긍정적이에요.",
-            "evidence": "실적 개선을 봤어요.",
-        }
 
         with mock.patch("market_rankings.quotes_for_rows", return_value={}), \
-                mock.patch("analyze.analyze_stock_opinion", return_value=result), \
                 mock.patch("remote_cache.upload_file"):
-            stats = stock_search.prewarm_popular_opinion_cache(limit=1, analysis_limit=2)
+            stats = stock_search.warm_popular_stocks_cache(limit=1)
+            stock_search.clear_popular_stocks_cache()
             payload = stock_search.popular_stocks(limit=1)
 
-        self.assertEqual(stats["stocks"], 1)
-        self.assertEqual(stats["analyzedVideos"], 2)
-        self.assertEqual(stats["generatedVideos"], 2)
-        self.assertEqual(stats["opinions"], 2)
-        self.assertEqual(payload["markets"]["kr"]["rows"][0]["opinionCount"], 2)
+        self.assertTrue(stats["saved"])
+        self.assertEqual(stats["rows"], 1)
+        self.assertEqual(payload["markets"]["kr"]["rows"][0]["rawChannelCount"], 2)
 
     def test_suggest_stocks_uses_us_cache_and_korean_aliases(self):
         self.write_us_stocks([

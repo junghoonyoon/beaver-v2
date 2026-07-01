@@ -16,6 +16,8 @@ import us_listed
 KST = ZoneInfo("Asia/Seoul")
 _STOCK_CACHE_VERSION = 5
 _SEARCH_INDEX_VERSION = 2
+_POPULAR_STOCKS_CACHE_VERSION = 1
+_POPULAR_STOCKS_REMOTE_PATH = "popular_stocks.json"
 _REMOTE_INDEX_CHECK_INTERVAL_SECONDS = 60
 _REMOTE_INDEX_CHECKED_AT = 0
 CHOSEONG = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ"
@@ -462,19 +464,27 @@ def popular_chips(limit=8):
     return rows
 
 
-def popular_stocks(limit=10):
+def popular_stocks(limit=10, use_saved=True):
     """첫 화면 노출용 인기주식: 최근 인덱스에서 많이 언급된 종목을 시장별로 고른다."""
+    index = load_index()
+    index_updated_at = index.get("updatedAt")
     cache_key = (
         config.SEARCH_INDEX_JSON.stat().st_mtime if config.SEARCH_INDEX_JSON.exists() else None,
         limit,
+        index_updated_at,
     )
     cached_key = getattr(popular_stocks, "_cached_key", None)
     cached = getattr(popular_stocks, "_cached", None)
     if cached_key == cache_key and cached is not None:
         return cached
+    saved = _read_saved_popular_stocks(limit, index_updated_at) if use_saved else None
+    if saved:
+        popular_stocks._cached_key = cache_key
+        popular_stocks._cached = saved
+        return saved
 
     now = datetime.datetime.now(KST)
-    videos = load_index().get("videos", [])
+    videos = index.get("videos", [])
     transcript_by_id = {video["videoId"]: transcript_text(video["videoId"]) for video in videos}
     buckets = {"kr": [], "us": []}
     for stock in _chip_candidate_stocks():
@@ -532,7 +542,6 @@ def popular_stocks(limit=10):
             "rawChannelCount": len(channels),
             "recentVideoCount": recent_hits,
             "latestPublishedAt": latest,
-            "_visibleRows": visible_rows,
         })
         buckets.setdefault(_market_group(stock), []).append((score, latest, row["name"], row))
 
@@ -542,7 +551,6 @@ def popular_stocks(limit=10):
         rows = _unique_chip_rows([row for _, _, _, row in ranked], limit)
         for idx, row in enumerate(rows, 1):
             row["rank"] = idx
-            row["opinionCount"] = _cached_opinion_count(row["query"], row.pop("_visibleRows", []))
         try:
             quotes = market_rankings.quotes_for_rows(market, rows)
         except Exception:
@@ -557,7 +565,7 @@ def popular_stocks(limit=10):
     payload = {
         "title": "인기주식 TOP 10",
         "basis": f"최근 {config.SEARCH_LOOKBACK_DAYS}일 유튜브 언급 기준",
-        "updatedAt": load_index().get("updatedAt"),
+        "updatedAt": index_updated_at,
         "markets": markets,
     }
     popular_stocks._cached_key = cache_key
@@ -565,77 +573,61 @@ def popular_stocks(limit=10):
     return payload
 
 
+def _popular_stocks_cache_path():
+    return config.CACHE_DIR / "popular_stocks.json"
+
+
+def _read_saved_popular_stocks(limit, index_updated_at):
+    path = _popular_stocks_cache_path()
+    if not path.exists():
+        remote_cache.download_to_file(_POPULAR_STOCKS_REMOTE_PATH, path)
+    if not path.exists():
+        return None
+    try:
+        cached = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if (
+            cached.get("version") != _POPULAR_STOCKS_CACHE_VERSION or
+            cached.get("limit") != limit or
+            cached.get("indexUpdatedAt") != index_updated_at):
+        return None
+    payload = cached.get("payload")
+    return payload if isinstance(payload, dict) and payload.get("markets") else None
+
+
+def _write_saved_popular_stocks(payload, limit):
+    config.CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    path = _popular_stocks_cache_path()
+    data = {
+        "version": _POPULAR_STOCKS_CACHE_VERSION,
+        "limit": limit,
+        "indexUpdatedAt": payload.get("updatedAt"),
+        "savedAt": datetime.datetime.now(KST).isoformat(),
+        "payload": payload,
+    }
+    tmp = path.with_suffix(f".{time.monotonic_ns()}.tmp")
+    tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp.replace(path)
+    remote_cache.upload_file(_POPULAR_STOCKS_REMOTE_PATH, path)
+
+
+def warm_popular_stocks_cache(limit=10):
+    """첫 화면에 필요한 인기주식/등락률 payload를 계산해 로컬·원격 캐시에 저장한다."""
+    clear_popular_stocks_cache()
+    payload = popular_stocks(limit=limit, use_saved=False)
+    _write_saved_popular_stocks(payload, limit)
+    return {
+        "rows": sum(len((market.get("rows") or [])) for market in payload.get("markets", {}).values()),
+        "indexUpdatedAt": payload.get("updatedAt"),
+        "saved": True,
+    }
+
+
 def clear_popular_stocks_cache():
     for attr in ("_cached_key", "_cached"):
         if hasattr(popular_stocks, attr):
             delattr(popular_stocks, attr)
-
-
-def _cached_opinion_count(query, videos):
-    count = 0
-    for video in videos:
-        try:
-            _, _, context_hash, path = _analysis_inputs(video, query)
-            if not path.exists():
-                continue
-            cached = json.loads(path.read_text(encoding="utf-8"))
-            if (
-                    cached.get("version") != _STOCK_CACHE_VERSION or
-                    cached.get("contextHash") != context_hash):
-                continue
-            result = cached["data"]
-        except (OSError, ValueError, KeyError):
-            continue
-        if opinion_from_result(video, result, True):
-            count += 1
-    return count
-
-
-def prewarm_popular_opinion_cache(limit=None, analysis_limit=None):
-    """첫 화면 인기주식의 의견 수가 비어 보이지 않도록 대표 영상 분석 캐시를 미리 만든다."""
-    limit = config.POPULAR_PREWARM_MARKET_LIMIT if limit is None else int(limit)
-    analysis_limit = config.POPULAR_PREWARM_ANALYSIS_LIMIT if analysis_limit is None else int(analysis_limit)
-    payload = popular_stocks(limit=limit)
-    stats = {
-        "stocks": 0,
-        "analyzedVideos": 0,
-        "generatedVideos": 0,
-        "cachedVideos": 0,
-        "opinions": 0,
-        "errors": [],
-    }
-    seen = set()
-    for market_data in (payload.get("markets") or {}).values():
-        for row in (market_data.get("rows") or [])[:limit]:
-            query = row.get("query") or row.get("name") or ""
-            if not query:
-                continue
-            videos = find_videos(query, max_youtubers=config.SEARCH_MAX_YOUTUBERS, include_fallback=False)
-            if analysis_limit > 0:
-                videos = videos[:analysis_limit]
-            if not videos:
-                continue
-            stats["stocks"] += 1
-            for video in videos:
-                key = (video.get("videoId"), compact(query))
-                if key in seen:
-                    continue
-                seen.add(key)
-                try:
-                    result, cached = analyze_match(video, query)
-                    stats["analyzedVideos"] += 1
-                    if cached:
-                        stats["cachedVideos"] += 1
-                    else:
-                        stats["generatedVideos"] += 1
-                    if opinion_from_result(video, result, cached):
-                        stats["opinions"] += 1
-                except Exception as exc:
-                    stats["errors"].append(f"{query}/{video.get('channel', '')}: {str(exc)[:120]}")
-    clear_popular_stocks_cache()
-    popular_stocks(limit=limit)
-    stats["popularStocksCached"] = True
-    return stats
 
 
 def related_chips(query, limit=8):

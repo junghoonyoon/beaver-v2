@@ -104,13 +104,12 @@ def popular_prewarm_status():
     state.update({
         "enabled": config.POPULAR_PREWARM_ENABLED,
         "marketLimit": config.POPULAR_PREWARM_MARKET_LIMIT,
-        "analysisLimit": config.POPULAR_PREWARM_ANALYSIS_LIMIT,
     })
     return state
 
 
 def prewarm_popular_async(reason=""):
-    """인기주식 의견 수를 첫 방문 전에도 채우기 위해 백그라운드에서 분석 캐시를 예열한다."""
+    """첫 화면 인기주식/등락률 payload를 백그라운드에서 미리 계산한다."""
     if not config.POPULAR_PREWARM_ENABLED:
         return False
     index = stock_search.load_index()
@@ -133,19 +132,19 @@ def prewarm_popular_async(reason=""):
     def worker():
         try:
             why = f" ({reason})" if reason else ""
-            print(f"인기주식 의견 캐시를 백그라운드에서 예열합니다{why}.")
-            stats = stock_search.prewarm_popular_opinion_cache()
+            print(f"인기주식 홈 캐시를 백그라운드에서 예열합니다{why}.")
+            stats = stock_search.warm_popular_stocks_cache(limit=config.POPULAR_PREWARM_MARKET_LIMIT)
             with POPULAR_PREWARM_LOCK:
                 POPULAR_PREWARM_STATE["lastStats"] = stats
                 POPULAR_PREWARM_STATE["lastIndexUpdatedAt"] = index_updated_at
             print(
-                "✅ 인기주식 의견 캐시 예열 완료: "
-                f"종목 {stats['stocks']}개 · 영상 {stats['analyzedVideos']}개 · 의견 {stats['opinions']}개"
+                "✅ 인기주식 홈 캐시 예열 완료: "
+                f"종목 {stats['rows']}개"
             )
         except Exception as exc:
             with POPULAR_PREWARM_LOCK:
                 POPULAR_PREWARM_STATE["lastError"] = str(exc)[:200]
-            print(f"⚠️ 인기주식 의견 캐시 예열 실패: {exc}")
+            print(f"⚠️ 인기주식 홈 캐시 예열 실패: {exc}")
         finally:
             with POPULAR_PREWARM_LOCK:
                 POPULAR_PREWARM_STATE["running"] = False
