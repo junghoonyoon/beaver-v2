@@ -349,6 +349,48 @@
     let activeSearchToken = 0;
     let activeSearchQuery = "";
     let activeSearchDone = true;
+    const trackedSearchResults = new Set();
+    const trackedDetailViews = new Set();
+    const analytics = (() => {
+      const key = "beaver.analytics.userId";
+      const makeId = prefix => `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+      let userId = "";
+      try {
+        userId = localStorage.getItem(key) || "";
+        if (!userId) {
+          userId = makeId("u");
+          localStorage.setItem(key, userId);
+        }
+      } catch {
+        userId = makeId("u");
+      }
+      const sessionId = makeId("s");
+      const startedAt = Date.now();
+      const send = (type, payload = {}, beacon = false) => {
+        if (isFileMode) return;
+        const body = JSON.stringify({
+          type,
+          userId,
+          sessionId,
+          path: location.pathname,
+          ...payload,
+        });
+        if (beacon && navigator.sendBeacon) {
+          navigator.sendBeacon("/api/analytics/event", new Blob([body], { type:"application/json" }));
+          return;
+        }
+        fetch("/api/analytics/event", {
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body,
+          keepalive:true,
+        }).catch(() => {});
+      };
+      window.addEventListener("pagehide", () => {
+        send("session_end", { durationMs:Date.now() - startedAt }, true);
+      });
+      return { send };
+    })();
 
     const choseong = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ";
     const compact = value => String(value ?? "").replace(/[^0-9A-Za-z가-힣ㄱ-ㅎㅏ-ㅣ]/g, "").toLowerCase();
@@ -557,6 +599,29 @@
         <div class="cards">${cards}</div>`;
     }
 
+    function trackSearchSnapshot(data) {
+      if (!data || data.done === false) return;
+      const key = data.jobId || `${data.query}:${data.indexUpdatedAt || ""}:${data.matchedVideos || 0}`;
+      if (trackedSearchResults.has(key)) return;
+      trackedSearchResults.add(key);
+      const opinionCount = data.opinions?.length || 0;
+      const success = opinionCount > 0 && !(data.errors?.length);
+      analytics.send("search_result", {
+        query:data.query,
+        success,
+        matchedVideos:data.matchedVideos || 0,
+        opinionCount,
+        error:data.errors?.[0] || "",
+      });
+      if (!success || trackedDetailViews.has(key)) return;
+      trackedDetailViews.add(key);
+      analytics.send("stock_detail_view", {
+        query:data.query,
+        matchedVideos:data.matchedVideos || 0,
+        opinionCount,
+      });
+    }
+
     function hideSuggestions() {
       suggestionsEl.classList.remove("show");
       suggestionsEl.innerHTML = "";
@@ -661,16 +726,19 @@
       marketPanel.classList.add("hide");
       loadingTitle.textContent = "관련 영상을 찾고 있어요";
       loadingText.textContent = "분석이 끝난 유튜버 의견부터 바로 보여드릴게요.";
+      analytics.send("search_submit", { query });
       try {
         if (isFileMode) throw new Error(serverRequiredMessage);
         const response = await fetch(`/api/search/start?q=${encodeURIComponent(query)}`);
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || "검색에 실패했어요.");
         render(data);
+        trackSearchSnapshot(data);
         if (!data.jobId) throw new Error("검색 작업을 시작하지 못했어요.");
         await pollSearch(data.jobId, token);
       } catch (error) {
         const message = error.message === "Failed to fetch" ? serverRequiredMessage : error.message;
+        analytics.send("search_result", { query, success:false, error:message });
         result.innerHTML = `<div class="error">${esc(message)}</div>`;
       } finally {
         if (token === activeSearchToken) {
@@ -690,6 +758,7 @@
         loadingTitle.textContent = data.done ? "분석이 끝났어요" : "유튜버 의견을 분석 중이에요";
         loadingText.textContent = data.currentStatus || "분석 결과를 정리하고 있어요.";
         render(data);
+        trackSearchSnapshot(data);
         if (data.done) return;
       }
     }
@@ -742,12 +811,23 @@
       if (item) search(item.dataset.query);
     });
     result.addEventListener("click", e => {
+      const link = e.target.closest("a.source-link,a.evidence-source,a.channel");
+      if (link) {
+        analytics.send("video_click", {
+          query:activeSearchQuery,
+          url:link.href,
+          label:link.textContent.trim(),
+        });
+        return;
+      }
       const count = e.target.closest(".count[data-stance]");
       if (!count) return;
       const card = [...result.querySelectorAll(".card[data-stance]")]
         .find(item => item.dataset.stance === count.dataset.stance);
       if (card) card.scrollIntoView({ behavior:"smooth", block:"start" });
     });
+    analytics.send("page_view");
+    analytics.send("session_start");
     renderRanking("kr");
     loadRanking();
     loadStatus();

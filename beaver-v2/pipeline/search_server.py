@@ -18,12 +18,14 @@ load_settings()
 
 import config  # noqa: E402
 import krx_listed  # noqa: E402
+import analytics  # noqa: E402
 import market_rankings  # noqa: E402
 import stock_search  # noqa: E402
 import us_listed  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 APP_HTML = ROOT / "앱화면" / "stock-search.html"
+DASHBOARD_HTML = ROOT / "앱화면" / "mvp-dashboard.html"
 HOST = os.environ.get("SEARCH_HOST", "0.0.0.0" if os.environ.get("PORT") else "127.0.0.1")
 PORT = int(os.environ.get("SEARCH_PORT") or os.environ.get("PORT") or "8765")
 PUBLIC_HOST = os.environ.get("SEARCH_PUBLIC_HOST", HOST)
@@ -371,12 +373,16 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):
         print(f"[검색 서버] {fmt % args}")
 
-    def _json(self, payload, status=200):
+    def _json(self, payload, status=200, cors=False):
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
+        if cors:
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
         self.end_headers()
         self.wfile.write(body)
 
@@ -393,8 +399,41 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def do_OPTIONS(self):
+        parsed = urlparse(self.path)
+        if parsed.path in ("/api/analytics/event", "/api/dashboard/metrics"):
+            self.send_response(204)
+            self.send_header("Access-Control-Allow-Origin", "*")
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            self.send_header("Access-Control-Allow-Headers", "Content-Type")
+            self.send_header("Access-Control-Max-Age", "86400")
+            self.end_headers()
+            return
+        self.send_error(404)
+
+    def do_POST(self):
+        parsed = urlparse(self.path)
+        if parsed.path == "/api/analytics/event":
+            try:
+                length = min(int(self.headers.get("Content-Length", "0")), 8192)
+                body = self.rfile.read(length).decode("utf-8") if length else "{}"
+                payload = json.loads(body or "{}")
+                analytics.record_event(payload)
+                self._json({"ok": True}, cors=True)
+            except Exception as exc:
+                self._json({"ok": False, "error": str(exc)[:200]}, 400, cors=True)
+            return
+        self.send_error(404)
+
     def do_GET(self):
         parsed = urlparse(self.path)
+        if parsed.path == "/api/dashboard/metrics":
+            try:
+                days = parse_qs(parsed.query).get("days", ["7"])[0]
+                self._json(analytics.dashboard_metrics(days=days), cors=True)
+            except Exception as exc:
+                self._json({"error": str(exc)}, 500, cors=True)
+            return
         if parsed.path == "/api/status":
             index = stock_search.load_index()
             refresh_search_index_async(reason="status")
@@ -489,6 +528,9 @@ class Handler(BaseHTTPRequestHandler):
             return
         if parsed.path in ("/", "/stock-search.html"):
             self._file(APP_HTML)
+            return
+        if parsed.path == "/mvp-dashboard.html":
+            self._file(DASHBOARD_HTML)
             return
         self.send_error(404)
 

@@ -13,6 +13,7 @@ MANUAL_TRANSCRIPT_DIR = CACHE_DIR / "manual_transcripts"
 SEARCH_INDEX_JSON = CACHE_DIR / "search_index.json"
 KRX_LISTED_JSON = CACHE_DIR / "krx_listed_stocks.json"
 US_LISTED_JSON = CACHE_DIR / "us_listed_stocks.json"
+ANALYTICS_EVENTS_JSONL = CACHE_DIR / "analytics_events.jsonl"
 SUPABASE_STORAGE_BUCKET = os.environ.get("SUPABASE_STORAGE_BUCKET", "beaver-cache")
 IS_RENDER = bool(os.environ.get("RENDER") or os.environ.get("RENDER_SERVICE_ID"))
 STARTUP_REFRESH_ENABLED = os.environ.get(
