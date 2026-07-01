@@ -27,6 +27,7 @@ ROOT = Path(__file__).resolve().parent.parent
 APP_HTML = ROOT / "앱화면" / "stock-search.html"
 APP_ASSETS = ROOT / "앱화면" / "assets"
 DASHBOARD_HTML = ROOT / "앱화면" / "mvp-dashboard.html"
+ROBOTS_TXT = ROOT / "앱화면" / "robots.txt"
 HOST = os.environ.get("SEARCH_HOST", "0.0.0.0" if os.environ.get("PORT") else "127.0.0.1")
 PORT = int(os.environ.get("SEARCH_PORT") or os.environ.get("PORT") or "8765")
 PUBLIC_HOST = os.environ.get("SEARCH_PUBLIC_HOST", HOST)
@@ -529,6 +530,9 @@ class Handler(BaseHTTPRequestHandler):
             return
         if parsed.path in ("/", "/stock-search.html"):
             self._file(APP_HTML)
+            return
+        if parsed.path == "/robots.txt":
+            self._file(ROBOTS_TXT)
             return
         if parsed.path.startswith("/assets/"):
             path = (APP_ASSETS / parsed.path.removeprefix("/assets/")).resolve()
