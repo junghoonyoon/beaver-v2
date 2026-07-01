@@ -1,0 +1,89 @@
+<svg width="694" height="414" viewBox="0 0 694 414" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="유튜브를 살펴보는 로딩 아이콘">
+  <defs>
+    <filter id="shadow" x="100" y="40" width="520" height="310" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="8" stdDeviation="7" flood-color="#000000" flood-opacity="0.12"/>
+    </filter>
+    <linearGradient id="ytRed" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FF1D25"/>
+      <stop offset="1" stop-color="#FF5B60"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#222"/>
+      <stop offset="1" stop-color="#555"/>
+    </linearGradient>
+    <style>
+      .card { transform-origin: 347px 207px; animation: float 2.6s ease-in-out infinite; }
+      .magnifier { transform-origin: 474px 202px; animation: scan 2.2s ease-in-out infinite; }
+      .red-line { animation: pulse 1.2s ease-in-out infinite; }
+      .gray-line { animation: softPulse 1.8s ease-in-out infinite; }
+      .spark { transform-origin: center; animation: spark 1.4s ease-in-out infinite; }
+      .play1 { animation: blink 1.8s ease-in-out infinite; }
+      .play2 { animation: blink 1.8s ease-in-out .25s infinite; }
+      .play3 { animation: blink 1.8s ease-in-out .5s infinite; }
+      @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+      @keyframes scan { 0%,100% { transform: translate(-8px,-2px) rotate(-2deg); } 50% { transform: translate(12px,8px) rotate(3deg); } }
+      @keyframes pulse { 0%,100% { opacity: .55; transform: scaleX(.72); } 50% { opacity: 1; transform: scaleX(1); } }
+      @keyframes softPulse { 0%,100% { opacity: .45; } 50% { opacity: .85; } }
+      @keyframes spark { 0%,100% { opacity: .25; transform: scale(.7); } 50% { opacity: 1; transform: scale(1); } }
+      @keyframes blink { 0%,100% { opacity: .45; } 50% { opacity: 1; } }
+      @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+    </style>
+  </defs>
+
+  <rect width="694" height="414" fill="transparent"/>
+
+  <g class="card" filter="url(#shadow)">
+    <rect x="146" y="70" width="416" height="320" rx="12" fill="white"/>
+    <rect x="146.8" y="70.8" width="414.4" height="318.4" rx="11.2" stroke="#DADCE0" stroke-width="1.6"/>
+
+    <!-- top logo/search area -->
+    <rect x="167" y="90" width="32" height="22" rx="6" fill="url(#ytRed)"/>
+    <path d="M180 96.5L190 101L180 105.5V96.5Z" fill="white"/>
+    <text x="204" y="108" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="700" fill="#111">YouTube</text>
+    <rect class="gray-line" x="302" y="90" width="196" height="25" rx="12.5" fill="#ECEDEF"/>
+    <circle cx="529" cy="102" r="16" fill="#ECEDEF"/>
+
+    <!-- video rows -->
+    <g opacity=".9">
+      <rect x="168" y="145" width="100" height="58" rx="7" fill="#DADCE0"/>
+      <path class="play1" d="M209 164L229 174L209 186V164Z" fill="white"/>
+      <rect class="gray-line" x="284" y="153" width="110" height="8" rx="4" fill="#C8CACE"/>
+      <rect class="gray-line" x="284" y="168" width="82" height="7" rx="3.5" fill="#D5D7DA"/>
+      <rect class="gray-line" x="284" y="183" width="54" height="7" rx="3.5" fill="#D5D7DA"/>
+    </g>
+
+    <g opacity=".9">
+      <rect x="168" y="226" width="100" height="58" rx="7" fill="#DADCE0"/>
+      <path class="play2" d="M209 245L229 255L209 267V245Z" fill="white"/>
+      <rect class="gray-line" x="284" y="234" width="110" height="8" rx="4" fill="#C8CACE"/>
+      <rect class="gray-line" x="284" y="249" width="82" height="7" rx="3.5" fill="#D5D7DA"/>
+      <rect class="gray-line" x="284" y="264" width="54" height="7" rx="3.5" fill="#D5D7DA"/>
+    </g>
+
+    <g opacity=".9">
+      <rect x="168" y="307" width="100" height="58" rx="7" fill="#DADCE0"/>
+      <path class="play3" d="M209 326L229 336L209 348V326Z" fill="white"/>
+      <rect class="gray-line" x="284" y="315" width="110" height="8" rx="4" fill="#C8CACE"/>
+      <rect class="gray-line" x="284" y="330" width="82" height="7" rx="3.5" fill="#D5D7DA"/>
+      <rect class="gray-line" x="284" y="345" width="54" height="7" rx="3.5" fill="#D5D7DA"/>
+    </g>
+  </g>
+
+  <!-- magnifying glass -->
+  <g class="magnifier">
+    <circle cx="476" cy="215" r="72" stroke="url(#glass)" stroke-width="17" fill="white" fill-opacity="0.78"/>
+    <line x1="527" y1="267" x2="588" y2="328" stroke="url(#glass)" stroke-width="24" stroke-linecap="round"/>
+    <g transform="translate(418 180)">
+      <rect class="red-line" x="0" y="0" width="82" height="9" rx="4.5" fill="#FF363D"/>
+      <rect x="0" y="22" width="122" height="8" rx="4" fill="#D5D7DA"/>
+      <rect x="0" y="43" width="83" height="8" rx="4" fill="#D5D7DA"/>
+      <rect x="0" y="64" width="63" height="8" rx="4" fill="#D5D7DA"/>
+    </g>
+  </g>
+
+  <!-- red spark -->
+  <g class="spark" opacity=".9">
+    <rect x="612" y="156" width="8" height="22" rx="4" transform="rotate(42 612 156)" fill="#FF767A"/>
+    <rect x="631" y="184" width="8" height="22" rx="4" transform="rotate(90 631 184)" fill="#FF767A"/>
+  </g>
+</svg>

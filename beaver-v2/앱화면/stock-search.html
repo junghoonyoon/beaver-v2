@@ -138,11 +138,9 @@
       border:1px solid var(--line); border-radius:18px; background:var(--card);
     }
     .loading.show { display:block }
-    .spinner {
-      width:28px; height:28px; margin:0 auto 12px; border:3px solid #dce8fb;
-      border-top-color:var(--blue); border-radius:50%; animation:spin .8s linear infinite;
+    .loading-visual {
+      display:block; width:min(210px,58vw); height:auto; margin:0 auto 10px;
     }
-    @keyframes spin { to { transform:rotate(360deg) } }
     .result { margin-top:38px }
     .result:empty { display:none }
     .summary { padding:6px 0 0 }
@@ -218,7 +216,7 @@
       <span class="brand-name">이 종목 <strong>어때?</strong></span>
     </button>
     <div class="hero-copy" id="heroCopy">
-      <h1>주식·투자<br>자주 보는 유튜버 최신 의견을 한눈에</h1>
+      <h1>자주 보는 주식 유튜버 의견을 한눈에</h1>
       <p class="lead">최근 2주 업로드 영상에서 종목·ETF·섹터·테마를 실제로 언급한 유튜버를 찾고,<br>긍정·신중·부정 의견과 근거를 한눈에 정리해드려요.</p>
     </div>
 
@@ -233,7 +231,7 @@
         <button class="market-tab" type="button" data-market="us" role="tab" aria-selected="false">미국주식</button>
       </div>
       <div class="rank-head">
-        <div class="rank-title-label" id="rankTitleLabel">최근 투자 유튜브 언급 TOP 10</div>
+        <div class="rank-title-label" id="rankTitleLabel">최근 주식 유튜브 언급 TOP 10</div>
         <div class="rank-actions">
           <span class="rank-refresh-caption">실시간 주가 흐름</span>
           <button class="rank-refresh" id="rankRefreshButton" type="button">
@@ -246,7 +244,7 @@
     <div class="status" id="status">검색 인덱스를 확인하는 중이에요…</div>
 
     <section class="loading" id="loading">
-      <div class="spinner"></div>
+      <img class="loading-visual" src="assets/youtube-search-loading.svg" alt="" aria-hidden="true">
       <b id="loadingTitle">관련 영상을 읽고 있어요</b>
       <div id="loadingText" style="margin-top:7px;color:var(--muted);font-size:13px">분석이 끝난 유튜버 의견부터 바로 보여드릴게요.</div>
     </section>
