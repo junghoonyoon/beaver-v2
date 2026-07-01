@@ -37,6 +37,15 @@ SEARCH_REFRESH_STATE = {
     "lastError": "",
 }
 SEARCH_REFRESH_LOCK = threading.Lock()
+POPULAR_PREWARM_STATE = {
+    "running": False,
+    "lastStartedAt": None,
+    "lastFinishedAt": None,
+    "lastIndexUpdatedAt": None,
+    "lastError": "",
+    "lastStats": None,
+}
+POPULAR_PREWARM_LOCK = threading.Lock()
 
 
 class SearchServer(ThreadingHTTPServer):
@@ -89,6 +98,63 @@ def search_refresh_status(index=None):
     return state
 
 
+def popular_prewarm_status():
+    with POPULAR_PREWARM_LOCK:
+        state = dict(POPULAR_PREWARM_STATE)
+    state.update({
+        "enabled": config.POPULAR_PREWARM_ENABLED,
+        "marketLimit": config.POPULAR_PREWARM_MARKET_LIMIT,
+        "analysisLimit": config.POPULAR_PREWARM_ANALYSIS_LIMIT,
+    })
+    return state
+
+
+def prewarm_popular_async(reason=""):
+    """인기주식 의견 수를 첫 방문 전에도 채우기 위해 백그라운드에서 분석 캐시를 예열한다."""
+    if not config.POPULAR_PREWARM_ENABLED:
+        return False
+    index = stock_search.load_index()
+    if not index.get("videos"):
+        return False
+    index_updated_at = index.get("updatedAt")
+    with POPULAR_PREWARM_LOCK:
+        if POPULAR_PREWARM_STATE["running"]:
+            return False
+        if (
+                POPULAR_PREWARM_STATE.get("lastStats") is not None and
+                POPULAR_PREWARM_STATE.get("lastIndexUpdatedAt") == index_updated_at):
+            return False
+        POPULAR_PREWARM_STATE.update({
+            "running": True,
+            "lastStartedAt": datetime.datetime.now(stock_search.KST).isoformat(),
+            "lastError": "",
+        })
+
+    def worker():
+        try:
+            why = f" ({reason})" if reason else ""
+            print(f"인기주식 의견 캐시를 백그라운드에서 예열합니다{why}.")
+            stats = stock_search.prewarm_popular_opinion_cache()
+            with POPULAR_PREWARM_LOCK:
+                POPULAR_PREWARM_STATE["lastStats"] = stats
+                POPULAR_PREWARM_STATE["lastIndexUpdatedAt"] = index_updated_at
+            print(
+                "✅ 인기주식 의견 캐시 예열 완료: "
+                f"종목 {stats['stocks']}개 · 영상 {stats['analyzedVideos']}개 · 의견 {stats['opinions']}개"
+            )
+        except Exception as exc:
+            with POPULAR_PREWARM_LOCK:
+                POPULAR_PREWARM_STATE["lastError"] = str(exc)[:200]
+            print(f"⚠️ 인기주식 의견 캐시 예열 실패: {exc}")
+        finally:
+            with POPULAR_PREWARM_LOCK:
+                POPULAR_PREWARM_STATE["running"] = False
+                POPULAR_PREWARM_STATE["lastFinishedAt"] = datetime.datetime.now(stock_search.KST).isoformat()
+
+    threading.Thread(target=worker, daemon=True).start()
+    return True
+
+
 def refresh_search_index_async(force=False, reason=""):
     """오래된 검색 인덱스를 서버는 살려둔 채 백그라운드에서 갱신한다."""
     if not force and not config.SEARCH_INDEX_AUTO_REFRESH_ENABLED:
@@ -114,10 +180,12 @@ def refresh_search_index_async(force=False, reason=""):
         })
 
     def worker():
+        refreshed = False
         try:
             why = f" ({reason})" if reason else ""
             print(f"검색 인덱스를 백그라운드에서 갱신합니다{why}.")
             stock_search.sync_index(ready)
+            refreshed = True
         except Exception as exc:
             with SEARCH_REFRESH_LOCK:
                 SEARCH_REFRESH_STATE["lastError"] = str(exc)[:200]
@@ -126,6 +194,8 @@ def refresh_search_index_async(force=False, reason=""):
             with SEARCH_REFRESH_LOCK:
                 SEARCH_REFRESH_STATE["running"] = False
                 SEARCH_REFRESH_STATE["lastFinishedAt"] = datetime.datetime.now(stock_search.KST).isoformat()
+            if refreshed:
+                prewarm_popular_async(reason="index-refresh")
 
     threading.Thread(target=worker, daemon=True).start()
     return True
@@ -341,6 +411,7 @@ class Handler(BaseHTTPRequestHandler):
                 "analysisProvider": provider,
                 "model": model,
                 "searchRefresh": search_refresh_status(index),
+                "popularPrewarm": popular_prewarm_status(),
                 "stockMaster": krx_listed.cache_status(),
                 "usStockMaster": us_listed.cache_status(),
             })
@@ -366,6 +437,14 @@ class Handler(BaseHTTPRequestHandler):
                     "label": "최근 많이 언급된 종목",
                     "chips": stock_search.popular_chips(),
                 })
+            return
+        if parsed.path == "/api/popular-stocks":
+            try:
+                payload = stock_search.popular_stocks()
+                prewarm_popular_async(reason="popular-stocks")
+                self._json(payload)
+            except Exception as exc:
+                self._json({"error": str(exc)}, 500)
             return
         if parsed.path == "/api/market-rankings":
             try:
@@ -425,6 +504,7 @@ def main():
         print("⚠️ 검색 인덱스가 오래되어 기존 데이터로 서버를 먼저 시작합니다.")
     if config.STARTUP_SEARCH_REFRESH_ENABLED:
         refresh_search_index_async(reason="startup")
+    prewarm_popular_async(reason="startup")
     if config.STARTUP_STOCK_REFRESH_ENABLED:
         krx_listed.refresh_if_needed_async()
         us_listed.refresh_if_needed_async()

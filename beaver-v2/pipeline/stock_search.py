@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 
 import config
 import krx_listed
+import market_rankings
 import remote_cache
 import us_listed
 
@@ -385,6 +386,16 @@ def _chip_row(stock, score=0):
     }
 
 
+def _market_group(stock):
+    market = str(stock.get("market") or "").upper()
+    if market in {"KOSPI", "KOSDAQ", "KONEX"}:
+        return "kr"
+    if market in {"NASDAQ", "NYSE", "AMEX", "NYSEARCA", "BATS"}:
+        return "us"
+    code = str(stock.get("code") or "")
+    return "us" if code.isascii() and re.search(r"[A-Za-z]", code) else "kr"
+
+
 def _unique_chip_rows(rows, limit):
     out = []
     seen = set()
@@ -400,9 +411,12 @@ def _unique_chip_rows(rows, limit):
 
 
 def _video_mentions_stock(video, stock):
+    return _video_mentions_stock_text(video, stock, transcript_text(video["videoId"]))
+
+
+def _video_mentions_stock_text(video, stock, text):
     aliases = _stock_aliases(stock)
     title = video.get("title", "")
-    text = transcript_text(video["videoId"])
     title_count = match_count(title, aliases)
     text_count = match_count(text, aliases)
     return title_count, text_count
@@ -446,6 +460,180 @@ def popular_chips(limit=8):
     popular_chips._cached_key = cache_key
     popular_chips._cached = rows
     return rows
+
+
+def popular_stocks(limit=10):
+    """첫 화면 노출용 인기주식: 최근 인덱스에서 많이 언급된 종목을 시장별로 고른다."""
+    cache_key = (
+        config.SEARCH_INDEX_JSON.stat().st_mtime if config.SEARCH_INDEX_JSON.exists() else None,
+        limit,
+    )
+    cached_key = getattr(popular_stocks, "_cached_key", None)
+    cached = getattr(popular_stocks, "_cached", None)
+    if cached_key == cache_key and cached is not None:
+        return cached
+
+    now = datetime.datetime.now(KST)
+    videos = load_index().get("videos", [])
+    transcript_by_id = {video["videoId"]: transcript_text(video["videoId"]) for video in videos}
+    buckets = {"kr": [], "us": []}
+    for stock in _chip_candidate_stocks():
+        channels = set()
+        title_hits = 0
+        text_hits = 0
+        views = 0
+        latest = ""
+        recent_hits = 0
+        matched_videos = 0
+        visible_matches = []
+        for video in videos:
+            text = transcript_by_id.get(video["videoId"], "")
+            title_count, text_count = _video_mentions_stock_text(video, stock, text)
+            if not title_count and not text_count:
+                continue
+            matched_videos += 1
+            channels.add(video.get("channel", ""))
+            title_hits += title_count
+            text_hits += text_count
+            views += int(video.get("views") or 0)
+            visible_row = dict(video)
+            visible_row["matchCount"] = text_count
+            visible_row["titleMatch"] = bool(title_count)
+            visible_row["hasTranscriptText"] = bool(text.strip())
+            visible_row["_text"] = text
+            visible_matches.append(visible_row)
+            published_at = video.get("publishedAt", "")
+            latest = max(latest, published_at)
+            try:
+                published = datetime.datetime.fromisoformat(published_at)
+                if published.tzinfo is None:
+                    published = published.replace(tzinfo=KST)
+                if now - published.astimezone(KST) <= datetime.timedelta(hours=72):
+                    recent_hits += 1
+            except (TypeError, ValueError):
+                pass
+        if not channels:
+            continue
+        score = (
+            matched_videos * 5 +
+            len(channels) * 8 +
+            title_hits * 4 +
+            min(text_hits, 20) +
+            recent_hits * 6 +
+            min(views / 100000, 8)
+        )
+        visible_rows = _sort_and_limit_matches(visible_matches, max_youtubers=config.SEARCH_MAX_YOUTUBERS)
+        row = _chip_row(stock, score)
+        row.update({
+            "query": row["name"],
+            "videoCount": len(visible_rows),
+            "channelCount": len({video.get("channel", "") for video in visible_rows}),
+            "rawVideoCount": matched_videos,
+            "rawChannelCount": len(channels),
+            "recentVideoCount": recent_hits,
+            "latestPublishedAt": latest,
+            "_visibleRows": visible_rows,
+        })
+        buckets.setdefault(_market_group(stock), []).append((score, latest, row["name"], row))
+
+    markets = {}
+    for market, scores in buckets.items():
+        ranked = sorted(scores, key=lambda item: (item[0], item[1], item[2], item[3].get("code", "")), reverse=True)
+        rows = _unique_chip_rows([row for _, _, _, row in ranked], limit)
+        for idx, row in enumerate(rows, 1):
+            row["rank"] = idx
+            row["opinionCount"] = _cached_opinion_count(row["query"], row.pop("_visibleRows", []))
+        try:
+            quotes = market_rankings.quotes_for_rows(market, rows)
+        except Exception:
+            quotes = {}
+        for row in rows:
+            row.update(quotes.get(str(row.get("code") or "").strip().upper(), {}))
+        markets[market] = {
+            "rows": rows,
+            "source": "search_index",
+        }
+
+    payload = {
+        "title": "인기주식 TOP 10",
+        "basis": f"최근 {config.SEARCH_LOOKBACK_DAYS}일 유튜브 언급 기준",
+        "updatedAt": load_index().get("updatedAt"),
+        "markets": markets,
+    }
+    popular_stocks._cached_key = cache_key
+    popular_stocks._cached = payload
+    return payload
+
+
+def clear_popular_stocks_cache():
+    for attr in ("_cached_key", "_cached"):
+        if hasattr(popular_stocks, attr):
+            delattr(popular_stocks, attr)
+
+
+def _cached_opinion_count(query, videos):
+    count = 0
+    for video in videos:
+        try:
+            _, _, context_hash, path = _analysis_inputs(video, query)
+            if not path.exists():
+                continue
+            cached = json.loads(path.read_text(encoding="utf-8"))
+            if (
+                    cached.get("version") != _STOCK_CACHE_VERSION or
+                    cached.get("contextHash") != context_hash):
+                continue
+            result = cached["data"]
+        except (OSError, ValueError, KeyError):
+            continue
+        if opinion_from_result(video, result, True):
+            count += 1
+    return count
+
+
+def prewarm_popular_opinion_cache(limit=None, analysis_limit=None):
+    """첫 화면 인기주식의 의견 수가 비어 보이지 않도록 대표 영상 분석 캐시를 미리 만든다."""
+    limit = config.POPULAR_PREWARM_MARKET_LIMIT if limit is None else int(limit)
+    analysis_limit = config.POPULAR_PREWARM_ANALYSIS_LIMIT if analysis_limit is None else int(analysis_limit)
+    payload = popular_stocks(limit=limit)
+    stats = {
+        "stocks": 0,
+        "analyzedVideos": 0,
+        "generatedVideos": 0,
+        "cachedVideos": 0,
+        "opinions": 0,
+        "errors": [],
+    }
+    seen = set()
+    for market_data in (payload.get("markets") or {}).values():
+        for row in (market_data.get("rows") or [])[:limit]:
+            query = row.get("query") or row.get("name") or ""
+            if not query:
+                continue
+            videos = find_videos(query, max_youtubers=config.SEARCH_MAX_YOUTUBERS, include_fallback=False)
+            if analysis_limit > 0:
+                videos = videos[:analysis_limit]
+            if not videos:
+                continue
+            stats["stocks"] += 1
+            for video in videos:
+                key = (video.get("videoId"), compact(query))
+                if key in seen:
+                    continue
+                seen.add(key)
+                try:
+                    result, cached = analyze_match(video, query)
+                    stats["analyzedVideos"] += 1
+                    if cached:
+                        stats["cachedVideos"] += 1
+                    else:
+                        stats["generatedVideos"] += 1
+                    if opinion_from_result(video, result, cached):
+                        stats["opinions"] += 1
+                except Exception as exc:
+                    stats["errors"].append(f"{query}/{video.get('channel', '')}: {str(exc)[:120]}")
+    clear_popular_stocks_cache()
+    return stats
 
 
 def related_chips(query, limit=8):
@@ -923,7 +1111,7 @@ def analyze_match(video, query):
     data = analyze.analyze_stock_opinion(query, aliases, context)
     data["sourceTimeSec"] = source_time_sec(video["videoId"], aliases, data.get("evidence", ""))
     config.STOCK_ANALYSIS_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(".tmp")
+    tmp = path.with_suffix(f".{time.monotonic_ns()}.tmp")
     tmp.write_text(json.dumps({
         "version": _STOCK_CACHE_VERSION,
         "contextHash": context_hash,

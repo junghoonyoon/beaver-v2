@@ -14,6 +14,8 @@ KST = ZoneInfo("Asia/Seoul")
 CACHE_PATH = config.CACHE_DIR / "market_rankings.json"
 REMOTE_PATH = "market_rankings.json"
 NASDAQ_SCREENER_URL = "https://api.nasdaq.com/api/screener/stocks"
+NASDAQ_QUOTE_URL = "https://api.nasdaq.com/api/quote/{symbol}/info"
+NAVER_STOCK_BASIC_URL = "https://m.stock.naver.com/api/stock/{code}/basic"
 
 FALLBACK_KR = [
     ("삼성전자", "005930", "KOSPI"),
@@ -96,6 +98,16 @@ def _number(value):
         return 0
 
 
+def _float_number(value):
+    text = str(value or "").replace(",", "").replace("$", "").replace("%", "").strip()
+    if not text:
+        return None
+    try:
+        return float(text)
+    except ValueError:
+        return None
+
+
 def _format_market_cap(value, currency):
     value = int(value or 0)
     if currency == "KRW":
@@ -107,6 +119,27 @@ def _format_market_cap(value, currency):
     if trillion >= 1:
         return f"${trillion:.2f}T"
     return f"${value / 1_000_000_000:.0f}B"
+
+
+def _format_price(value, currency):
+    if value is None:
+        return ""
+    if currency == "KRW":
+        return f"{int(round(value)):,}원"
+    return f"${value:,.2f}"
+
+
+def _format_change_rate(value):
+    if value is None:
+        return ""
+    sign = "+" if value > 0 else ""
+    return f"{sign}{value:.2f}%"
+
+
+def _change_direction(value):
+    if value is None or value == 0:
+        return "flat"
+    return "up" if value > 0 else "down"
 
 
 def _fallback_rows(items, market, source):
@@ -223,6 +256,88 @@ def fetch_kr(limit=10):
     return {"rows": top, "baseDate": bas_dt, "source": "KRX"}
 
 
+def fetch_kr_quotes(codes):
+    """국내 인기 종목에 붙일 최근 기준일 시세를 가져온다."""
+    wanted = {str(code or "").strip() for code in codes if str(code or "").strip()}
+    if not wanted:
+        return {}
+    key = (config.KRX_API_KEY or "").strip()
+    if not key:
+        return {}
+
+    bas_dt = _latest_kr_base_date(key)
+    quotes = {}
+    page_no = 1
+    num_rows = 1000
+    while True:
+        payload = _get_krx_payload(_api_url(key, page_no, num_rows, bas_dt=bas_dt), key)
+        page_rows, total = _krx_items_from_payload(payload)
+        for raw in page_rows:
+            code = str(raw.get("srtnCd") or "").strip()
+            if code[:1].isalpha():
+                code = code[1:]
+            if code not in wanted:
+                continue
+            price = _float_number(raw.get("clpr"))
+            change = _float_number(raw.get("vs"))
+            change_rate = _float_number(raw.get("fltRt"))
+            quotes[code] = {
+                "price": price,
+                "priceText": _format_price(price, "KRW"),
+                "change": change,
+                "changeText": _format_price(change, "KRW") if change is not None else "",
+                "changeRate": change_rate,
+                "changeRateText": _format_change_rate(change_rate),
+                "changeDirection": _change_direction(change_rate if change_rate is not None else change),
+                "priceBaseDate": bas_dt,
+                "quoteSource": "KRX",
+                "quoteDelayText": "기준일 시세",
+            }
+        if wanted.issubset(quotes.keys()):
+            break
+        if len(page_rows) < num_rows or len(quotes) >= total:
+            break
+        page_no += 1
+        if page_no > 50:
+            break
+    return quotes
+
+
+def fetch_kr_quotes_naver(codes):
+    """공공데이터 시세가 막힐 때 국내 현재가를 네이버 증권 응답으로 보강한다."""
+    quotes = {}
+    for code in [str(item or "").strip() for item in codes if str(item or "").strip()]:
+        try:
+            response = requests.get(
+                NAVER_STOCK_BASIC_URL.format(code=code),
+                headers={"User-Agent": _nasdaq_headers()["User-Agent"], "Accept": "application/json"},
+                timeout=10,
+            )
+            if not response.ok:
+                continue
+            payload = response.json()
+        except (requests.RequestException, ValueError):
+            continue
+        price = _float_number(payload.get("closePrice"))
+        change = _float_number(payload.get("compareToPreviousClosePrice"))
+        change_rate = _float_number(payload.get("fluctuationsRatio"))
+        if price is None:
+            continue
+        quotes[code] = {
+            "price": price,
+            "priceText": _format_price(price, "KRW"),
+            "change": change,
+            "changeText": _format_price(change, "KRW") if change is not None else "",
+            "changeRate": change_rate,
+            "changeRateText": _format_change_rate(change_rate),
+            "changeDirection": _change_direction(change_rate if change_rate is not None else change),
+            "priceBaseDate": payload.get("localTradedAt"),
+            "quoteSource": "NAVER",
+            "quoteDelayText": "현재 시세",
+        }
+    return quotes
+
+
 def _nasdaq_headers():
     return {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
@@ -293,6 +408,65 @@ def fetch_us(limit=10):
     for idx, row in enumerate(top, 1):
         row["rank"] = idx
     return {"rows": top, "baseDate": None, "source": "NASDAQ"}
+
+
+def _nasdaq_quote_number(value):
+    return _float_number(value)
+
+
+def fetch_us_quotes(symbols):
+    """미국 인기 종목에 붙일 Nasdaq 지연 시세를 가져온다. 실패한 종목은 건너뛴다."""
+    out = {}
+    for symbol in [str(item or "").strip().upper() for item in symbols if str(item or "").strip()]:
+        url = NASDAQ_QUOTE_URL.format(symbol=symbol)
+        try:
+            response = requests.get(
+                url,
+                params={"assetclass": "stocks"},
+                headers=_nasdaq_headers(),
+                timeout=10,
+            )
+            if not response.ok:
+                continue
+            payload = response.json()
+        except (requests.RequestException, ValueError):
+            continue
+        data = payload.get("data") or {}
+        primary = data.get("primaryData") or {}
+        price = _nasdaq_quote_number(primary.get("lastSalePrice"))
+        change = _nasdaq_quote_number(primary.get("netChange"))
+        change_rate = _nasdaq_quote_number(primary.get("percentageChange"))
+        if price is None:
+            continue
+        out[symbol] = {
+            "price": price,
+            "priceText": _format_price(price, "USD"),
+            "change": change,
+            "changeText": _format_price(change, "USD") if change is not None else "",
+            "changeRate": change_rate,
+            "changeRateText": _format_change_rate(change_rate),
+            "changeDirection": _change_direction(change_rate if change_rate is not None else change),
+            "priceBaseDate": None,
+            "quoteSource": "NASDAQ",
+            "quoteDelayText": "지연 시세",
+        }
+    return out
+
+
+def quotes_for_rows(market, rows):
+    if market == "kr":
+        codes = [row.get("code") for row in rows]
+        try:
+            quotes = fetch_kr_quotes(codes)
+        except Exception:
+            quotes = {}
+        missing = [code for code in codes if str(code or "").strip() not in quotes]
+        if missing:
+            quotes.update(fetch_kr_quotes_naver(missing))
+        return quotes
+    if market == "us":
+        return fetch_us_quotes([row.get("code") for row in rows])
+    return {}
 
 
 def _default_payload():

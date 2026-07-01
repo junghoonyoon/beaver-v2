@@ -30,8 +30,10 @@ class StockSearchTest(unittest.TestCase):
         ]
         for patch in self.patches:
             patch.start()
+        stock_search.clear_popular_stocks_cache()
 
     def tearDown(self):
+        stock_search.clear_popular_stocks_cache()
         for patch in reversed(self.patches):
             patch.stop()
         self.tmp.cleanup()
@@ -115,6 +117,61 @@ class StockSearchTest(unittest.TestCase):
         self.assertIn("LG CNS", stock_search.query_aliases("LG CNS"))
         self.assertIn("엘지씨엔에스", stock_search.query_aliases("lg cns"))
         self.assertGreater(stock_search.match_count("LG CNS도 데이터센터 수혜를 봅니다.", stock_search.query_aliases("LG CNS")), 0)
+
+    def test_popular_stocks_returns_market_groups_from_mentions(self):
+        videos = [
+            {"videoId": "kr1", "channel": "A", "title": "삼성전자 전망", "publishedAt": "2026-06-24T10:00:00+09:00",
+             "views": 10000, "url": "kr1"},
+            {"videoId": "kr2", "channel": "B", "title": "반도체", "publishedAt": "2026-06-25T10:00:00+09:00",
+             "views": 20000, "url": "kr2"},
+            {"videoId": "us1", "channel": "C", "title": "엔비디아 AI", "publishedAt": "2026-06-25T11:00:00+09:00",
+             "views": 30000, "url": "us1"},
+        ]
+        self.write_transcript("kr1", "삼성전자 실적 개선")
+        self.write_transcript("kr2", "삼성전자는 HBM 기대감이 있습니다")
+        self.write_transcript("us1", "엔비디아 GPU 수요가 좋습니다")
+        self.write_index(videos)
+
+        with mock.patch("market_rankings.quotes_for_rows", return_value={}):
+            payload = stock_search.popular_stocks(limit=5)
+
+        self.assertEqual(payload["title"], "인기주식 TOP 10")
+        self.assertIn("유튜브 언급 기준", payload["basis"])
+        self.assertEqual(payload["markets"]["kr"]["rows"][0]["name"], "삼성전자")
+        self.assertEqual(payload["markets"]["kr"]["rows"][0]["videoCount"], 2)
+        self.assertEqual(payload["markets"]["kr"]["rows"][0]["opinionCount"], 0)
+        self.assertEqual(payload["markets"]["us"]["rows"][0]["name"], "엔비디아")
+        self.assertEqual(payload["markets"]["us"]["rows"][0]["videoCount"], 1)
+        self.assertEqual(payload["markets"]["us"]["rows"][0]["opinionCount"], 0)
+
+    def test_prewarm_popular_opinion_cache_populates_opinion_counts(self):
+        videos = [
+            {"videoId": "kr1", "channel": "A", "title": "삼성전자 전망", "publishedAt": "2026-06-24",
+             "views": 10000, "url": "kr1"},
+            {"videoId": "kr2", "channel": "B", "title": "삼성전자 투자", "publishedAt": "2026-06-25",
+             "views": 20000, "url": "kr2"},
+        ]
+        for row in videos:
+            self.write_transcript(row["videoId"], "삼성전자 실적 개선을 긍정적으로 봅니다.")
+        self.write_index(videos)
+        result = {
+            "mentioned": True,
+            "stance": "긍정",
+            "summary": "긍정적이에요.",
+            "evidence": "실적 개선을 봤어요.",
+        }
+
+        with mock.patch("market_rankings.quotes_for_rows", return_value={}), \
+                mock.patch("analyze.analyze_stock_opinion", return_value=result), \
+                mock.patch("remote_cache.upload_file"):
+            stats = stock_search.prewarm_popular_opinion_cache(limit=1, analysis_limit=2)
+            payload = stock_search.popular_stocks(limit=1)
+
+        self.assertEqual(stats["stocks"], 1)
+        self.assertEqual(stats["analyzedVideos"], 2)
+        self.assertEqual(stats["generatedVideos"], 2)
+        self.assertEqual(stats["opinions"], 2)
+        self.assertEqual(payload["markets"]["kr"]["rows"][0]["opinionCount"], 2)
 
     def test_suggest_stocks_uses_us_cache_and_korean_aliases(self):
         self.write_us_stocks([

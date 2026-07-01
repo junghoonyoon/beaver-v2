@@ -48,7 +48,7 @@
     .brand-name { white-space:nowrap; font-family:"GmarketSansBold","Apple SD Gothic Neo",sans-serif; transform:translateY(1px) }
     .brand-name strong { font-weight:700 }
     .hero-copy.hide { display:none }
-    h1 { margin:24px 0 18px; font-size:clamp(30px,6vw,44px); line-height:1.2; letter-spacing:.2px }
+    h1 { margin:24px 0 18px; font-size:clamp(28px,5.4vw,40px); line-height:1.2; letter-spacing:.2px }
     .lead { margin:0; color:var(--body); font-size:16px; line-height:1.65 }
     .search {
       position:sticky; top:12px; z-index:30; margin-top:30px; display:flex; gap:10px; padding:8px;
@@ -81,14 +81,14 @@
     .suggestion-name { min-width:0; color:#14161a; font-size:16px; font-weight:700; line-height:1.3; word-break:keep-all }
     .suggestion-name .match { color:var(--blue); font-weight:800 }
     .suggestion-market { color:#70757d; font-size:15px; font-weight:600; line-height:1.3; text-align:right; white-space:nowrap }
-    .market-panel { margin-top:28px }
+    .market-panel { margin-top:36px }
     .market-tabs {
       display:flex; width:100%; gap:3px; padding:3px;
       border:1px solid #eceff3; border-radius:999px; background:#f5f6f8;
     }
     .market-tab {
-      appearance:none; flex:1 1 0; min-width:0; border:0; border-radius:999px; padding:7px 13px;
-      background:transparent; color:#8b9098; font-size:13px; font-weight:700; cursor:pointer;
+      appearance:none; flex:1 1 0; min-width:0; border:0; border-radius:999px; padding:9px 15px;
+      background:transparent; color:#8b9098; font-size:15px; font-weight:700; cursor:pointer;
     }
     .market-tab.active { background:#fff; color:var(--ink); box-shadow:0 1px 3px rgba(20,28,45,.08) }
     .rank-caption { margin:13px 0 8px; color:var(--muted); font-size:12px; font-weight:700 }
@@ -98,15 +98,26 @@
     }
     .rank-item {
       appearance:none; display:grid; grid-template-columns:24px minmax(0,1fr) auto; align-items:center; gap:12px;
-      width:100%; border:0; border-bottom:1px solid #edf0f3; padding:10px 0;
+      width:100%; border:0; border-bottom:1px solid #edf0f3; padding:11px 0;
       background:#fff; color:var(--ink); text-align:left; cursor:pointer;
     }
     .rank-item:last-child { border-bottom:0 }
     .rank-item:hover { background:#f7f9fc }
     .rank-no { color:#7aa7f2; font-size:14px; font-weight:750; text-align:right; font-variant-numeric:tabular-nums }
-    .rank-body { display:block; min-width:0 }
+    .rank-body { display:grid; gap:3px; min-width:0 }
+    .rank-title { display:flex; align-items:baseline; gap:6px; min-width:0; flex-wrap:wrap }
     .rank-name { display:block; min-width:0; color:#30343b; font-size:15px; font-weight:650; line-height:1.35 }
-    .rank-code { color:#9aa0a9; font-size:12px; font-weight:600; line-height:1; text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap }
+    .rank-code { display:none; color:#9aa0a9; font-size:12px; font-weight:600; line-height:1.2; font-variant-numeric:tabular-nums; white-space:nowrap }
+    .rank-change { color:#667085; font-size:12px; font-weight:650; line-height:1; font-variant-numeric:tabular-nums; white-space:nowrap }
+    .rank-change.up { color:var(--pos) }
+    .rank-change.down { color:var(--neg) }
+    .rank-change.flat { color:#667085 }
+    .rank-meta {
+      display:block; color:#667085; font-size:12px; font-weight:500; line-height:1.2;
+      text-align:right; white-space:nowrap;
+    }
+    .rank-opinion { color:#667085; font-size:12px; font-weight:500 }
+    .rank-opinion strong { color:#30343b; font-weight:800 }
     .rank-market { display:none }
     .market-panel.hide { display:none }
     .status { display:none; margin-top:10px; color:var(--muted); font-size:13px }
@@ -177,9 +188,9 @@
       .search { top:10px; gap:6px; padding:6px }
       .search input { padding:10px 10px; font-size:16px }
       .search button { min-height:46px; padding:0 14px; font-size:15px; white-space:nowrap }
-      .market-panel { margin-top:24px }
-      .market-tab { font-size:13px; padding:7px 11px }
-      .rank-item { grid-template-columns:22px minmax(0,1fr) auto; gap:10px; padding:10px 0 }
+      .market-panel { margin-top:30px }
+      .market-tab { font-size:14px; padding:8px 13px }
+      .rank-item { grid-template-columns:22px minmax(0,1fr) auto; gap:10px; padding:11px 0 }
       .rank-name { font-size:15px }
       .suggestion { grid-template-columns:72px minmax(0,1fr) 64px; gap:10px; padding:12px 14px }
       .suggestion-code,.suggestion-name,.suggestion-market { font-size:14px }
@@ -202,12 +213,12 @@
       <button id="submit" type="submit">의견 찾기</button>
       <div class="suggestions" id="suggestions" role="listbox" aria-label="종목 추천"></div>
     </form>
-    <section class="market-panel" id="marketPanel" aria-label="상위 종목">
+    <section class="market-panel" id="marketPanel" aria-label="인기주식">
       <div class="market-tabs" role="tablist" aria-label="시장 선택">
         <button class="market-tab active" type="button" data-market="kr" role="tab" aria-selected="true">국내주식</button>
         <button class="market-tab" type="button" data-market="us" role="tab" aria-selected="false">미국주식</button>
       </div>
-      <div class="rank-caption" id="rankCaption">시가총액 상위 10</div>
+      <div class="rank-caption" id="rankCaption">인기주식 TOP 10 · 최근 14일 유튜브 언급 기준 · 실시간 주가 흐름</div>
       <div class="rank-list" id="rankList"></div>
     </section>
     <div class="status" id="status">검색 인덱스를 확인하는 중이에요…</div>
@@ -411,6 +422,7 @@
       ]
     };
     let rankingData = {
+      basis: "최근 14일 유튜브 언급 기준",
       markets: {
         kr: { rows: rankingStocks.kr, source: "fallback" },
         us: { rows: rankingStocks.us, source: "fallback" }
@@ -418,27 +430,41 @@
     };
     let activeMarket = "kr";
 
+    function rankOpinionText(row) {
+      if (!Number.isFinite(row.opinionCount)) return "";
+      const checked = Number.isFinite(row.rawChannelCount)
+        ? row.rawChannelCount
+        : (Number.isFinite(row.channelCount) ? row.channelCount : null);
+      if (!checked) return `<strong>${esc(row.opinionCount)}명</strong> 의견 채택`;
+      return `유튜버 <strong>${esc(checked)}명</strong> 확인 &gt; <strong>${esc(row.opinionCount)}명</strong> 의견 채택`;
+    }
+
     function renderRanking(market = "kr") {
       activeMarket = market;
       const marketData = (rankingData.markets || {})[market] || {};
       const rows = marketData.rows?.length ? marketData.rows : (rankingStocks[market] || rankingStocks.kr);
-      const baseDate = String(marketData.baseDate || "");
-      const dateLabel = baseDate.length === 8 ? `${baseDate.slice(0, 4)}.${baseDate.slice(4, 6)}.${baseDate.slice(6, 8)}` : "";
-      rankCaption.textContent = `시가총액 상위 10${dateLabel ? ` · 기준일 ${dateLabel}` : ""}`;
+      const basis = rankingData.basis || "최근 14일 유튜브 언급 기준";
+      rankCaption.textContent = `인기주식 TOP 10 · ${basis} · 실시간 주가 흐름`;
       rankListEl.innerHTML = rows.map((row, idx) => `
         <button class="rank-item" type="button" data-query="${esc(row.query || row.name)}">
           <span class="rank-no">${idx + 1}</span>
           <span class="rank-body">
-            <span class="rank-name">${esc(row.name)}</span>
+            <span class="rank-title">
+              <span class="rank-name">${esc(row.name)}</span>
+              ${row.changeRateText ? `<span class="rank-change ${esc(row.changeDirection || "flat")}">${esc(row.changeRateText)}</span>` : ""}
+            </span>
+            ${row.code ? `<span class="rank-code">${esc(row.code)}</span>` : ""}
           </span>
-          ${row.code ? `<span class="rank-code">${esc(row.code)}</span>` : ""}
+          <span class="rank-meta">
+            <span class="rank-opinion">${rankOpinionText(row)}</span>
+          </span>
         </button>`).join("");
     }
 
     async function loadRanking() {
       if (isFileMode) return;
       try {
-        const data = await fetch("/api/market-rankings").then(r => r.json());
+        const data = await fetch("/api/popular-stocks").then(r => r.json());
         if (data.markets) {
           rankingData = data;
           renderRanking(activeMarket);
