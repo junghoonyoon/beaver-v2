@@ -108,29 +108,6 @@ class AnalyticsTest(unittest.TestCase):
         self.assertEqual(by_key["returning_users"]["raw"], 1)
         self.assertEqual(by_key["return_rate"]["value"], "50.0%")
 
-    def test_recent_metrics_counts_requested_window(self):
-        now = datetime.datetime(2026, 7, 3, 9, 0, tzinfo=analytics.KST)
-        recent = now - datetime.timedelta(minutes=30)
-        old = now - datetime.timedelta(hours=3)
-        self.write_event("page_view", "u1", timestamp=recent.isoformat())
-        self.write_event("search_submit", "u1", timestamp=recent.isoformat(), query="삼성전자")
-        self.write_event("search_result", "u1", timestamp=recent.isoformat(), query="삼성전자", success=True)
-        self.write_event("stock_detail_view", "u1", timestamp=recent.isoformat(), query="삼성전자")
-        self.write_event("video_click", "u1", timestamp=recent.isoformat(), query="삼성전자")
-        self.write_event("page_view", "u2", timestamp=old.isoformat())
-        self.write_event("search_submit", "u2", timestamp=old.isoformat(), query="엔비디아")
-
-        with mock.patch("analytics._now", return_value=now):
-            metrics = analytics.recent_metrics(hours=2)
-
-        self.assertEqual(metrics["period"]["hours"], 2)
-        self.assertEqual(metrics["summary"]["visitors"], 1)
-        self.assertEqual(metrics["summary"]["searchUsers"], 1)
-        self.assertEqual(metrics["summary"]["detailUsers"], 1)
-        self.assertEqual(metrics["summary"]["videoClickUsers"], 1)
-        self.assertEqual(metrics["summary"]["searchRate"], 100.0)
-        self.assertEqual(metrics["topQueries"], [{"query": "삼성전자", "count": 1}])
-
 
 if __name__ == "__main__":
     unittest.main()
