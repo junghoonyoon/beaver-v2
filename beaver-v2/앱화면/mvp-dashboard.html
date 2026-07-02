@@ -223,7 +223,7 @@
         <div class="metric-sub" data-sub>운영 데이터 불러오는 중</div>
       </article>
       <article class="metric" data-kpi="video_click_rate">
-        <div class="metric-head"><div class="metric-title">영상 클릭률</div><div class="metric-tag tag-content">콘텐츠</div></div>
+        <div class="metric-head"><div class="metric-title">상세→영상 클릭률</div><div class="metric-tag tag-content">콘텐츠</div></div>
         <div class="metric-value" data-value>-</div>
         <div class="metric-sub" data-sub>운영 데이터 불러오는 중</div>
       </article>
@@ -247,7 +247,7 @@
     <section class="section">
       <div class="section-head">
         <h2>방문자가 어디까지 갔나요?</h2>
-        <div class="section-sub">방문 → 검색 → 상세 조회 → 영상 클릭</div>
+        <div class="section-sub">전체 방문자 기준 도달률</div>
       </div>
       <div class="grid panels">
         <article class="panel">
@@ -268,7 +268,7 @@
               <div class="funnel-value" data-funnel-value="detailRate">-</div>
             </div>
             <div class="funnel-row">
-              <div class="funnel-label">영상 클릭</div>
+              <div class="funnel-label">영상 클릭 사용자</div>
               <div class="bar-track"><div class="bar video" data-funnel-bar="videoClickRate" style="width:0%"></div></div>
               <div class="funnel-value" data-funnel-value="videoClickRate">-</div>
             </div>
@@ -303,7 +303,7 @@
           <p class="mini-title">운영 체크포인트</p>
           <ul class="checklist">
             <li>검색 실패율이 10%를 넘으면 자동완성, 종목 별칭, 미국 티커 입력 문제를 먼저 확인합니다.</li>
-            <li>상세 조회수 대비 영상 클릭률이 낮으면 요약 근거와 원본 링크 배치의 설득력을 점검합니다.</li>
+            <li>상세→영상 클릭률이 낮으면 요약 근거와 원본 링크 배치의 설득력을 점검합니다.</li>
             <li>D7 Retention이 15% 아래로 내려가면 재방문 동기인 관심종목/알림/최근 검색 저장을 우선 검토합니다.</li>
           </ul>
         </article>
@@ -335,7 +335,7 @@
             <tr><td class="metric-name">평균 검색 종목</td><td>검색한 사람이 평균 몇 개 종목을 탐색했는지</td><td class="formula">distinct stock_code / 검색 사용자</td><td>search_submit</td><td><span class="status ready">수집 연결</span></td></tr>
             <tr><td class="metric-name">검색 실패율</td><td>결과 없음 또는 분석 실패 검색의 비율</td><td class="formula">failed_search / total_search</td><td>search_result</td><td><span class="status ready">수집 연결</span></td></tr>
             <tr><td class="metric-name">결과 확인 수</td><td>검색 결과 상세 콘텐츠를 본 횟수</td><td class="formula">count(stock_detail_view)</td><td>stock_detail_view</td><td><span class="status ready">수집 연결</span></td></tr>
-            <tr><td class="metric-name">영상 클릭률</td><td>상세 조회 후 원본 영상 링크를 누른 비율</td><td class="formula">video_click / stock_detail_view</td><td>stock_detail_view, video_click</td><td><span class="status ready">수집 연결</span></td></tr>
+            <tr><td class="metric-name">상세→영상 클릭률</td><td>상세 조회 후 원본 영상 링크를 누른 비율</td><td class="formula">video_click / stock_detail_view</td><td>stock_detail_view, video_click</td><td><span class="status ready">수집 연결</span></td></tr>
             <tr><td class="metric-name">평균 세션 시간</td><td>사용자가 한 세션에 머문 평균 시간</td><td class="formula">avg(session_end - session_start)</td><td>session_start, session_end</td><td><span class="status ready">수집 연결</span></td></tr>
             <tr><td class="metric-name">7일 뒤 재방문율</td><td>첫 방문 7일 뒤 다시 방문한 사용자 비율</td><td class="formula">D7 재방문자 / 신규 사용자 코호트</td><td>page_view</td><td><span class="status ready">수집 연결</span></td></tr>
             <tr><td class="metric-name">재방문율</td><td>기간 내 2회 이상 방문한 사용자 비율</td><td class="formula">returning_visitors / total_visitors</td><td>page_view</td><td><span class="status ready">수집 연결</span></td></tr>

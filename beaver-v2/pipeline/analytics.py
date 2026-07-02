@@ -281,7 +281,7 @@ def dashboard_metrics(days=7):
         _metric("avg_search_stocks", "평균 검색 종목", f"{avg_search_stocks:.1f}", "검색한 사람이 찾은 종목 수", avg_search_stocks),
         _metric("search_failure_rate", "검색 실패율", f"{_pct(len(failed_searches), len(search_results)):.1f}%", "결과 없음·분석 실패 포함", _pct(len(failed_searches), len(search_results)), "percent"),
         _metric("stock_detail_views", "결과 확인 수", f"{len(details):,}", "검색 결과를 확인한 횟수", len(details)),
-        _metric("video_click_rate", "영상 클릭률", f"{_pct(len(video_clicks), len(details)):.1f}%", "상세 조회 → 원본 영상 클릭", _pct(len(video_clicks), len(details)), "percent"),
+        _metric("video_click_rate", "상세→영상 클릭률", f"{_pct(len(video_clicks), len(details)):.1f}%", "영상 클릭 / 결과 확인 수", _pct(len(video_clicks), len(details)), "percent"),
         _metric("avg_session_time", "평균 세션 시간", _duration_text(average_duration), "방문 시작부터 이탈까지 평균", average_duration, "duration"),
         _metric("d7_retention", "7일 뒤 재방문율", f"{d7_retention:.1f}%", "첫 방문 7일 후 재방문", d7_retention, "percent"),
         _metric("return_rate", "재방문율", f"{_pct(len(repeat_users), len(visitors)):.1f}%", f"최근 {days}일 2회 이상 방문", _pct(len(repeat_users), len(visitors)), "percent"),
