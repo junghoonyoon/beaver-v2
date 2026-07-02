@@ -353,6 +353,12 @@
       if (Number.isNaN(date.getTime())) return value || "-";
       return `${date.getMonth() + 1}/${date.getDate()}`;
     };
+    const dateTimeLabel = value => {
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "-";
+      const pad = number => String(number).padStart(2, "0");
+      return `${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate()} ${pad(date.getHours())}:${pad(date.getMinutes())} KST`;
+    };
     const cellClass = value => {
       if (value === null || value === undefined) return "";
       if (value >= 30) return "hot";
@@ -410,8 +416,9 @@
         $("noteValue").textContent = data.hasData
           ? `운영 이벤트 ${Number(data.eventCount || 0).toLocaleString()}건을 집계했습니다.`
           : "아직 수집된 운영 이벤트가 없습니다.";
+        const firstEventAt = dateTimeLabel(data.collection?.firstEventAt);
         $("noteMeta").textContent = data.hasData
-          ? `${data.period.start} ~ ${data.period.end} 기준 · 배포 이후 데이터만 포함`
+          ? `수집 시작: ${firstEventAt} · 표시 기간: ${data.period.start} ~ ${data.period.end}`
           : "운영버전에 새 코드가 배포된 뒤 방문/검색 이벤트부터 쌓입니다.";
         (data.metrics || []).forEach(setMetric);
         setFunnel(data.funnel || {});

@@ -223,6 +223,7 @@ def dashboard_metrics(days=7):
     start = today - datetime.timedelta(days=days - 1)
     day_keys = [(start + datetime.timedelta(days=idx)).isoformat() for idx in range(days)]
     events = load_events()
+    first_event_at = min((event["_time"] for event in events), default=None)
     period_events = [event for event in events if start <= event["_time"].date() <= today]
     today_events = [event for event in events if event["_time"].date() == today]
     page_views = [event for event in events if event.get("type") == "page_view"]
@@ -292,6 +293,9 @@ def dashboard_metrics(days=7):
         "generatedAt": now.isoformat(),
         "hasData": bool(events),
         "eventCount": len(events),
+        "collection": {
+            "firstEventAt": first_event_at.isoformat() if first_event_at else None,
+        },
         "period": {
             "days": days,
             "start": start.isoformat(),

@@ -86,6 +86,7 @@ class AnalyticsTest(unittest.TestCase):
         by_key = {row["key"]: row for row in metrics["metrics"]}
 
         self.assertTrue(metrics["hasData"])
+        self.assertIsNotNone(metrics["collection"]["firstEventAt"])
         self.assertEqual(by_key["dau"]["raw"], 2)
         self.assertEqual(by_key["total_searches"]["raw"], 2)
         self.assertEqual(by_key["stock_detail_views"]["raw"], 1)
