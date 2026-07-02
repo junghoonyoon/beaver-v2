@@ -302,6 +302,9 @@ def _run_fallback_job(job_id, query, existing_videos):
             for row in fresh:
                 seen.add(row["videoId"])
             result["matchedVideos"] += len(fresh)
+            result["mentionedVideoCount"] = result["matchedVideos"]
+            result["candidateYoutuberCount"] = len({row["channel"] for row in existing_videos + fresh})
+            result["shownYoutuberCount"] = min(result["candidateYoutuberCount"], config.SEARCH_MAX_YOUTUBERS)
             result["analysisLimit"] = max(1, min(result["matchedVideos"], config.SEARCH_MAX_ANALYZED_VIDEOS))
             result["currentStatus"] = "최신 영상 보강 결과를 확인 중이에요." if fresh else result.get("currentStatus", "")
         if fresh:
@@ -344,10 +347,10 @@ def _wait_for_first_search_update(job_id, timeout_seconds=1.0):
 
 
 def start_search_job(query):
-    videos = stock_search.find_videos(query, include_fallback=False)
+    videos, stats = stock_search.find_videos_with_stats(query, include_fallback=False)
     fallback_running = stock_search.needs_search_fallback(videos)
     job_id = uuid.uuid4().hex[:12]
-    result = stock_search.base_search_result(query, videos)
+    result = stock_search.base_search_result(query, videos, stats)
     result.update({
         "jobId": job_id,
         "done": False,

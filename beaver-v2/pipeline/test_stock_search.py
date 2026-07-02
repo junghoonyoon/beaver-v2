@@ -27,6 +27,10 @@ class StockSearchTest(unittest.TestCase):
             mock.patch.object(config, "SEARCH_CONTEXT_MAX_SPANS", 4),
             mock.patch.object(config, "SEARCH_FALLBACK_ENABLED", False),
             mock.patch.object(config, "FORCE_ANALYSIS_REFRESH", False),
+            mock.patch("remote_cache.download_json", return_value=None),
+            mock.patch("remote_cache.upload_json", return_value=True),
+            mock.patch("remote_cache.download_to_file", return_value=False),
+            mock.patch("remote_cache.upload_file", return_value=True),
         ]
         for patch in self.patches:
             patch.start()
@@ -68,6 +72,17 @@ class StockSearchTest(unittest.TestCase):
         aliases = stock_search.query_aliases("SK하이닉스")
         self.assertIn("하이닉스", aliases)
         self.assertGreater(stock_search.match_count("오늘 SK 하이닉스를 봅니다", aliases), 0)
+
+    def test_channel_pool_has_launch_scale_and_categories(self):
+        categories = {cat for channel in config.CHANNELS for cat in channel.get("categories", [])}
+
+        self.assertGreaterEqual(len(config.CHANNELS), 80)
+        self.assertGreaterEqual(len(config.signal_pool()), 40)
+        self.assertGreaterEqual(len([c for c in config.CHANNELS if c.get("channelId")]), 70)
+        self.assertGreaterEqual(len([c for c in config.signal_pool() if c.get("channelId")]), 40)
+        self.assertTrue({
+            "국내주식", "미국주식", "반도체", "2차전지", "바이오", "조선방산", "거시시황",
+        }.issubset(categories))
 
     def test_short_us_ticker_does_not_match_inside_english_words(self):
         self.write_us_stocks([
@@ -219,6 +234,24 @@ class StockSearchTest(unittest.TestCase):
         self.assertEqual(len(found), 2)
         self.assertEqual({row["channel"] for row in found}, {"A", "B"})
         self.assertEqual(next(row for row in found if row["channel"] == "A")["videoId"], "a")
+
+    def test_find_videos_uses_index_search_text_without_loading_all_transcripts(self):
+        videos = [
+            {"videoId": "a", "channel": "A", "title": "시장 전망", "publishedAt": "2026-06-24",
+             "views": 10, "url": "a", "searchText": stock_search.compact("하이닉스 실적 개선"),
+             "titleSearchText": stock_search.compact("시장 전망"), "transcriptStatus": "ok"},
+            {"videoId": "b", "channel": "B", "title": "반도체", "publishedAt": "2026-06-23",
+             "views": 20, "url": "b", "searchText": stock_search.compact("삼성전자 실적 개선"),
+             "titleSearchText": stock_search.compact("반도체"), "transcriptStatus": "ok"},
+        ]
+        self.write_index(videos)
+
+        with mock.patch("stock_search.transcript_text", side_effect=AssertionError("should not read transcripts")):
+            found, stats = stock_search.find_videos_with_stats("SK하이닉스")
+
+        self.assertEqual([row["videoId"] for row in found], ["a"])
+        self.assertEqual(stats["mentionedVideoCount"], 1)
+        self.assertEqual(stats["candidateYoutuberCount"], 1)
 
     def test_stock_analysis_is_cached(self):
         video = {"videoId": "v1", "_text": "삼성전자 실적 개선을 긍정적으로 봅니다."}

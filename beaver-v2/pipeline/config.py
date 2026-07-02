@@ -70,8 +70,8 @@ SEARCH_LOOKBACK_DAYS = int(os.environ.get("SEARCH_LOOKBACK_DAYS", "14"))
 SEARCH_INDEX_REFRESH_HOURS = float(os.environ.get("SEARCH_INDEX_REFRESH_HOURS", "3"))
 SEARCH_INDEX_AUTO_REFRESH_ENABLED = os.environ.get("SEARCH_INDEX_AUTO_REFRESH_ENABLED", "1") == "1"
 SEARCH_MAX_VIDEOS_PER_CHANNEL = int(os.environ.get("SEARCH_MAX_VIDEOS_PER_CHANNEL", "15"))
-SEARCH_MAX_YOUTUBERS = int(os.environ.get("SEARCH_MAX_YOUTUBERS", "10"))
-SEARCH_MAX_ANALYZED_VIDEOS = int(os.environ.get("SEARCH_MAX_ANALYZED_VIDEOS", "5"))
+SEARCH_MAX_YOUTUBERS = int(os.environ.get("SEARCH_MAX_YOUTUBERS", "15"))
+SEARCH_MAX_ANALYZED_VIDEOS = int(os.environ.get("SEARCH_MAX_ANALYZED_VIDEOS", "15"))
 SEARCH_FALLBACK_ENABLED = os.environ.get("SEARCH_FALLBACK_ENABLED", "1") == "1"
 SEARCH_FALLBACK_MIN_RESULTS = int(os.environ.get("SEARCH_FALLBACK_MIN_RESULTS", "3"))
 SEARCH_FALLBACK_RECENT_HOURS = int(os.environ.get("SEARCH_FALLBACK_RECENT_HOURS", "24"))
@@ -104,44 +104,105 @@ VERDICTS = ["낙관", "신중", "경계"]
 # type : 콘텐츠 유형 — "종목"(개별 종목 신호용) | "시황" | "거시" | "배분"
 #        ※ '지금 사도 될까요?' 종목 카드 집계는 type="종목" 위주, 나머지는 '시장 분위기'용.
 # 채널 성향은 최근 영상 기준으로 계속 보정해야 하는 보조 메타데이터.
+def _channel(name, lean, kind, categories, channel_id="", tracked=False):
+    return {
+        "name": name,
+        "channelId": channel_id,
+        "lean": lean,
+        "type": kind,
+        "categories": categories,
+        "tracked": tracked,
+    }
+
+
 CHANNELS = [
-    {"name": "삼프로TV",              "channelId": "", "lean": "중립", "type": "시황", "tracked": True},
-    {"name": "슈카월드",              "channelId": "", "lean": "신중", "type": "거시", "tracked": True},
-    {"name": "815머니톡",             "channelId": "", "lean": "강세", "type": "시황", "tracked": True},
-    {"name": "김작가 TV",             "channelId": "", "lean": "중립", "type": "시황", "tracked": True},
-    {"name": "박곰희TV",              "channelId": "", "lean": "중립", "type": "배분", "tracked": True},
-    {"name": "달란트투자",            "channelId": "", "lean": "강세", "type": "종목"},
-    {"name": "상승효과TV",            "channelId": "UCINSVY-JDQraydXAdfMIbPg", "lean": "중립", "type": "시황"},  # @sng_tv · '시장을 꿰뚫는 주식 투자의 기술' 저자
-    {"name": "소수몽키",              "channelId": "", "lean": "중립", "type": "종목"},
-    {"name": "미국주식으로 은퇴하기",   "channelId": "", "lean": "강세", "type": "종목"},
-    {"name": "김단테",                "channelId": "", "lean": "중립", "type": "배분"},
-    {"name": "증시각도기TV",          "channelId": "", "lean": "강세", "type": "종목"},  # 염승환 (개인 채널 '염승환의 주식투자'와 동일 인물 → 중복 제거)
-    {"name": "한국경제TV뉴스",         "channelId": "", "lean": "중립", "type": "시황"},
-    {"name": "와이스트릿",            "channelId": "", "lean": "중립", "type": "시황"},
-    {"name": "홍춘욱의 경제강의노트",   "channelId": "", "lean": "중립", "type": "거시"},
-    {"name": "김영익의 경제스쿨",      "channelId": "", "lean": "약세", "type": "거시"},
-    {"name": "슈퍼개미 김정환",        "channelId": "", "lean": "강세", "type": "종목"},
-    {"name": "메르의 투자노트",        "channelId": "", "lean": "중립", "type": "종목"},
-    {"name": "강환국 알고투자",        "channelId": "", "lean": "중립", "type": "배분"},
-    {"name": "오건영의 경제읽기",      "channelId": "", "lean": "중립", "type": "거시"},
-    {"name": "신과함께",              "channelId": "", "lean": "중립", "type": "시황"},
-    {"name": "이브로TV",              "channelId": "", "lean": "강세", "type": "종목"},
-    {"name": "주식하는 개미",          "channelId": "", "lean": "중립", "type": "종목"},
-    {"name": "김준송TV",              "channelId": "", "lean": "신중", "type": "거시"},
-    {"name": "정채진 투자노트",        "channelId": "", "lean": "중립", "type": "종목"},
-    {"name": "이타인클럽",            "channelId": "", "lean": "중립", "type": "종목"},
-    {"name": "후랭이TV",              "channelId": "", "lean": "중립", "type": "배분"},  # 부동산·재테크 비중 큼 — 주식 신호용으론 약함
-    {"name": "머니인사이드",          "channelId": "", "lean": "중립", "type": "시황"},
-    {"name": "경제읽어주는남자",       "channelId": "", "lean": "중립", "type": "거시"},
-    {"name": "주코노미TV",            "channelId": "", "lean": "중립", "type": "시황"},
-    # ── 균형 보강 (신중·약세 쪽 — 가치투자 운용사·전직 애널리스트) ──
-    {"name": "VIP TV",                "channelId": "", "lean": "신중", "type": "종목"},  # 최준철·김민국, VIP자산운용 (가치투자, 밸류 보수)
-    {"name": "홍진채",                "channelId": "", "lean": "신중", "type": "종목"},  # 라쿤자산운용 (가치투자)
-    {"name": "김한진",                "channelId": "", "lean": "약세", "type": "거시"},  # 삼프로TV 이코노미스트
-    {"name": "윤지호",                "channelId": "", "lean": "신중", "type": "거시"},  # 전 이베스트 리서치센터장
-    {"name": "이선엽",                "channelId": "", "lean": "신중", "type": "시황"},  # AFW파트너스, 전 신한 투자전략팀장
-    {"name": "이효석",                "channelId": "", "lean": "중립", "type": "거시"},  # HS아카데미, 전 SK증권
-    # {"name": "사경인",              "channelId": "", "lean": "신중", "type": "종목"},  # 회계·재무제표 리스크 관점 — 최근 활동 검증 후 활성화
+    _channel("삼프로TV", "중립", "시황", ["국내주식", "미국주식", "거시시황"], tracked=True),
+    _channel("슈카월드", "신중", "거시", ["거시시황"], tracked=True),
+    _channel("815머니톡", "강세", "시황", ["국내주식", "미국주식", "거시시황"], tracked=True),
+    _channel("김작가 TV", "중립", "시황", ["국내주식", "미국주식", "거시시황"], tracked=True),
+    _channel("박곰희TV", "중립", "배분", ["국내주식", "미국주식", "거시시황"], tracked=True),
+    _channel("달란트투자", "강세", "종목", ["국내주식"]),
+    _channel("상승효과TV", "중립", "시황", ["국내주식"], "UCINSVY-JDQraydXAdfMIbPg"),
+    _channel("소수몽키", "중립", "종목", ["미국주식"]),
+    _channel("미국주식으로 은퇴하기", "강세", "종목", ["미국주식", "반도체"]),
+    _channel("김단테", "중립", "배분", ["미국주식", "거시시황"]),
+    _channel("증시각도기TV", "강세", "종목", ["국내주식"]),
+    _channel("한국경제TV뉴스", "중립", "시황", ["국내주식", "거시시황"]),
+    _channel("와이스트릿", "중립", "시황", ["국내주식", "미국주식", "거시시황"]),
+    _channel("홍춘욱의 경제강의노트", "중립", "거시", ["거시시황"]),
+    _channel("김영익의 경제스쿨", "약세", "거시", ["거시시황"]),
+    _channel("슈퍼개미 김정환", "강세", "종목", ["국내주식"]),
+    _channel("메르의 투자노트", "중립", "종목", ["국내주식", "미국주식", "반도체", "2차전지", "조선방산"]),
+    _channel("강환국 알고투자", "중립", "배분", ["국내주식", "미국주식", "거시시황"]),
+    _channel("오건영의 경제읽기", "중립", "거시", ["거시시황"]),
+    _channel("신과함께", "중립", "시황", ["국내주식", "거시시황"]),
+    _channel("이브로TV", "강세", "종목", ["국내주식"]),
+    _channel("주식하는 개미", "중립", "종목", ["국내주식"]),
+    _channel("김준송TV", "신중", "거시", ["거시시황"]),
+    _channel("후랭이TV", "중립", "배분", ["국내주식", "거시시황"]),
+    _channel("머니인사이드", "중립", "시황", ["국내주식", "미국주식", "거시시황"]),
+    _channel("경제읽어주는남자", "중립", "거시", ["거시시황"]),
+    _channel("주코노미TV", "중립", "시황", ["국내주식"]),
+    _channel("VIP TV", "신중", "종목", ["국내주식"]),
+    _channel("홍진채", "신중", "종목", ["국내주식"]),
+    _channel("김한진", "약세", "거시", ["거시시황"]),
+    _channel("윤지호", "신중", "거시", ["거시시황", "국내주식"]),
+    _channel("이선엽", "신중", "시황", ["국내주식", "거시시황"]),
+    _channel("이효석", "중립", "거시", ["거시시황", "미국주식"]),
+
+    # 종목형 보강: 국내·미국·섹터 특화 채널을 우선 수집 풀에 편입한다.
+    _channel("전인구경제연구소", "중립", "종목", ["국내주식", "미국주식", "거시시황"]),
+    _channel("냉철TV", "중립", "종목", ["국내주식"]),
+    _channel("돈깡", "중립", "종목", ["국내주식"]),
+    _channel("창원개미TV", "중립", "종목", ["국내주식"]),
+    _channel("주식단테", "강세", "종목", ["국내주식"]),
+    _channel("김종철프로증권", "중립", "종목", ["국내주식"]),
+    _channel("부자아빠 주식학교", "강세", "종목", ["국내주식"]),
+    _channel("이상로의 빨간주식", "강세", "종목", ["국내주식"]),
+    _channel("주식초등학교", "중립", "종목", ["국내주식"]),
+    _channel("이남우의 좋은주식연구소", "중립", "종목", ["국내주식", "미국주식"]),
+    _channel("김현준 더퍼블릭자산운용", "중립", "종목", ["국내주식"]),
+    _channel("염승환의 주식투자", "중립", "종목", ["국내주식"]),
+
+    _channel("미주부", "중립", "종목", ["미국주식"]),
+    _channel("미국주식 사관학교", "중립", "종목", ["미국주식"]),
+    _channel("월가아재의 과학적 투자", "중립", "종목", ["미국주식", "거시시황"]),
+    _channel("미국형님", "중립", "종목", ["미국주식"]),
+    _channel("나스닥 사관학교", "중립", "종목", ["미국주식"]),
+    _channel("더밀크", "중립", "종목", ["미국주식", "반도체", "거시시황"]),
+
+    _channel("디일렉", "중립", "종목", ["반도체", "2차전지", "국내주식"]),
+    _channel("테크월드뉴스", "중립", "종목", ["반도체", "국내주식"]),
+    _channel("전자신문", "중립", "시황", ["반도체", "2차전지", "국내주식"]),
+    _channel("IT의 신 이형수", "중립", "종목", ["반도체", "국내주식"]),
+    _channel("박순혁TV", "강세", "종목", ["2차전지", "국내주식"]),
+    _channel("선대인TV", "중립", "종목", ["2차전지", "국내주식", "거시시황"]),
+    _channel("배터리 아저씨", "강세", "종목", ["2차전지", "국내주식"]),
+    _channel("바이오스펙테이터", "중립", "종목", ["바이오", "국내주식"]),
+    _channel("팜이데일리", "중립", "종목", ["바이오", "국내주식"]),
+    _channel("히트뉴스", "중립", "시황", ["바이오", "국내주식"]),
+    _channel("더구루", "중립", "종목", ["조선방산", "2차전지", "바이오", "국내주식", "미국주식"]),
+    _channel("딜사이트", "중립", "종목", ["조선방산", "2차전지", "바이오", "국내주식"]),
+    _channel("블로터", "중립", "시황", ["반도체", "2차전지", "바이오", "조선방산", "국내주식"]),
+    _channel("국방TV", "중립", "시황", ["조선방산"]),
+    _channel("비즈니스포스트", "중립", "시황", ["국내주식", "조선방산", "반도체", "2차전지"]),
+
+    # 전체 시장 보강: 결과 표본이 적을 때 fallback 성격의 시황·뉴스 풀.
+    _channel("토마토증권통", "중립", "종목", ["국내주식", "거시시황"]),
+    _channel("매일경제TV", "중립", "시황", ["국내주식", "거시시황"]),
+    _channel("MTN 머니투데이방송", "중립", "종목", ["국내주식", "거시시황"]),
+    _channel("서울경제TV", "중립", "시황", ["국내주식", "거시시황"]),
+    _channel("이데일리TV", "중립", "시황", ["국내주식", "거시시황"]),
+    _channel("연합뉴스경제TV", "중립", "시황", ["국내주식", "거시시황"]),
+    _channel("한국경제TV", "중립", "시황", ["국내주식", "거시시황"]),
+    _channel("매경 월가월부", "중립", "시황", ["미국주식", "거시시황"]),
+    _channel("어썸머니", "중립", "시황", ["국내주식", "미국주식", "거시시황"]),
+    _channel("한경 글로벌마켓", "중립", "시황", ["미국주식", "거시시황"]),
+    _channel("매경 자이앤트TV", "중립", "시황", ["국내주식", "미국주식", "거시시황"]),
+    _channel("머니올라", "중립", "시황", ["국내주식", "거시시황"]),
+    _channel("부꾸미", "중립", "시황", ["국내주식", "미국주식", "거시시황"]),
+    _channel("리치고", "중립", "배분", ["국내주식", "거시시황"]),
+    _channel("삼성증권 POP", "중립", "시황", ["국내주식", "미국주식", "거시시황"]),
 ]
 
 

@@ -2,6 +2,7 @@
 import datetime
 import json
 import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
 
@@ -16,6 +17,9 @@ REMOTE_PATH = "market_rankings.json"
 NASDAQ_SCREENER_URL = "https://api.nasdaq.com/api/screener/stocks"
 NASDAQ_QUOTE_URL = "https://api.nasdaq.com/api/quote/{symbol}/info"
 NAVER_STOCK_BASIC_URL = "https://m.stock.naver.com/api/stock/{code}/basic"
+_POPULAR_QUOTE_REQUEST_TIMEOUT_SECONDS = 1.8
+_POPULAR_QUOTE_MAX_WORKERS = 4
+_POPULAR_QUOTE_MAX_CODES = 10
 
 FALLBACK_KR = [
     ("삼성전자", "005930", "KOSPI"),
@@ -106,6 +110,24 @@ def _float_number(value):
         return float(text)
     except ValueError:
         return None
+
+
+def _fetch_naver_stock_quote(code):
+    try:
+        response = requests.get(
+            NAVER_STOCK_BASIC_URL.format(code=code),
+            headers={"User-Agent": _nasdaq_headers()["User-Agent"], "Accept": "application/json"},
+            timeout=_POPULAR_QUOTE_REQUEST_TIMEOUT_SECONDS,
+        )
+    except requests.RequestException:
+        return None, None
+    if not response.ok:
+        return None, None
+    try:
+        payload = response.json()
+    except ValueError:
+        return None, None
+    return code, payload
 
 
 def _format_market_cap(value, currency):
@@ -306,35 +328,45 @@ def fetch_kr_quotes(codes):
 def fetch_kr_quotes_naver(codes):
     """공공데이터 시세가 막힐 때 국내 현재가를 네이버 증권 응답으로 보강한다."""
     quotes = {}
-    for code in [str(item or "").strip() for item in codes if str(item or "").strip()]:
-        try:
-            response = requests.get(
-                NAVER_STOCK_BASIC_URL.format(code=code),
-                headers={"User-Agent": _nasdaq_headers()["User-Agent"], "Accept": "application/json"},
-                timeout=10,
-            )
-            if not response.ok:
+    normalized_codes = []
+    for item in codes:
+        code = str(item or "").strip()
+        if not code or code in normalized_codes:
+            continue
+        normalized_codes.append(code)
+        if len(normalized_codes) >= _POPULAR_QUOTE_MAX_CODES:
+            break
+
+    if not normalized_codes:
+        return quotes
+
+    with ThreadPoolExecutor(max_workers=min(_POPULAR_QUOTE_MAX_WORKERS, len(normalized_codes))) as executor:
+        futures = {executor.submit(_fetch_naver_stock_quote, code): code for code in normalized_codes}
+        for future in as_completed(futures, timeout=_POPULAR_QUOTE_REQUEST_TIMEOUT_SECONDS * 3):
+            code = futures[future]
+            try:
+                fetched_code, payload = future.result(timeout=0)
+            except Exception:
                 continue
-            payload = response.json()
-        except (requests.RequestException, ValueError):
-            continue
-        price = _float_number(payload.get("closePrice"))
-        change = _float_number(payload.get("compareToPreviousClosePrice"))
-        change_rate = _float_number(payload.get("fluctuationsRatio"))
-        if price is None:
-            continue
-        quotes[code] = {
-            "price": price,
-            "priceText": _format_price(price, "KRW"),
-            "change": change,
-            "changeText": _format_price(change, "KRW") if change is not None else "",
-            "changeRate": change_rate,
-            "changeRateText": _format_change_rate(change_rate),
-            "changeDirection": _change_direction(change_rate if change_rate is not None else change),
-            "priceBaseDate": payload.get("localTradedAt"),
-            "quoteSource": "NAVER",
-            "quoteDelayText": "현재 시세",
-        }
+            if fetched_code is None or not isinstance(payload, dict):
+                continue
+            price = _float_number(payload.get("closePrice"))
+            change = _float_number(payload.get("compareToPreviousClosePrice"))
+            change_rate = _float_number(payload.get("fluctuationsRatio"))
+            if price is None:
+                continue
+            quotes[fetched_code] = {
+                "price": price,
+                "priceText": _format_price(price, "KRW"),
+                "change": change,
+                "changeText": _format_price(change, "KRW") if change is not None else "",
+                "changeRate": change_rate,
+                "changeRateText": _format_change_rate(change_rate),
+                "changeDirection": _change_direction(change_rate if change_rate is not None else change),
+                "priceBaseDate": payload.get("localTradedAt"),
+                "quoteSource": "NAVER",
+                "quoteDelayText": "현재 시세",
+            }
     return quotes
 
 
@@ -424,7 +456,7 @@ def fetch_us_quotes(symbols):
                 url,
                 params={"assetclass": "stocks"},
                 headers=_nasdaq_headers(),
-                timeout=10,
+                timeout=2.5,
             )
             if not response.ok:
                 continue

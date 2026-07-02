@@ -15,7 +15,7 @@ import us_listed
 
 KST = ZoneInfo("Asia/Seoul")
 _STOCK_CACHE_VERSION = 5
-_SEARCH_INDEX_VERSION = 2
+_SEARCH_INDEX_VERSION = 3
 _POPULAR_STOCKS_CACHE_VERSION = 2
 _POPULAR_STOCKS_REMOTE_PATH = "popular_stocks.json"
 _REMOTE_INDEX_CHECK_INTERVAL_SECONDS = 60
@@ -477,7 +477,7 @@ def popular_stocks(limit=10, use_saved=True):
     cached = getattr(popular_stocks, "_cached", None)
     if cached_key == cache_key and cached is not None:
         return cached
-    saved = _read_saved_popular_stocks(limit, index_updated_at) if use_saved else None
+    saved = _read_saved_popular_stocks(limit, index_updated_at, allow_stale=True) if use_saved else None
     if saved:
         popular_stocks._cached_key = cache_key
         popular_stocks._cached = saved
@@ -557,6 +557,10 @@ def popular_stocks(limit=10, use_saved=True):
             quotes = {}
         for row in rows:
             row.update(quotes.get(str(row.get("code") or "").strip().upper(), {}))
+            row.setdefault("rawChannelCount", 0)
+            row.setdefault("changeRateText", "")
+            row.setdefault("quoteSource", "")
+            row.setdefault("quoteDelayText", "")
         markets[market] = {
             "rows": rows,
             "source": "search_index",
@@ -577,7 +581,7 @@ def _popular_stocks_cache_path():
     return config.CACHE_DIR / "popular_stocks.json"
 
 
-def _read_saved_popular_stocks(limit, index_updated_at):
+def _read_saved_popular_stocks(limit, index_updated_at, allow_stale=False):
     path = _popular_stocks_cache_path()
     if not path.exists():
         remote_cache.download_to_file(_POPULAR_STOCKS_REMOTE_PATH, path)
@@ -590,10 +594,24 @@ def _read_saved_popular_stocks(limit, index_updated_at):
     if (
             cached.get("version") != _POPULAR_STOCKS_CACHE_VERSION or
             cached.get("limit") != limit or
-            cached.get("indexUpdatedAt") != index_updated_at):
+            (cached.get("indexUpdatedAt") != index_updated_at and not allow_stale)):
         return None
     payload = cached.get("payload")
-    return payload if isinstance(payload, dict) and payload.get("markets") else None
+    if not (isinstance(payload, dict) and payload.get("markets")):
+        return None
+    if payload.get("markets").get("kr", {}).get("rows"):
+        for row in payload["markets"]["kr"]["rows"]:
+            row.setdefault("rawChannelCount", 0)
+            row.setdefault("changeRateText", "")
+            row.setdefault("quoteSource", "")
+            row.setdefault("quoteDelayText", "")
+    if payload.get("markets").get("us", {}).get("rows"):
+        for row in payload["markets"]["us"]["rows"]:
+            row.setdefault("rawChannelCount", 0)
+            row.setdefault("changeRateText", "")
+            row.setdefault("quoteSource", "")
+            row.setdefault("quoteDelayText", "")
+    return payload
 
 
 def _write_saved_popular_stocks(payload, limit):
@@ -828,6 +846,10 @@ def save_index(videos):
     return payload
 
 
+def _index_search_text(title, transcript):
+    return compact(f"{title or ''} {transcript or ''}")
+
+
 def sync_index(channels):
     """최근 영상 자막을 캐시하고 검색 가능한 메타데이터 인덱스를 만든다."""
     import youtube
@@ -854,11 +876,14 @@ def sync_index(channels):
                 "videoId": video["videoId"],
                 "channel": video["channel"],
                 "channelType": channel.get("type"),
+                "categories": channel.get("categories") or [],
                 "title": video["title"],
                 "publishedAt": video["publishedAt"].isoformat(),
                 "views": video["views"],
                 "durationSec": video["durationSec"],
                 "url": video["url"],
+                "titleSearchText": compact(video["title"]),
+                "searchText": _index_search_text(video["title"], text),
                 "transcriptChars": len(text or ""),
                 "transcriptStatus": "ok" if text else "missing",
                 "transcriptError": "" if text else (youtube.LAST_TRANSCRIPT_ERROR or ""),
@@ -877,11 +902,14 @@ def _index_video_row(video, text="", channel_type=None, fallback=False):
         "videoId": video["videoId"],
         "channel": video["channel"],
         "channelType": channel_type,
+        "categories": video.get("categories") or [],
         "title": video["title"],
         "publishedAt": video["publishedAt"].isoformat() if hasattr(video["publishedAt"], "isoformat") else video["publishedAt"],
         "views": video.get("views", 0),
         "durationSec": video.get("durationSec", 0),
         "url": video.get("url") or f"https://www.youtube.com/watch?v={video['videoId']}",
+        "titleSearchText": compact(video["title"]),
+        "searchText": _index_search_text(video["title"], text),
         "transcriptChars": len(text or ""),
         "transcriptStatus": "ok" if text else "missing",
         "transcriptError": "",
@@ -890,16 +918,24 @@ def _index_video_row(video, text="", channel_type=None, fallback=False):
 
 
 def _video_match_row(video, aliases):
-    text = transcript_text(video["videoId"])
-    count = match_count(text, aliases)
-    title_count = match_count(video.get("title", ""), aliases)
+    text = None
+    search_text = video.get("searchText")
+    if search_text is None:
+        text = transcript_text(video["videoId"])
+        search_text = _index_search_text(video.get("title", ""), text)
+    title_text = video.get("titleSearchText")
+    if title_text is None:
+        title_text = compact(video.get("title", ""))
+    count = match_count(search_text, aliases)
+    title_count = match_count(title_text, aliases)
     if count <= 0 and title_count <= 0:
         return None
     row = dict(video)
-    row["_text"] = text
+    if text is not None:
+        row["_text"] = text
     row["matchCount"] = count
     row["titleMatch"] = bool(title_count)
-    row["hasTranscriptText"] = bool(text.strip())
+    row["hasTranscriptText"] = video.get("transcriptStatus") == "ok" or bool((text or "").strip())
     return row
 
 
@@ -986,19 +1022,45 @@ def _sort_and_limit_matches(matches, max_youtubers=None):
     return list(best.values())
 
 
-def find_videos(query, max_youtubers=None, include_fallback=True):
+def _matching_videos(query, include_fallback=True):
     aliases = query_aliases(query)
     if not aliases:
         return []
     matches = []
-    for video in load_index().get("videos", []):
+    index = load_index()
+    active_channels = {channel["name"] for channel in config.CHANNELS if channel.get("channelId")}
+    filter_to_roster = index.get("version") == _SEARCH_INDEX_VERSION
+    for video in index.get("videos", []):
+        if filter_to_roster and active_channels and video.get("channel") not in active_channels:
+            continue
         row = _video_match_row(video, aliases)
         if row:
             matches.append(row)
     if include_fallback and _needs_search_fallback(matches):
         existing_ids = {row["videoId"] for row in matches}
         matches.extend(_fallback_search_matches(query, aliases, existing_ids))
-    return _sort_and_limit_matches(matches, max_youtubers=max_youtubers)
+    return matches
+
+
+def match_stats(matches, visible_matches):
+    channels = {row["channel"] for row in matches}
+    visible_channels = {row["channel"] for row in visible_matches}
+    return {
+        "mentionedVideoCount": len(matches),
+        "candidateYoutuberCount": len(channels),
+        "shownYoutuberCount": len(visible_channels),
+    }
+
+
+def find_videos_with_stats(query, max_youtubers=None, include_fallback=True):
+    matches = _matching_videos(query, include_fallback=include_fallback)
+    visible = _sort_and_limit_matches(list(matches), max_youtubers=max_youtubers)
+    return visible, match_stats(matches, visible)
+
+
+def find_videos(query, max_youtubers=None, include_fallback=True):
+    videos, _ = find_videos_with_stats(query, max_youtubers=max_youtubers, include_fallback=include_fallback)
+    return videos
 
 
 def needs_search_fallback(videos):
@@ -1027,6 +1089,8 @@ def _stock_cache_path(video_id, query):
 
 def _analysis_inputs(video, query):
     aliases = query_aliases(query)
+    if "_text" not in video:
+        video["_text"] = transcript_text(video["videoId"])
     context = extract_context(video["_text"], aliases)
     context_hash = hashlib.sha256(context.encode("utf-8")).hexdigest()
     path = _stock_cache_path(video["videoId"], query)
@@ -1117,12 +1181,16 @@ def analyze_match(video, query):
     return data, False
 
 
-def base_search_result(query, videos):
+def base_search_result(query, videos, stats=None):
+    stats = stats or match_stats(videos, videos)
     analysis_limit = max(1, min(len(videos), config.SEARCH_MAX_ANALYZED_VIDEOS))
     return {
         "query": query.strip(),
         "aliases": query_aliases(query),
-        "matchedVideos": len(videos),
+        "matchedVideos": stats["mentionedVideoCount"],
+        "mentionedVideoCount": stats["mentionedVideoCount"],
+        "candidateYoutuberCount": stats["candidateYoutuberCount"],
+        "shownYoutuberCount": stats["shownYoutuberCount"],
         "processedVideos": 0,
         "analyzedVideos": 0,
         "analysisLimit": analysis_limit,
@@ -1181,9 +1249,9 @@ def sort_opinions(search_result):
         opinion.pop("_order", None)
 
 
-def search_stock(query):
-    videos = find_videos(query)
-    search_result = base_search_result(query, videos)
+def search_stock(query, include_fallback=True):
+    videos, stats = find_videos_with_stats(query, include_fallback=include_fallback)
+    search_result = base_search_result(query, videos, stats)
     analysis_limit = search_result["analysisLimit"]
 
     for idx, video in enumerate(videos):

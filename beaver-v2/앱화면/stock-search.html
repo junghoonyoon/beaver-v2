@@ -9,6 +9,7 @@
   <meta property="og:title" content="지금사도될까요?">
   <meta property="og:description" content="주식 유튜브 핵심 의견을 종목별로 빠르게 요약해 영상 탐색 시간을 줄여드립니다.">
   <meta property="og:url" content="https://stockzip.kr/">
+  <link rel="canonical" href="https://stockzip.kr/">
   <meta property="og:image" content="https://stockzip.kr/assets/og-image.png">
   <meta property="og:image:secure_url" content="https://stockzip.kr/assets/og-image.png">
   <meta property="og:image:type" content="image/png">
@@ -192,6 +193,10 @@
     .share-button:hover { background:var(--blue-wash) }
     .summary-meta { margin-top:12px; color:var(--body); font-size:14px; line-height:1.65 }
     .summary-period { color:var(--blue); font-weight:800 }
+    .sample-note {
+      margin-top:10px; color:#7a5a09; background:#fff8e5; border:1px solid #f2dfaa;
+      border-radius:10px; padding:10px 12px; font-size:13px; line-height:1.55;
+    }
     .counts { display:flex; flex-wrap:wrap; gap:9px; margin-top:18px }
     .count {
       appearance:none; border:0; border-radius:999px; padding:7px 11px;
@@ -583,7 +588,8 @@
     }
 
     function summaryShareText(data) {
-      return `${data.query} 요약: 최근 2주 영상 ${data.matchedVideos}개에서 ${data.query} 언급 · ${data.opinions.length}명 의견`;
+      const mentionedVideoCount = data.mentionedVideoCount || data.matchedVideos || 0;
+      return `${data.query} 요약: 최근 2주 언급 영상 ${mentionedVideoCount}개 · ${data.opinions.length}명 의견`;
     }
 
     function sharePayloadFor(data) {
@@ -750,6 +756,12 @@
         return;
       }
       activeSharePayload = sharePayloadFor(data);
+      const mentionedVideoCount = data.mentionedVideoCount || data.matchedVideos || 0;
+      const analyzedYoutuberCount = data.opinions.length;
+      const candidateYoutuberCount = data.candidateYoutuberCount || data.shownYoutuberCount || data.opinions.length;
+      const sampleNote = done && data.opinions.length < 5
+        ? `<div class="sample-note">아직 표본이 적어요. 최근 2주 공개 영상 기준으로 ${esc(data.query)} 의견이 더 모이면 판단 신뢰도가 올라갑니다.</div>`
+        : "";
       const c = data.counts;
       const opinions = data.opinions
         .map((opinion, order) => ({ ...opinion, order }))
@@ -782,9 +794,10 @@
             <button class="share-button" type="button" data-action="share-result" aria-label="${esc(data.query)} 공유하기">공유하기</button>
           </div>
           <div class="summary-meta">
-            <span class="summary-period">최근 2주</span> 영상 ${data.matchedVideos}개 ${esc(data.query)} 언급 · ${data.opinions.length}명 의견 <span class="summary-period">최신순</span>
+            <span class="summary-period">최근 2주</span> 분석한 유튜버 ${analyzedYoutuberCount}명 · 언급 영상 ${mentionedVideoCount}개 · 후보 유튜버 ${candidateYoutuberCount}명 <span class="summary-period">최신순</span>
             ${!done && data.currentStatus ? ` · ${esc(data.currentStatus)}` : ""}
           </div>
+          ${sampleNote}
           <div class="counts">
             ${c.긍정 ? `<button class="count pos" type="button" data-stance="긍정">긍정 평가 ${c.긍정}</button>` : ""}
             ${c.신중 ? `<button class="count neu" type="button" data-stance="신중">신중 평가 ${c.신중}</button>` : ""}
