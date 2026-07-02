@@ -22,6 +22,9 @@ EVENT_TYPES = {
     "video_click",
     "share_click",
     "share_success",
+    "market_mood_view",
+    "market_mood_notice_view",
+    "stance_filter_click",
 }
 
 
@@ -112,10 +115,17 @@ def _clean_event(payload):
         "success": _safe_bool(payload.get("success")),
         "matchedVideos": _safe_int(payload.get("matchedVideos")),
         "opinionCount": _safe_int(payload.get("opinionCount")),
+        "marketMood": _short(payload.get("marketMood") or payload.get("marketMoodLabel"), 80),
+        "positiveCount": _safe_int(payload.get("positiveCount")),
+        "watchCount": _safe_int(payload.get("watchCount")),
+        "riskCount": _safe_int(payload.get("riskCount")),
+        "mentionOnlyCount": _safe_int(payload.get("mentionOnlyCount", payload.get("infoMentionCount"))),
         "durationMs": _safe_int(payload.get("durationMs")),
         "url": _short(payload.get("url"), 300),
         "method": _short(payload.get("method"), 40),
         "label": _short(payload.get("label"), 120),
+        "clickTarget": _short(payload.get("clickTarget"), 60),
+        "stance": _short(payload.get("stance"), 40),
         "error": _short(payload.get("error"), 200),
     }
 
@@ -243,6 +253,9 @@ def dashboard_metrics(days=7):
     failed_searches = [event for event in search_results if not event.get("success")]
     details = [event for event in period_events if event.get("type") == "stock_detail_view"]
     video_clicks = [event for event in period_events if event.get("type") == "video_click"]
+    video_clicks_by_target = defaultdict(list)
+    for event in video_clicks:
+        video_clicks_by_target[event.get("clickTarget") or "unknown"].append(event)
     session_ends = [
         event for event in period_events
         if event.get("type") == "session_end" and _safe_int(event.get("durationMs")) > 0
@@ -282,6 +295,10 @@ def dashboard_metrics(days=7):
         _metric("search_failure_rate", "검색 실패율", f"{_pct(len(failed_searches), len(search_results)):.1f}%", "결과 없음·분석 실패 포함", _pct(len(failed_searches), len(search_results)), "percent"),
         _metric("stock_detail_views", "결과 확인 수", f"{len(details):,}", "검색 결과를 확인한 횟수", len(details)),
         _metric("video_click_rate", "상세→영상 클릭률", f"{_pct(len(video_clicks), len(details)):.1f}%", "영상 클릭 / 결과 확인 수", _pct(len(video_clicks), len(details)), "percent"),
+        _metric("video_click_user_rate", "상세 조회자 중 영상 클릭률", f"{_pct(len(video_users), len(detail_users)):.1f}%", "영상 클릭 사용자 / 상세 조회자", _pct(len(video_users), len(detail_users)), "percent"),
+        _metric("evidence_timestamp_click_rate", "근거 타임스탬프 클릭률", f"{_pct(len(video_clicks_by_target['evidence_timestamp']), len(details)):.1f}%", "근거 타임스탬프 클릭 / 결과 확인 수", _pct(len(video_clicks_by_target["evidence_timestamp"]), len(details)), "percent"),
+        _metric("source_cta_click_rate", "하단 CTA 클릭률", f"{_pct(len(video_clicks_by_target['source_cta']), len(details)):.1f}%", "하단 근거 CTA 클릭 / 결과 확인 수", _pct(len(video_clicks_by_target["source_cta"]), len(details)), "percent"),
+        _metric("channel_name_click_rate", "채널명 클릭률", f"{_pct(len(video_clicks_by_target['channel_name']), len(details)):.1f}%", "채널명 클릭 / 결과 확인 수", _pct(len(video_clicks_by_target["channel_name"]), len(details)), "percent"),
         _metric("avg_session_time", "평균 세션 시간", _duration_text(average_duration), "방문 시작부터 이탈까지 평균", average_duration, "duration"),
         _metric("d7_retention", "7일 뒤 재방문율", f"{d7_retention:.1f}%", "첫 방문 7일 후 재방문", d7_retention, "percent"),
         _metric("return_rate", "재방문율", f"{_pct(len(repeat_users), len(visitors)):.1f}%", f"최근 {days}일 2회 이상 방문", _pct(len(repeat_users), len(visitors)), "percent"),
@@ -310,6 +327,12 @@ def dashboard_metrics(days=7):
             "searchRate": _pct(len(searchers), len(visitors)),
             "detailRate": _pct(len(detail_users), len(visitors)),
             "videoClickRate": _pct(len(video_users), len(visitors)),
+        },
+        "videoClickTargets": {
+            "channelName": len(video_clicks_by_target["channel_name"]),
+            "evidenceTimestamp": len(video_clicks_by_target["evidence_timestamp"]),
+            "sourceCta": len(video_clicks_by_target["source_cta"]),
+            "unknown": len(video_clicks_by_target["unknown"]),
         },
         "trend": _daily_search_rates(period_events, day_keys),
         "cohorts": _retention_cohorts(first_seen, page_views, today),

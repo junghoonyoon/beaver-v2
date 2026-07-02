@@ -181,6 +181,38 @@ class StockSearchTest(unittest.TestCase):
         self.assertEqual(stats["rows"], 1)
         self.assertEqual(payload["markets"]["kr"]["rows"][0]["rawChannelCount"], 2)
 
+    def test_popular_stocks_refreshes_missing_cached_quotes(self):
+        self.write_index([])
+        cached = {
+            "version": stock_search._POPULAR_STOCKS_CACHE_VERSION,
+            "limit": 1,
+            "indexUpdatedAt": "2026-07-03T09:00:00+09:00",
+            "payload": {
+                "title": "인기주식 TOP 10",
+                "basis": "최근 14일 유튜브 언급 기준",
+                "updatedAt": "2026-07-03T09:00:00+09:00",
+                "quoteUpdatedAt": "2026-07-03T09:00:00+09:00",
+                "markets": {
+                    "us": {"rows": [{
+                        "name": "마이크론",
+                        "code": "MU",
+                        "rawChannelCount": 42,
+                        "changeRateText": "",
+                    }]},
+                },
+            },
+        }
+        stock_search._popular_stocks_cache_path().write_text(json.dumps(cached), encoding="utf-8")
+
+        with mock.patch("market_rankings.quotes_for_rows", return_value={
+            "MU": {"changeRateText": "-3.35%", "quoteSource": "NASDAQ"}
+        }):
+            payload = stock_search.popular_stocks(limit=1)
+
+        row = payload["markets"]["us"]["rows"][0]
+        self.assertEqual(row["changeRateText"], "-3.35%")
+        self.assertEqual(row["quoteSource"], "NASDAQ")
+
     def test_suggest_stocks_uses_us_cache_and_korean_aliases(self):
         self.write_us_stocks([
             {"code": "INTC", "market": "NASDAQ", "name": "Intel Corporation", "english": "Intel Corporation",
@@ -264,6 +296,36 @@ class StockSearchTest(unittest.TestCase):
         self.assertTrue(second_cached)
         analyze_call.assert_called_once()
 
+    def test_market_mood_uses_conservative_bias_adjustment(self):
+        cases = [
+            ({"긍정": 5, "신중": 1, "부정": 0, "단순언급": 2}, "긍정적 분위기"),
+            ({"긍정": 4, "신중": 4, "부정": 0, "단순언급": 1}, "조건부 긍정"),
+            ({"긍정": 3, "신중": 7, "부정": 1, "단순언급": 4}, "관망 우세"),
+            ({"긍정": 2, "신중": 2, "부정": 2, "단순언급": 0}, "주의 필요"),
+            ({"긍정": 1, "신중": 0, "부정": 0, "단순언급": 8}, "판단 보류"),
+            ({"긍정": 3, "신중": 1, "부정": 3, "단순언급": 0}, "주의 필요"),
+        ]
+
+        for counts, label in cases:
+            with self.subTest(counts=counts):
+                mood = stock_search.market_mood(counts)
+                self.assertEqual(mood["label"], label)
+                self.assertEqual(set(mood), {"label", "summary", "biasNotice", "judgedCount", "mentionOnlyCount", "scoreRatio"})
+
+    def test_add_opinion_updates_market_mood_without_base_result(self):
+        data = stock_search.base_search_result("삼성전자", [])
+
+        for stance in ("긍정", "신중", "신중", "단순언급"):
+            stock_search.add_opinion(data, {
+                "stance": stance,
+                "channel": "A",
+                "publishedAt": "2026-06-24",
+                "views": 1,
+            })
+
+        self.assertEqual(data["marketMood"]["label"], "관망 우세")
+        self.assertEqual(set(data["marketMood"]), {"label", "summary", "biasNotice", "judgedCount", "mentionOnlyCount", "scoreRatio"})
+
     def test_analyze_match_ignores_title_only_when_transcript_is_missing(self):
         video = {
             "videoId": "v1",
@@ -276,6 +338,29 @@ class StockSearchTest(unittest.TestCase):
         self.assertFalse(cached)
         self.assertFalse(result["mentioned"])
         self.assertEqual(result["stance"], "단순언급")
+
+    def test_market_mood_ignores_mention_only_and_labels_small_samples(self):
+        mood = stock_search.market_mood({"긍정": 1, "신중": 1, "부정": 0, "단순언급": 5})
+
+        self.assertEqual(mood["label"], "판단 보류")
+        self.assertIsNone(mood["biasNotice"])
+        self.assertEqual(set(mood), {"label", "summary", "biasNotice", "judgedCount", "mentionOnlyCount", "scoreRatio"})
+
+    def test_market_mood_labels_representative_cases(self):
+        self.assertEqual(stock_search.market_mood({"긍정": 4, "신중": 1, "부정": 0})["label"], "긍정적 분위기")
+        self.assertEqual(stock_search.market_mood({"긍정": 3, "신중": 2, "부정": 0})["label"], "조건부 긍정")
+        self.assertEqual(stock_search.market_mood({"긍정": 1, "신중": 3, "부정": 0})["label"], "관망 우세")
+        self.assertEqual(stock_search.market_mood({"긍정": 1, "신중": 1, "부정": 2})["label"], "주의 필요")
+        self.assertEqual(stock_search.market_mood({"긍정": 2, "신중": 2, "부정": 1})["label"], "의견 갈림")
+
+    def test_add_opinion_updates_market_mood(self):
+        data = {"opinions": [], "counts": {"긍정": 0, "신중": 0, "부정": 0, "단순언급": 0}}
+        for idx, stance in enumerate(["긍정", "긍정", "신중"], 1):
+            stock_search.add_opinion(data, {
+                "stance": stance, "channel": f"C{idx}", "publishedAt": "2026-06-26T15:00:00+09:00", "views": 1,
+            })
+
+        self.assertEqual(data["marketMood"]["label"], "긍정적 분위기")
 
     def test_find_videos_uses_youtube_fallback_when_results_are_stale(self):
         videos = [

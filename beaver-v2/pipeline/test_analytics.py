@@ -70,13 +70,50 @@ class AnalyticsTest(unittest.TestCase):
         self.assertIn("share_success", saved)
         self.assertIn("clipboard", saved)
 
+    def test_record_video_click_keeps_target_and_stance(self):
+        event = analytics.record_event({
+            "type": "video_click",
+            "userId": "u1",
+            "sessionId": "s1",
+            "query": "마이크론",
+            "clickTarget": "evidence_timestamp",
+            "stance": "긍정",
+            "label": "03:12부터 근거 확인",
+            "url": "https://www.youtube.com/watch?v=abc&t=192s",
+        })
+
+        saved = self.events_path.read_text(encoding="utf-8")
+        self.assertEqual(event["clickTarget"], "evidence_timestamp")
+        self.assertEqual(event["stance"], "긍정")
+        self.assertIn("03:12부터 근거 확인", saved)
+
+    def test_record_search_result_keeps_market_mood_fields(self):
+        event = analytics.record_event({
+            "type": "search_result",
+            "userId": "u1",
+            "sessionId": "s1",
+            "query": "삼성전자",
+            "success": True,
+            "marketMood": "관망 우세",
+            "positiveCount": 1,
+            "watchCount": 3,
+            "riskCount": 0,
+            "mentionOnlyCount": 2,
+        })
+
+        self.assertEqual(event["marketMood"], "관망 우세")
+        self.assertEqual(event["watchCount"], 3)
+        self.assertEqual(event["mentionOnlyCount"], 2)
+
     def test_dashboard_metrics_counts_core_funnel(self):
         self.write_event("page_view", "u1")
         self.write_event("session_start", "u1")
         self.write_event("search_submit", "u1", query="삼성전자")
         self.write_event("search_result", "u1", query="삼성전자", success=True, matchedVideos=2, opinionCount=1)
         self.write_event("stock_detail_view", "u1", query="삼성전자")
-        self.write_event("video_click", "u1", query="삼성전자")
+        self.write_event("video_click", "u1", query="삼성전자", clickTarget="evidence_timestamp", stance="긍정")
+        self.write_event("video_click", "u1", query="삼성전자", clickTarget="source_cta", stance="긍정")
+        self.write_event("video_click", "u1", query="삼성전자", clickTarget="channel_name", stance="긍정")
         self.write_event("session_end", "u1", durationMs=125000)
         self.write_event("page_view", "u2")
         self.write_event("search_submit", "u2", query="없는종목")
@@ -94,7 +131,14 @@ class AnalyticsTest(unittest.TestCase):
         self.assertEqual(by_key["return_rate"]["value"], "0.0%")
         self.assertEqual(by_key["search_rate"]["value"], "100.0%")
         self.assertEqual(by_key["search_failure_rate"]["value"], "50.0%")
-        self.assertEqual(by_key["video_click_rate"]["value"], "100.0%")
+        self.assertEqual(by_key["video_click_rate"]["value"], "300.0%")
+        self.assertEqual(by_key["video_click_user_rate"]["value"], "100.0%")
+        self.assertEqual(by_key["evidence_timestamp_click_rate"]["value"], "100.0%")
+        self.assertEqual(by_key["source_cta_click_rate"]["value"], "100.0%")
+        self.assertEqual(by_key["channel_name_click_rate"]["value"], "100.0%")
+        self.assertEqual(metrics["videoClickTargets"]["evidenceTimestamp"], 1)
+        self.assertEqual(metrics["videoClickTargets"]["sourceCta"], 1)
+        self.assertEqual(metrics["videoClickTargets"]["channelName"], 1)
         self.assertEqual(by_key["avg_session_time"]["value"], "2:05")
 
     def test_returning_users_matches_return_rate_definition(self):

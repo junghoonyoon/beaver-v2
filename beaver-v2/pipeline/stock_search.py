@@ -16,12 +16,14 @@ import us_listed
 KST = ZoneInfo("Asia/Seoul")
 _STOCK_CACHE_VERSION = 5
 _SEARCH_INDEX_VERSION = 3
-_POPULAR_STOCKS_CACHE_VERSION = 2
+_POPULAR_STOCKS_CACHE_VERSION = 3
 _POPULAR_STOCKS_REMOTE_PATH = "popular_stocks.json"
+_POPULAR_QUOTES_TTL_SECONDS = 300
 _REMOTE_INDEX_CHECK_INTERVAL_SECONDS = 60
 _REMOTE_INDEX_CHECKED_AT = 0
 CHOSEONG = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ"
 INITIAL_CHARS = set(CHOSEONG)
+MARKET_MOOD_BIAS_NOTICE = "강한 부정 의견은 적게 표현되는 경향이 있어 관망 의견도 함께 반영했어요."
 
 KNOWN_ALIASES = {
     "삼성전자": ["삼성전자", "삼전"],
@@ -476,9 +478,11 @@ def popular_stocks(limit=10, use_saved=True):
     cached_key = getattr(popular_stocks, "_cached_key", None)
     cached = getattr(popular_stocks, "_cached", None)
     if cached_key == cache_key and cached is not None:
+        _refresh_popular_quotes(cached)
         return cached
     saved = _read_saved_popular_stocks(limit, index_updated_at, allow_stale=True) if use_saved else None
     if saved:
+        _refresh_popular_quotes(saved)
         popular_stocks._cached_key = cache_key
         popular_stocks._cached = saved
         return saved
@@ -570,10 +574,56 @@ def popular_stocks(limit=10, use_saved=True):
         "title": "인기주식 TOP 10",
         "basis": f"최근 {config.SEARCH_LOOKBACK_DAYS}일 유튜브 언급 기준",
         "updatedAt": index_updated_at,
+        "quoteUpdatedAt": datetime.datetime.now(KST).isoformat(),
         "markets": markets,
     }
     popular_stocks._cached_key = cache_key
     popular_stocks._cached = payload
+    return payload
+
+
+def _popular_quotes_are_fresh(payload):
+    updated_at = payload.get("quoteUpdatedAt")
+    if not updated_at:
+        return False
+    try:
+        parsed = datetime.datetime.fromisoformat(updated_at)
+    except (TypeError, ValueError):
+        return False
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=KST)
+    age = datetime.datetime.now(KST) - parsed.astimezone(KST)
+    return age < datetime.timedelta(seconds=_POPULAR_QUOTES_TTL_SECONDS)
+
+
+def _refresh_popular_quotes(payload):
+    """인기 순위 캐시는 유지하되 주가 흐름만 짧은 TTL로 다시 덧씌운다."""
+    markets = payload.get("markets") or {}
+    has_missing_quote = any(
+        not row.get("changeRateText")
+        for market in markets.values()
+        for row in (market.get("rows") or [])
+    )
+    if _popular_quotes_are_fresh(payload) and not has_missing_quote:
+        return payload
+
+    refreshed = False
+    for market_key, market in markets.items():
+        rows = market.get("rows") or []
+        if market_key not in {"kr", "us"} or not rows:
+            continue
+        try:
+            quotes = market_rankings.quotes_for_rows(market_key, rows)
+        except Exception:
+            quotes = {}
+        for row in rows:
+            quote = quotes.get(str(row.get("code") or "").strip().upper())
+            if not quote:
+                continue
+            row.update(quote)
+            refreshed = True
+    if refreshed:
+        payload["quoteUpdatedAt"] = datetime.datetime.now(KST).isoformat()
     return payload
 
 
@@ -1184,6 +1234,7 @@ def analyze_match(video, query):
 def base_search_result(query, videos, stats=None):
     stats = stats or match_stats(videos, videos)
     analysis_limit = max(1, min(len(videos), config.SEARCH_MAX_ANALYZED_VIDEOS))
+    counts = {"긍정": 0, "신중": 0, "부정": 0, "단순언급": 0}
     return {
         "query": query.strip(),
         "aliases": query_aliases(query),
@@ -1195,9 +1246,61 @@ def base_search_result(query, videos, stats=None):
         "analyzedVideos": 0,
         "analysisLimit": analysis_limit,
         "opinions": [],
-        "counts": {"긍정": 0, "신중": 0, "부정": 0, "단순언급": 0},
+        "counts": counts,
+        "marketMood": market_mood(counts),
         "errors": [],
         "indexUpdatedAt": load_index().get("updatedAt"),
+    }
+
+
+def market_mood(counts):
+    positive = int(counts.get("긍정") or 0)
+    watch = int(counts.get("신중") or 0)
+    risk = int(counts.get("부정") or 0)
+    mention_only = int(counts.get("단순언급") or 0)
+    judged = positive + watch + risk
+
+    score = positive * 1.0 + watch * -0.3 + risk * -1.5
+    score_ratio = round(score / judged, 2) if judged else 0.0
+    positive_share = positive / judged if judged else 0
+    watch_share = watch / judged if judged else 0
+    risk_share = risk / judged if judged else 0
+
+    if judged < 3:
+        label = "판단 보류"
+    elif positive_share >= 0.6 and watch_share < 0.35:
+        label = "긍정적 분위기"
+    elif positive_share >= 0.45 and score_ratio > 0.15:
+        label = "조건부 긍정"
+    elif risk_share >= 0.25 or score_ratio <= -0.35:
+        label = "주의 필요"
+    elif watch_share >= 0.45:
+        label = "관망 우세"
+    else:
+        label = "의견 갈림"
+
+    summaries = {
+        "긍정적 분위기": "상승 요인을 직접 언급한 의견이 관망·주의 의견보다 많아요.",
+        "조건부 긍정": "긍정적으로 보는 의견이 있지만, 조건을 달아 접근하자는 목소리도 함께 보여요.",
+        "관망 우세": "기대 요인은 있지만, 지금은 확인할 조건이 더 있다는 의견이 많아요.",
+        "주의 필요": "리스크나 가격 부담을 짚은 의견이 반복돼 원본 맥락을 먼저 확인해 보세요.",
+        "의견 갈림": "유튜버 의견이 한쪽으로 모이지 않아 긍정·관망·주의를 함께 봐야 해요.",
+        "판단 보류": "아직 의견 표본이 적어요. 최근 2주 공개 영상 기준으로 의견이 더 모이면 분위기가 선명해집니다.",
+    }
+    show_bias_notice = (
+        judged >= 3 and (
+            watch_share >= 0.5 or
+            (risk_share < 0.25 and positive_share < 0.5) or
+            label in ("관망 우세", "주의 필요")
+        )
+    )
+    return {
+        "label": label,
+        "summary": summaries[label],
+        "biasNotice": MARKET_MOOD_BIAS_NOTICE if show_bias_notice else None,
+        "judgedCount": judged,
+        "mentionOnlyCount": mention_only,
+        "scoreRatio": score_ratio,
     }
 
 
@@ -1224,6 +1327,7 @@ def add_opinion(search_result, opinion):
     opinion["_order"] = len(search_result["opinions"])
     search_result["opinions"].append(opinion)
     search_result["counts"][opinion["stance"]] += 1
+    search_result["marketMood"] = market_mood(search_result["counts"])
 
 
 def _published_sort_value(opinion):

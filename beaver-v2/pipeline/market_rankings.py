@@ -456,7 +456,7 @@ def fetch_us_quotes(symbols):
                 url,
                 params={"assetclass": "stocks"},
                 headers=_nasdaq_headers(),
-                timeout=2.5,
+                timeout=8,
             )
             if not response.ok:
                 continue
