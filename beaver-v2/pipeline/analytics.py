@@ -236,7 +236,6 @@ def dashboard_metrics(days=7):
     detail_users = _users_for(period_events, "stock_detail_view")
     video_users = _users_for(period_events, "video_click")
     new_users = {user for user in visitors if first_seen.get(user) and start <= first_seen[user].date() <= today}
-    returning_users = visitors - new_users
 
     searches = [event for event in period_events if event.get("type") == "search_submit"]
     search_results = [event for event in period_events if event.get("type") == "search_result"]
@@ -267,6 +266,7 @@ def dashboard_metrics(days=7):
         user for user in visitors
         if len(visits_by_user[user]) >= 2 or len(sessions_by_user[user]) >= 2
     }
+    returning_users = repeat_users
 
     d7_cohort_date = today - datetime.timedelta(days=7)
     d7_retention = _retention_rate(first_seen, page_views, d7_cohort_date, 7) or 0.0
@@ -274,7 +274,7 @@ def dashboard_metrics(days=7):
     metrics = [
         _metric("dau", "DAU", f"{len(today_visitors):,}", "오늘 방문한 고유 사용자", len(today_visitors)),
         _metric("new_users", "신규 사용자", f"{len(new_users):,}", f"최근 {days}일 첫 방문", len(new_users)),
-        _metric("returning_users", "재방문 사용자", f"{len(returning_users):,}", f"최근 {days}일 기존 사용자", len(returning_users)),
+        _metric("returning_users", "재방문 사용자", f"{len(returning_users):,}", f"최근 {days}일 2회 이상 방문", len(returning_users)),
         _metric("search_rate", "검색 실행률", f"{_pct(len(searchers), len(visitors)):.1f}%", "방문 → 검색 전환", _pct(len(searchers), len(visitors)), "percent"),
         _metric("total_searches", "총 검색 수", f"{len(searches):,}", f"최근 {days}일 검색 요청 합계", len(searches)),
         _metric("avg_search_stocks", "사용자당 평균 검색 종목 수", f"{avg_search_stocks:.1f}", "검색 사용자 기준 distinct 종목", avg_search_stocks),

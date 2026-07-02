@@ -89,10 +89,23 @@ class AnalyticsTest(unittest.TestCase):
         self.assertEqual(by_key["dau"]["raw"], 2)
         self.assertEqual(by_key["total_searches"]["raw"], 2)
         self.assertEqual(by_key["stock_detail_views"]["raw"], 1)
+        self.assertEqual(by_key["returning_users"]["raw"], 0)
+        self.assertEqual(by_key["return_rate"]["value"], "0.0%")
         self.assertEqual(by_key["search_rate"]["value"], "100.0%")
         self.assertEqual(by_key["search_failure_rate"]["value"], "50.0%")
         self.assertEqual(by_key["video_click_rate"]["value"], "100.0%")
         self.assertEqual(by_key["avg_session_time"]["value"], "2:05")
+
+    def test_returning_users_matches_return_rate_definition(self):
+        self.write_event("page_view", "u1", day_offset=-1, sessionId="s-u1-a")
+        self.write_event("page_view", "u1", sessionId="s-u1-b")
+        self.write_event("page_view", "u2")
+
+        metrics = analytics.dashboard_metrics(days=7)
+        by_key = {row["key"]: row for row in metrics["metrics"]}
+
+        self.assertEqual(by_key["returning_users"]["raw"], 1)
+        self.assertEqual(by_key["return_rate"]["value"], "50.0%")
 
 
 if __name__ == "__main__":
