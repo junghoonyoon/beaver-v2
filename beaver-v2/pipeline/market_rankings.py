@@ -456,13 +456,14 @@ def fetch_us_quotes(symbols):
 def quotes_for_rows(market, rows):
     if market == "kr":
         codes = [row.get("code") for row in rows]
-        try:
-            quotes = fetch_kr_quotes(codes)
-        except Exception:
-            quotes = {}
+        quotes = fetch_kr_quotes_naver(codes)
         missing = [code for code in codes if str(code or "").strip() not in quotes]
-        if missing:
-            quotes.update(fetch_kr_quotes_naver(missing))
+        if not missing:
+            return quotes
+        try:
+            quotes.update(fetch_kr_quotes(missing))
+        except Exception:
+            pass
         return quotes
     if market == "us":
         return fetch_us_quotes([row.get("code") for row in rows])

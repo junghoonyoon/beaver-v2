@@ -83,6 +83,17 @@ class MarketRankingsTest(unittest.TestCase):
         self.assertIn("kr fail", refreshed["markets"]["kr"]["error"])
         self.assertEqual(refreshed["markets"]["us"]["rows"][0]["name"], "캐시미국")
 
+    def test_quotes_for_kr_prefers_naver_current_quote(self):
+        naver_quote = {"005930": {"changeRateText": "-9.06%", "quoteSource": "NAVER"}}
+        krx_quote = {"005930": {"changeRateText": "-5.84%", "quoteSource": "KRX"}}
+        with mock.patch.object(market_rankings, "fetch_kr_quotes_naver", return_value=naver_quote), \
+             mock.patch.object(market_rankings, "fetch_kr_quotes", return_value=krx_quote) as krx:
+            quotes = market_rankings.quotes_for_rows("kr", [{"code": "005930"}])
+
+        self.assertEqual(quotes["005930"]["changeRateText"], "-9.06%")
+        self.assertEqual(quotes["005930"]["quoteSource"], "NAVER")
+        krx.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()
