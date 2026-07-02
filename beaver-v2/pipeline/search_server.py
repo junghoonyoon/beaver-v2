@@ -443,7 +443,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_OPTIONS(self):
         parsed = urlparse(self.path)
-        if parsed.path in ("/api/analytics/event", "/api/dashboard/metrics"):
+        if parsed.path in ("/api/analytics/event", "/api/dashboard/metrics", "/api/dashboard/recent"):
             self.send_response(204)
             self.send_header("Access-Control-Allow-Origin", "*")
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
@@ -473,6 +473,13 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 days = parse_qs(parsed.query).get("days", ["7"])[0]
                 self._json(analytics.dashboard_metrics(days=days), cors=True)
+            except Exception as exc:
+                self._json({"error": str(exc)}, 500, cors=True)
+            return
+        if parsed.path == "/api/dashboard/recent":
+            try:
+                hours = parse_qs(parsed.query).get("hours", ["2"])[0]
+                self._json(analytics.recent_metrics(hours=hours), cors=True)
             except Exception as exc:
                 self._json({"error": str(exc)}, 500, cors=True)
             return
