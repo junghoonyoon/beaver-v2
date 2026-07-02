@@ -273,17 +273,17 @@ def dashboard_metrics(days=7):
     d7_retention = _retention_rate(first_seen, page_views, d7_cohort_date, 7) or 0.0
 
     metrics = [
-        _metric("dau", "DAU", f"{len(today_visitors):,}", "오늘 방문한 고유 사용자", len(today_visitors)),
-        _metric("new_users", "신규 사용자", f"{len(new_users):,}", f"최근 {days}일 첫 방문", len(new_users)),
-        _metric("returning_users", "재방문 사용자", f"{len(returning_users):,}", f"최근 {days}일 2회 이상 방문", len(returning_users)),
+        _metric("dau", "오늘 방문자", f"{len(today_visitors):,}", "오늘 1회 이상 방문", len(today_visitors)),
+        _metric("new_users", "첫 방문자", f"{len(new_users):,}", f"최근 {days}일 첫 방문", len(new_users)),
+        _metric("returning_users", "재방문자", f"{len(returning_users):,}", f"최근 {days}일 2회 이상 방문", len(returning_users)),
         _metric("search_rate", "검색 실행률", f"{_pct(len(searchers), len(visitors)):.1f}%", "방문 → 검색 전환", _pct(len(searchers), len(visitors)), "percent"),
-        _metric("total_searches", "총 검색 수", f"{len(searches):,}", f"최근 {days}일 검색 요청 합계", len(searches)),
-        _metric("avg_search_stocks", "사용자당 평균 검색 종목 수", f"{avg_search_stocks:.1f}", "검색 사용자 기준 distinct 종목", avg_search_stocks),
+        _metric("total_searches", "검색 수", f"{len(searches):,}", f"최근 {days}일 검색 요청 합계", len(searches)),
+        _metric("avg_search_stocks", "평균 검색 종목", f"{avg_search_stocks:.1f}", "검색한 사람이 찾은 종목 수", avg_search_stocks),
         _metric("search_failure_rate", "검색 실패율", f"{_pct(len(failed_searches), len(search_results)):.1f}%", "결과 없음·분석 실패 포함", _pct(len(failed_searches), len(search_results)), "percent"),
-        _metric("stock_detail_views", "종목 상세 조회수", f"{len(details):,}", "검색 결과 상세 콘텐츠 조회", len(details)),
+        _metric("stock_detail_views", "결과 확인 수", f"{len(details):,}", "검색 결과를 확인한 횟수", len(details)),
         _metric("video_click_rate", "영상 클릭률", f"{_pct(len(video_clicks), len(details)):.1f}%", "상세 조회 → 원본 영상 클릭", _pct(len(video_clicks), len(details)), "percent"),
         _metric("avg_session_time", "평균 세션 시간", _duration_text(average_duration), "방문 시작부터 이탈까지 평균", average_duration, "duration"),
-        _metric("d7_retention", "D7 Retention", f"{d7_retention:.1f}%", "첫 방문 7일 후 재방문", d7_retention, "percent"),
+        _metric("d7_retention", "7일 뒤 재방문율", f"{d7_retention:.1f}%", "첫 방문 7일 후 재방문", d7_retention, "percent"),
         _metric("return_rate", "재방문율", f"{_pct(len(repeat_users), len(visitors)):.1f}%", f"최근 {days}일 2회 이상 방문", _pct(len(repeat_users), len(visitors)), "percent"),
     ]
 

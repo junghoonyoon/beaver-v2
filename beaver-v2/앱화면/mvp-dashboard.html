@@ -51,12 +51,14 @@
     h1 { margin:0; font-size:clamp(28px,4vw,44px); line-height:1.16; letter-spacing:0 }
     .lead { margin:10px 0 0; color:var(--body); font-size:15px; line-height:1.65 }
     .summary-note {
-      width:min(360px,100%); padding:16px; border:1px solid #dfe6f2; border-radius:8px;
+      width:min(380px,100%); padding:18px; border:1px solid #dfe6f2; border-radius:8px;
       background:#fff; box-shadow:var(--shadow);
     }
-    .note-label { color:var(--muted); font-size:12px; font-weight:800 }
-    .note-value { margin-top:7px; color:#30343b; font-size:18px; font-weight:850; line-height:1.35 }
-    .note-meta { margin-top:7px; color:var(--body); font-size:13px; line-height:1.5 }
+    .note-label { color:var(--blue); font-size:12px; font-weight:850 }
+    .note-value { margin-top:8px; color:#30343b; font-size:20px; font-weight:850; line-height:1.35 }
+    .note-meta { margin-top:9px; color:var(--body); font-size:13px; line-height:1.55 }
+    .note-meta span { display:block }
+    .note-meta .note-warn { margin-top:4px; color:#7a5c12 }
     .grid { display:grid; gap:14px }
     .metrics { grid-template-columns:repeat(4,minmax(0,1fr)) }
     .metric {
@@ -170,28 +172,28 @@
     <section class="hero">
       <div>
         <h1>오늘 서비스 상태 보기</h1>
-        <p class="lead">방문자가 종목을 검색하고, 상세 의견과 원본 영상까지 확인한 뒤 다시 돌아오는 흐름을 12개 지표로 압축합니다.</p>
+        <p class="lead">방문자가 들어와서 종목을 검색하고, 결과와 원본 영상까지 확인하는 흐름을 쉽게 보여드립니다.</p>
       </div>
       <aside class="summary-note">
-        <div class="note-label" id="noteLabel">데이터 상태</div>
-        <div class="note-value" id="noteValue">운영 서버의 이벤트 집계를 불러오고 있습니다.</div>
+        <div class="note-label" id="noteLabel">데이터 수집 상태</div>
+        <div class="note-value" id="noteValue">운영 데이터를 불러오고 있습니다.</div>
         <div class="note-meta" id="noteMeta">배포 이후 수집된 데이터부터 반영됩니다.</div>
       </aside>
     </section>
 
     <section class="grid metrics" aria-label="핵심 지표">
       <article class="metric" data-kpi="dau">
-        <div class="metric-head"><div class="metric-title">DAU</div><div class="metric-tag tag-user">사용자</div></div>
+        <div class="metric-head"><div class="metric-title">오늘 방문자</div><div class="metric-tag tag-user">사용자</div></div>
         <div class="metric-value" data-value>-</div>
         <div class="metric-sub" data-sub>운영 데이터 불러오는 중</div>
       </article>
       <article class="metric" data-kpi="new_users">
-        <div class="metric-head"><div class="metric-title">신규 사용자</div><div class="metric-tag tag-user">사용자</div></div>
+        <div class="metric-head"><div class="metric-title">첫 방문자</div><div class="metric-tag tag-user">사용자</div></div>
         <div class="metric-value" data-value>-</div>
         <div class="metric-sub" data-sub>운영 데이터 불러오는 중</div>
       </article>
       <article class="metric" data-kpi="returning_users">
-        <div class="metric-head"><div class="metric-title">재방문 사용자</div><div class="metric-tag tag-user">사용자</div></div>
+        <div class="metric-head"><div class="metric-title">재방문자</div><div class="metric-tag tag-user">사용자</div></div>
         <div class="metric-value" data-value>-</div>
         <div class="metric-sub" data-sub>운영 데이터 불러오는 중</div>
       </article>
@@ -201,12 +203,12 @@
         <div class="metric-sub" data-sub>운영 데이터 불러오는 중</div>
       </article>
       <article class="metric" data-kpi="total_searches">
-        <div class="metric-head"><div class="metric-title">총 검색 수</div><div class="metric-tag tag-search">검색</div></div>
+        <div class="metric-head"><div class="metric-title">검색 수</div><div class="metric-tag tag-search">검색</div></div>
         <div class="metric-value" data-value>-</div>
         <div class="metric-sub" data-sub>운영 데이터 불러오는 중</div>
       </article>
       <article class="metric" data-kpi="avg_search_stocks">
-        <div class="metric-head"><div class="metric-title">사용자당 평균 검색 종목 수</div><div class="metric-tag tag-search">검색</div></div>
+        <div class="metric-head"><div class="metric-title">평균 검색 종목</div><div class="metric-tag tag-search">검색</div></div>
         <div class="metric-value" data-value>-</div>
         <div class="metric-sub" data-sub>운영 데이터 불러오는 중</div>
       </article>
@@ -216,7 +218,7 @@
         <div class="metric-sub" data-sub>운영 데이터 불러오는 중</div>
       </article>
       <article class="metric" data-kpi="stock_detail_views">
-        <div class="metric-head"><div class="metric-title">종목 상세 조회수</div><div class="metric-tag tag-content">콘텐츠</div></div>
+        <div class="metric-head"><div class="metric-title">결과 확인 수</div><div class="metric-tag tag-content">콘텐츠</div></div>
         <div class="metric-value" data-value>-</div>
         <div class="metric-sub" data-sub>운영 데이터 불러오는 중</div>
       </article>
@@ -231,7 +233,7 @@
         <div class="metric-sub" data-sub>운영 데이터 불러오는 중</div>
       </article>
       <article class="metric" data-kpi="d7_retention">
-        <div class="metric-head"><div class="metric-title">D7 Retention</div><div class="metric-tag tag-retention">리텐션</div></div>
+        <div class="metric-head"><div class="metric-title">7일 뒤 재방문율</div><div class="metric-tag tag-retention">리텐션</div></div>
         <div class="metric-value" data-value>-</div>
         <div class="metric-sub" data-sub>운영 데이터 불러오는 중</div>
       </article>
@@ -244,7 +246,7 @@
 
     <section class="section">
       <div class="section-head">
-        <h2>핵심 흐름</h2>
+        <h2>방문자가 어디까지 갔나요?</h2>
         <div class="section-sub">방문 → 검색 → 상세 조회 → 영상 클릭</div>
       </div>
       <div class="grid panels">
@@ -284,12 +286,12 @@
 
     <section class="section">
       <div class="section-head">
-        <h2>리텐션</h2>
-        <div class="section-sub">코호트별 재방문 품질</div>
+        <h2>다시 찾아오나요?</h2>
+        <div class="section-sub">재방문 품질</div>
       </div>
       <div class="grid split">
         <article class="panel">
-          <p class="mini-title">D7 Retention 코호트</p>
+          <p class="mini-title">방문일별 재방문율</p>
           <div class="cohort" id="cohort" aria-label="D7 리텐션 코호트">
             <div class="head">가입일</div><div class="head">D1</div><div class="head">D3</div><div class="head">D7</div><div class="head">D14</div>
             <div>-</div><div>-</div><div>-</div><div>-</div><div>-</div>
@@ -310,8 +312,8 @@
 
     <section class="section">
       <div class="section-head">
-        <h2>지표 정의</h2>
-        <div class="section-sub">운영 이벤트 기준</div>
+        <h2>지표 설명</h2>
+        <div class="section-sub">사용 기록 기준</div>
       </div>
       <div class="table-wrap">
         <table>
@@ -325,17 +327,17 @@
             </tr>
           </thead>
           <tbody>
-            <tr><td class="metric-name">DAU</td><td>하루 동안 1회 이상 방문한 고유 사용자</td><td class="formula">count(distinct user_id)</td><td>page_view</td><td><span class="status need">배포 후 수집</span></td></tr>
-            <tr><td class="metric-name">신규 사용자</td><td>서비스를 처음 방문한 사용자</td><td class="formula">first_seen_at = 측정일</td><td>page_view</td><td><span class="status need">배포 후 수집</span></td></tr>
-            <tr><td class="metric-name">재방문 사용자</td><td>이전 방문 이력이 있는 활성 사용자</td><td class="formula">DAU - 신규 사용자</td><td>page_view</td><td><span class="status need">배포 후 수집</span></td></tr>
+            <tr><td class="metric-name">오늘 방문자</td><td>오늘 1회 이상 방문한 고유 사용자</td><td class="formula">count(distinct user_id)</td><td>page_view</td><td><span class="status need">배포 후 수집</span></td></tr>
+            <tr><td class="metric-name">첫 방문자</td><td>서비스를 처음 방문한 사용자</td><td class="formula">first_seen_at = 측정일</td><td>page_view</td><td><span class="status need">배포 후 수집</span></td></tr>
+            <tr><td class="metric-name">재방문자</td><td>이전 방문 이력이 있는 활성 사용자</td><td class="formula">방문자 - 첫 방문자</td><td>page_view</td><td><span class="status need">배포 후 수집</span></td></tr>
             <tr><td class="metric-name">검색 실행률</td><td>방문자 중 검색을 1회 이상 실행한 비율</td><td class="formula">검색 사용자 / 방문자</td><td>page_view, search_submit</td><td><span class="status ready">수집 연결</span></td></tr>
-            <tr><td class="metric-name">총 검색 수</td><td>기간 내 검색 실행 횟수</td><td class="formula">count(search_submit)</td><td>search_submit</td><td><span class="status ready">수집 연결</span></td></tr>
-            <tr><td class="metric-name">사용자당 평균 검색 종목 수</td><td>검색 사용자가 몇 개 종목을 탐색했는지</td><td class="formula">distinct stock_code / 검색 사용자</td><td>search_submit</td><td><span class="status ready">수집 연결</span></td></tr>
+            <tr><td class="metric-name">검색 수</td><td>기간 내 검색 실행 횟수</td><td class="formula">count(search_submit)</td><td>search_submit</td><td><span class="status ready">수집 연결</span></td></tr>
+            <tr><td class="metric-name">평균 검색 종목</td><td>검색한 사람이 평균 몇 개 종목을 탐색했는지</td><td class="formula">distinct stock_code / 검색 사용자</td><td>search_submit</td><td><span class="status ready">수집 연결</span></td></tr>
             <tr><td class="metric-name">검색 실패율</td><td>결과 없음 또는 분석 실패 검색의 비율</td><td class="formula">failed_search / total_search</td><td>search_result</td><td><span class="status ready">수집 연결</span></td></tr>
-            <tr><td class="metric-name">종목 상세 조회수</td><td>검색 결과 상세 콘텐츠를 본 횟수</td><td class="formula">count(stock_detail_view)</td><td>stock_detail_view</td><td><span class="status ready">수집 연결</span></td></tr>
+            <tr><td class="metric-name">결과 확인 수</td><td>검색 결과 상세 콘텐츠를 본 횟수</td><td class="formula">count(stock_detail_view)</td><td>stock_detail_view</td><td><span class="status ready">수집 연결</span></td></tr>
             <tr><td class="metric-name">영상 클릭률</td><td>상세 조회 후 원본 영상 링크를 누른 비율</td><td class="formula">video_click / stock_detail_view</td><td>stock_detail_view, video_click</td><td><span class="status ready">수집 연결</span></td></tr>
             <tr><td class="metric-name">평균 세션 시간</td><td>사용자가 한 세션에 머문 평균 시간</td><td class="formula">avg(session_end - session_start)</td><td>session_start, session_end</td><td><span class="status ready">수집 연결</span></td></tr>
-            <tr><td class="metric-name">D7 Retention</td><td>첫 방문 7일 뒤 다시 방문한 사용자 비율</td><td class="formula">D7 재방문자 / 신규 사용자 코호트</td><td>page_view</td><td><span class="status ready">수집 연결</span></td></tr>
+            <tr><td class="metric-name">7일 뒤 재방문율</td><td>첫 방문 7일 뒤 다시 방문한 사용자 비율</td><td class="formula">D7 재방문자 / 신규 사용자 코호트</td><td>page_view</td><td><span class="status ready">수집 연결</span></td></tr>
             <tr><td class="metric-name">재방문율</td><td>기간 내 2회 이상 방문한 사용자 비율</td><td class="formula">returning_visitors / total_visitors</td><td>page_view</td><td><span class="status ready">수집 연결</span></td></tr>
           </tbody>
         </table>
@@ -347,6 +349,7 @@
     const qs = new URLSearchParams(location.search);
     const apiBase = qs.get("source") || (location.hostname === "127.0.0.1" ? "https://beaver-v2.onrender.com" : "");
     const apiUrl = `${apiBase}/api/dashboard/metrics?days=7`;
+    let displayDays = 7;
     const percent = value => `${Number(value || 0).toFixed(1)}%`;
     const dateLabel = value => {
       const date = new Date(`${value}T00:00:00+09:00`);
@@ -357,7 +360,21 @@
       const date = new Date(value);
       if (Number.isNaN(date.getTime())) return "-";
       const pad = number => String(number).padStart(2, "0");
-      return `${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate()} ${pad(date.getHours())}:${pad(date.getMinutes())} KST`;
+      return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일 ${pad(date.getHours())}:${pad(date.getMinutes())} KST`;
+    };
+    const compactDateLabel = value => {
+      const date = new Date(`${value}T00:00:00+09:00`);
+      if (Number.isNaN(date.getTime())) return value || "-";
+      return `${date.getMonth() + 1}월 ${date.getDate()}일`;
+    };
+    const collectionDayLabel = value => {
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "데이터 수집 중";
+      const now = new Date();
+      const start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const diffDays = Math.max(0, Math.floor((today - start) / 86400000));
+      return `데이터 수집 ${diffDays + 1}일차`;
     };
     const cellClass = value => {
       if (value === null || value === undefined) return "";
@@ -369,8 +386,17 @@
     function setMetric(metric) {
       const card = document.querySelector(`[data-kpi="${metric.key}"]`);
       if (!card) return;
+      const subCopy = {
+        dau:"오늘 1회 이상 방문",
+        new_users:`최근 ${displayDays}일 첫 방문`,
+        returning_users:`최근 ${displayDays}일 2회 이상 방문`,
+        total_searches:`최근 ${displayDays}일 검색 요청 합계`,
+        avg_search_stocks:"검색한 사람이 찾은 종목 수",
+        stock_detail_views:"검색 결과를 확인한 횟수",
+        d7_retention:"첫 방문 7일 후 재방문",
+      };
       card.querySelector("[data-value]").textContent = metric.value;
-      card.querySelector("[data-sub]").textContent = metric.sub;
+      card.querySelector("[data-sub]").textContent = subCopy[metric.key] || metric.sub;
     }
     function setFunnel(funnel) {
       const values = {
@@ -411,15 +437,16 @@
         const response = await fetch(apiUrl, { cache:"no-store" });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || "운영 지표를 불러오지 못했어요.");
-        $("periodLabel").textContent = `${data.sourceLabel || "운영 데이터"} · 최근 ${data.period.days}일`;
-        $("noteLabel").textContent = data.hasData ? "데이터 상태" : "데이터 수집 대기";
-        $("noteValue").textContent = data.hasData
-          ? `운영 이벤트 ${Number(data.eventCount || 0).toLocaleString()}건을 집계했습니다.`
-          : "아직 수집된 운영 이벤트가 없습니다.";
+        displayDays = data.period?.days || 7;
+        $("periodLabel").textContent = `${data.sourceLabel || "운영 데이터"} · 최근 ${data.period.days}일 보기`;
         const firstEventAt = dateTimeLabel(data.collection?.firstEventAt);
-        $("noteMeta").textContent = data.hasData
-          ? `수집 시작: ${firstEventAt} · 표시 기간: ${data.period.start} ~ ${data.period.end}`
-          : "운영버전에 새 코드가 배포된 뒤 방문/검색 이벤트부터 쌓입니다.";
+        $("noteLabel").textContent = data.hasData ? collectionDayLabel(data.collection?.firstEventAt) : "데이터 수집 대기";
+        $("noteValue").textContent = data.hasData
+          ? `사용 기록 ${Number(data.eventCount || 0).toLocaleString()}건이 쌓였어요.`
+          : "아직 수집된 사용 기록이 없습니다.";
+        $("noteMeta").innerHTML = data.hasData
+          ? `<span>실제 수집 시작: ${firstEventAt}</span><span class="note-warn">최근 ${data.period.days}일 보기지만, 수집 시작 전 날짜는 비어 있을 수 있어요.</span><span>화면 기간: ${compactDateLabel(data.period.start)} ~ ${compactDateLabel(data.period.end)}</span>`
+          : "운영버전에 새 코드가 배포된 뒤 방문/검색 기록부터 쌓입니다.";
         (data.metrics || []).forEach(setMetric);
         setFunnel(data.funnel || {});
         setTrend(data.trend || []);
