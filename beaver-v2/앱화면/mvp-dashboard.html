@@ -332,6 +332,30 @@
 
     <section class="section">
       <div class="section-head">
+        <h2>어떤 종목을 찾았나요?</h2>
+        <div class="section-sub">검색어 기준</div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>검색어/종목</th>
+              <th>검색 수</th>
+              <th>검색 사용자</th>
+              <th>성공률</th>
+              <th>실패</th>
+              <th>최근 검색</th>
+            </tr>
+          </thead>
+          <tbody id="searchTermsBody">
+            <tr><td colspan="6">검색 기록을 불러오는 중입니다.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
         <h2>지표 설명</h2>
         <div class="section-sub">사용 기록 기준</div>
       </div>
@@ -391,6 +415,19 @@
       if (Number.isNaN(date.getTime())) return value || "-";
       return `${date.getMonth() + 1}월 ${date.getDate()}일`;
     };
+    const shortDateTimeLabel = value => {
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "-";
+      const pad = number => String(number).padStart(2, "0");
+      return `${date.getMonth() + 1}/${date.getDate()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    };
+    const escapeHTML = value => String(value ?? "").replace(/[&<>"']/g, char => ({
+      "&":"&amp;",
+      "<":"&lt;",
+      ">":"&gt;",
+      '"':"&quot;",
+      "'":"&#39;",
+    }[char]));
     const collectionDayLabel = value => {
       const date = new Date(value);
       if (Number.isNaN(date.getTime())) return "데이터 수집 중";
@@ -460,6 +497,23 @@
       }).join("");
       cohort.innerHTML = head + body;
     }
+    function setSearchTerms(rows) {
+      const body = $("searchTermsBody");
+      if (!rows || rows.length === 0) {
+        body.innerHTML = `<tr><td colspan="6">아직 검색 기록이 없습니다.</td></tr>`;
+        return;
+      }
+      body.innerHTML = rows.map(row => `
+        <tr>
+          <td class="metric-name">${escapeHTML(row.query)}</td>
+          <td>${Number(row.count || 0).toLocaleString()}</td>
+          <td>${Number(row.users || 0).toLocaleString()}</td>
+          <td>${row.successRate === null || row.successRate === undefined ? "-" : percent(row.successRate)}</td>
+          <td>${Number(row.failedCount || 0).toLocaleString()}</td>
+          <td>${shortDateTimeLabel(row.lastSearchedAt)}</td>
+        </tr>
+      `).join("");
+    }
     async function loadMetrics() {
       try {
         const response = await fetch(apiUrl, { cache:"no-store" });
@@ -479,10 +533,12 @@
         setFunnel(data.funnel || {});
         setTrend(data.trend || []);
         setCohorts(data.cohorts || []);
+        setSearchTerms(data.searchTerms || []);
       } catch (error) {
         $("periodLabel").textContent = "운영 데이터 연결 실패";
         $("noteLabel").textContent = "연결 실패";
         $("noteValue").textContent = "운영 지표 API에 연결하지 못했습니다.";
+        $("searchTermsBody").innerHTML = `<tr><td colspan="6">검색 기록을 불러오지 못했습니다.</td></tr>`;
         $("noteMeta").textContent = apiBase.includes("beaver-v2.onrender.com")
           ? "운영 서버에 새 지표 API가 아직 배포되지 않았습니다. 배포 후 자동으로 실제 데이터가 표시됩니다."
           : error.message;

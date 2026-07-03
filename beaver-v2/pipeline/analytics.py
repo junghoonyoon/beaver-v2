@@ -43,6 +43,96 @@ def _sync_remote_if_needed():
     remote_cache.download_to_file(REMOTE_PATH, path)
 
 
+def _event_line(event):
+    return json.dumps(event, ensure_ascii=False, separators=(",", ":"))
+
+
+def _event_key(line):
+    try:
+        event = json.loads(line)
+    except ValueError:
+        return ("raw", line)
+    return (
+        event.get("timestamp"),
+        event.get("type"),
+        event.get("userId"),
+        event.get("sessionId"),
+        event.get("path"),
+        event.get("query"),
+        event.get("stockCode"),
+        event.get("label"),
+        event.get("url"),
+        event.get("clickTarget"),
+    )
+
+
+def _jsonl_lines(body):
+    if not body:
+        return []
+    if isinstance(body, bytes):
+        body = body.decode("utf-8", errors="ignore")
+    return [line for line in str(body).splitlines() if line.strip()]
+
+
+def _local_event_lines(path):
+    if not path.exists():
+        return []
+    return _jsonl_lines(path.read_text(encoding="utf-8"))
+
+
+def _merge_event_lines(*groups):
+    merged = []
+    seen = set()
+    for lines in groups:
+        for line in lines:
+            key = _event_key(line)
+            if key in seen:
+                continue
+            seen.add(key)
+            merged.append(line)
+    return merged
+
+
+def _write_event_lines(path, lines):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    body = "\n".join(lines)
+    if body:
+        body += "\n"
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(body, encoding="utf-8")
+    tmp.replace(path)
+
+
+def _backup_remote_events(remote_body):
+    if not remote_body:
+        return
+    stamp = _now().strftime("%Y%m%d-%H%M%S")
+    remote_cache.upload_bytes(
+        f"analytics/backups/events-{stamp}.jsonl",
+        remote_body,
+        "application/x-ndjson; charset=utf-8",
+    )
+
+
+def _append_event_safely(path, event):
+    local_lines = _local_event_lines(path)
+    remote_body = remote_cache.download_bytes(REMOTE_PATH)
+    remote_lines = _jsonl_lines(remote_body)
+    if remote_lines and len(local_lines) < len(remote_lines):
+        _backup_remote_events(remote_body)
+        print(
+            "  ⚠️ analytics 원격 이벤트가 로컬보다 큽니다. "
+            f"remote={len(remote_lines)} local={len(local_lines)} 병합 후 업로드합니다."
+        )
+    merged = _merge_event_lines(remote_lines, local_lines, [_event_line(event)])
+    _write_event_lines(path, merged)
+    remote_cache.upload_bytes(
+        REMOTE_PATH,
+        path.read_bytes(),
+        "application/x-ndjson; charset=utf-8",
+    )
+
+
 def _short(value, limit=_MAX_FIELD_LENGTH):
     if value is None:
         return ""
@@ -136,11 +226,7 @@ def record_event(payload):
         event["userId"] = event["sessionId"] or "anonymous"
     path = _event_path()
     with _LOCK:
-        _sync_remote_if_needed()
-        path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open("a", encoding="utf-8") as file:
-            file.write(json.dumps(event, ensure_ascii=False, separators=(",", ":")) + "\n")
-        remote_cache.upload_file(REMOTE_PATH, path)
+        _append_event_safely(path, event)
     return event
 
 
@@ -224,6 +310,45 @@ def _retention_cohorts(first_seen, page_views, today):
             row[f"d{day}"] = _retention_rate(first_seen, page_views, start, day)
         rows.append(row)
     return rows
+
+
+def _search_terms(searches, search_results):
+    rows = defaultdict(lambda: {
+        "query": "",
+        "count": 0,
+        "users": set(),
+        "resultCount": 0,
+        "failedCount": 0,
+        "lastSearchedAt": None,
+    })
+    for event in searches:
+        query = (event.get("query") or event.get("stockCode") or "").strip() or "(빈 검색어)"
+        row = rows[query]
+        row["query"] = query
+        row["count"] += 1
+        if event.get("userId"):
+            row["users"].add(event.get("userId"))
+        if row["lastSearchedAt"] is None or event["_time"] > row["lastSearchedAt"]:
+            row["lastSearchedAt"] = event["_time"]
+    for event in search_results:
+        query = (event.get("query") or event.get("stockCode") or "").strip() or "(빈 검색어)"
+        row = rows[query]
+        row["query"] = query
+        row["resultCount"] += 1
+        if not event.get("success"):
+            row["failedCount"] += 1
+    return [
+        {
+            "query": row["query"],
+            "count": row["count"],
+            "users": len(row["users"]),
+            "failedCount": row["failedCount"],
+            "successRate": _pct(row["resultCount"] - row["failedCount"], row["resultCount"]) if row["resultCount"] else None,
+            "lastSearchedAt": row["lastSearchedAt"].isoformat() if row["lastSearchedAt"] else None,
+        }
+        for row in sorted(rows.values(), key=lambda item: (-item["count"], item["query"]))[:20]
+        if row["count"] > 0
+    ]
 
 
 def dashboard_metrics(days=7):
@@ -334,6 +459,7 @@ def dashboard_metrics(days=7):
             "sourceCta": len(video_clicks_by_target["source_cta"]),
             "unknown": len(video_clicks_by_target["unknown"]),
         },
+        "searchTerms": _search_terms(searches, search_results),
         "trend": _daily_search_rates(period_events, day_keys),
         "cohorts": _retention_cohorts(first_seen, page_views, today),
     }

@@ -1,4 +1,5 @@
 import datetime
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -18,6 +19,8 @@ class AnalyticsTest(unittest.TestCase):
             mock.patch.object(config, "ANALYTICS_EVENTS_JSONL", self.events_path),
             mock.patch("remote_cache.download_to_file", return_value=False),
             mock.patch("remote_cache.upload_file", return_value=True),
+            mock.patch("remote_cache.download_bytes", return_value=None),
+            mock.patch("remote_cache.upload_bytes", return_value=True),
         ]
         for patch in self.patches:
             patch.start()
@@ -69,6 +72,42 @@ class AnalyticsTest(unittest.TestCase):
         self.assertEqual(event["method"], "clipboard")
         self.assertIn("share_success", saved)
         self.assertIn("clipboard", saved)
+
+    def test_record_event_merges_larger_remote_file_before_upload(self):
+        remote_rows = [
+            {
+                "type": "page_view",
+                "timestamp": "2026-07-01T16:32:58+09:00",
+                "userId": "remote-user-1",
+                "sessionId": "s-remote-1",
+                "path": "/",
+            },
+            {
+                "type": "search_submit",
+                "timestamp": "2026-07-01T16:33:10+09:00",
+                "userId": "remote-user-2",
+                "sessionId": "s-remote-2",
+                "path": "/",
+                "query": "삼성전자",
+            },
+        ]
+        remote_body = "\n".join(json.dumps(row, ensure_ascii=False) for row in remote_rows).encode("utf-8") + b"\n"
+
+        with mock.patch("remote_cache.download_bytes", return_value=remote_body), \
+                mock.patch("remote_cache.upload_bytes", return_value=True) as upload:
+            analytics.record_event({
+                "type": "page_view",
+                "userId": "new-user",
+                "sessionId": "s-new",
+            })
+
+        saved = self.events_path.read_text(encoding="utf-8")
+        self.assertIn("remote-user-1", saved)
+        self.assertIn("remote-user-2", saved)
+        self.assertIn("new-user", saved)
+        self.assertEqual(len(saved.splitlines()), 3)
+        self.assertGreaterEqual(upload.call_count, 2)
+        self.assertEqual(upload.call_args_list[-1].args[0], analytics.REMOTE_PATH)
 
     def test_record_video_click_keeps_target_and_stance(self):
         event = analytics.record_event({
@@ -139,6 +178,13 @@ class AnalyticsTest(unittest.TestCase):
         self.assertEqual(metrics["videoClickTargets"]["evidenceTimestamp"], 1)
         self.assertEqual(metrics["videoClickTargets"]["sourceCta"], 1)
         self.assertEqual(metrics["videoClickTargets"]["channelName"], 1)
+        self.assertEqual(metrics["searchTerms"][0]["query"], "삼성전자")
+        self.assertEqual(metrics["searchTerms"][0]["count"], 1)
+        self.assertEqual(metrics["searchTerms"][0]["users"], 1)
+        self.assertEqual(metrics["searchTerms"][0]["successRate"], 100.0)
+        self.assertEqual(metrics["searchTerms"][1]["query"], "없는종목")
+        self.assertEqual(metrics["searchTerms"][1]["failedCount"], 1)
+        self.assertEqual(metrics["searchTerms"][1]["successRate"], 0.0)
         self.assertEqual(by_key["avg_session_time"]["value"], "2:05")
 
     def test_returning_users_matches_return_rate_definition(self):
