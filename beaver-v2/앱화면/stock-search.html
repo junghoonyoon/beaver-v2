@@ -162,6 +162,12 @@
     .rank-opinion strong { color:#30343b; font-weight:800 }
     .rank-item:nth-child(-n+3) .rank-no { color:var(--blue); font-weight:850 }
     .rank-item:nth-child(-n+3) .rank-name { color:var(--ink); font-weight:750 }
+    .rank-more {
+      display:none; width:100%; min-height:38px; margin-top:10px; border:1px solid #dfe6f2;
+      border-radius:999px; background:#fff; color:#4e5968; font-size:13px; font-weight:750; cursor:pointer;
+    }
+    .rank-more.show { display:block }
+    .rank-more:hover { border-color:#c9d7eb; color:#30343b; background:#f8fafc }
     .rank-market { display:none }
     .market-panel.hide { display:none }
     .status { display:none; margin-top:10px; color:var(--muted); font-size:13px }
@@ -270,6 +276,7 @@
       .rank-refresh { font-size:12px }
       .rank-item { grid-template-columns:22px minmax(0,1fr) auto; gap:12px; padding:13px 0 }
       .rank-name { font-size:15px }
+      .rank-more { min-height:36px; font-size:12px }
       .summary-head { align-items:flex-start; gap:10px }
       .summary h2 { font-size:24px }
       .share-button { min-height:32px; padding:0 11px; font-size:12px }
@@ -309,6 +316,7 @@
         </div>
       </div>
       <div class="rank-list" id="rankList"></div>
+      <button class="rank-more" id="rankMoreButton" type="button"></button>
     </section>
     <div class="status" id="status">검색 인덱스를 확인하는 중이에요…</div>
 
@@ -326,7 +334,8 @@
     const form = $("form"), input = $("query"), submit = $("submit"), homeButton = $("homeButton"), heroCopy = $("heroCopy");
     const loading = $("loading"), loadingTitle = $("loadingTitle"), loadingText = $("loadingText");
     const result = $("result"), statusEl = $("status"), suggestionsEl = $("suggestions");
-    const marketPanel = $("marketPanel"), rankListEl = $("rankList"), rankRefreshButton = $("rankRefreshButton");
+    const marketPanel = $("marketPanel"), rankListEl = $("rankList"), rankRefreshButton = $("rankRefreshButton"), rankMoreButton = $("rankMoreButton");
+    const RANK_INITIAL_LIMIT = 10, RANK_STEP = 10, RANK_MAX_LIMIT = 30;
     const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const stanceClass = stance => ({긍정:"pos",신중:"neu",부정:"neg",단순언급:"mention"}[stance] || "mention");
     const stanceShortLabel = stance => ({긍정:"긍정적",신중:"관망",부정:"주의",단순언급:"정보성"}[stance] || stance);
@@ -626,6 +635,7 @@
       }
     };
     let activeMarket = "kr";
+    let rankVisibleCounts = { kr:RANK_INITIAL_LIMIT, us:RANK_INITIAL_LIMIT };
 
     function rankOpinionText(row) {
       const checked = Number.isFinite(row.rawChannelCount)
@@ -638,7 +648,9 @@
       activeMarket = market;
       const marketData = (rankingData.markets || {})[market] || {};
       const rows = marketData.rows?.length ? marketData.rows : (rankingStocks[market] || rankingStocks.kr);
-      rankListEl.innerHTML = rows.map((row, idx) => `
+      const visibleCount = Math.min(rankVisibleCounts[market] || RANK_INITIAL_LIMIT, RANK_MAX_LIMIT, rows.length);
+      const visibleRows = rows.slice(0, visibleCount);
+      rankListEl.innerHTML = visibleRows.map((row, idx) => `
         <button class="rank-item" type="button" data-query="${esc(row.query || row.name)}">
           <span class="rank-no">${idx + 1}</span>
           <span class="rank-body">
@@ -652,6 +664,12 @@
             <span class="rank-opinion">${rankOpinionText(row)}</span>
           </span>
         </button>`).join("");
+      const canShowMore = visibleCount < Math.min(rows.length, RANK_MAX_LIMIT);
+      const moreCount = Math.min(RANK_STEP, rows.length - visibleCount, RANK_MAX_LIMIT - visibleCount);
+      rankMoreButton.classList.toggle("show", canShowMore);
+      rankMoreButton.textContent = canShowMore
+        ? `${moreCount}개 더보기`
+        : "";
     }
 
     function shareUrlFor(query) {
@@ -826,6 +844,7 @@
         const data = await fetch(`/api/popular-stocks?t=${Date.now()}`).then(r => r.json());
         if (data.markets) {
           rankingData = data;
+          rankVisibleCounts = { kr:RANK_INITIAL_LIMIT, us:RANK_INITIAL_LIMIT };
           renderRanking(activeMarket);
         }
       } catch {
@@ -1159,6 +1178,10 @@
     });
     homeButton.addEventListener("click", showHome);
     rankRefreshButton.addEventListener("click", () => loadRanking());
+    rankMoreButton.addEventListener("click", () => {
+      rankVisibleCounts[activeMarket] = Math.min((rankVisibleCounts[activeMarket] || RANK_INITIAL_LIMIT) + RANK_STEP, RANK_MAX_LIMIT);
+      renderRanking(activeMarket);
+    });
     marketPanel.addEventListener("click", e => {
       const tab = e.target.closest(".market-tab");
       if (tab) {

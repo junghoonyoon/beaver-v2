@@ -16,7 +16,7 @@ import us_listed
 KST = ZoneInfo("Asia/Seoul")
 _STOCK_CACHE_VERSION = 5
 _SEARCH_INDEX_VERSION = 3
-_POPULAR_STOCKS_CACHE_VERSION = 3
+_POPULAR_STOCKS_CACHE_VERSION = 6
 _POPULAR_STOCKS_REMOTE_PATH = "popular_stocks.json"
 _POPULAR_QUOTES_TTL_SECONDS = 300
 _REMOTE_INDEX_CHECK_INTERVAL_SECONDS = 60
@@ -371,13 +371,19 @@ def _chip_candidate_stocks():
     rows = []
     seen = set()
     known_keys = {compact(name) for name in KNOWN_ALIASES}
+    us_alias_codes = {compact(code) for code in us_listed.US_KOREAN_ALIASES}
     for stock in stock_master():
+        code_key = compact(stock.get("code") or stock.get("name"))
         names = [stock.get("name", ""), *_stock_aliases(stock), *stock.get("keywords", [])]
-        if stock in FALLBACK_STOCK_MASTER or any(compact(name) in known_keys for name in names):
-            key = compact(stock.get("code") or stock.get("name"))
-            if key and key not in seen:
-                seen.add(key)
-                rows.append(stock)
+        if not (
+            stock in FALLBACK_STOCK_MASTER
+            or code_key in us_alias_codes
+            or any(compact(name) in known_keys for name in names)
+        ):
+            continue
+        if code_key and code_key not in seen:
+            seen.add(code_key)
+            rows.append(stock)
     return rows
 
 
@@ -466,7 +472,7 @@ def popular_chips(limit=8):
     return rows
 
 
-def popular_stocks(limit=10, use_saved=True):
+def popular_stocks(limit=30, use_saved=True):
     """첫 화면 노출용 인기주식: 최근 인덱스에서 많이 언급된 종목을 시장별로 고른다."""
     index = load_index()
     index_updated_at = index.get("updatedAt")
@@ -547,12 +553,12 @@ def popular_stocks(limit=10, use_saved=True):
             "recentVideoCount": recent_hits,
             "latestPublishedAt": latest,
         })
-        buckets.setdefault(_market_group(stock), []).append((score, latest, row["name"], row))
+        buckets.setdefault(_market_group(stock), []).append((len(channels), score, latest, row["name"], row))
 
     markets = {}
     for market, scores in buckets.items():
-        ranked = sorted(scores, key=lambda item: (item[0], item[1], item[2], item[3].get("code", "")), reverse=True)
-        rows = _unique_chip_rows([row for _, _, _, row in ranked], limit)
+        ranked = sorted(scores, key=lambda item: (item[0], item[1], item[2], item[3], item[4].get("code", "")), reverse=True)
+        rows = _unique_chip_rows([row for _, _, _, _, row in ranked], limit)
         for idx, row in enumerate(rows, 1):
             row["rank"] = idx
         try:

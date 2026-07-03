@@ -160,6 +160,50 @@ class StockSearchTest(unittest.TestCase):
         self.assertEqual(payload["markets"]["us"]["rows"][0]["videoCount"], 1)
         self.assertEqual(payload["markets"]["us"]["rows"][0]["rawChannelCount"], 1)
 
+    def test_popular_stocks_sort_by_raw_channel_count_first(self):
+        videos = [
+            {"videoId": "nv1", "channel": "A", "title": "엔비디아", "publishedAt": "2026-06-25T10:00:00+09:00",
+             "views": 500000, "url": "nv1"},
+            {"videoId": "nv2", "channel": "A", "title": "엔비디아", "publishedAt": "2026-06-25T11:00:00+09:00",
+             "views": 500000, "url": "nv2"},
+            {"videoId": "mu1", "channel": "B", "title": "마이크론", "publishedAt": "2026-06-25T12:00:00+09:00",
+             "views": 1000, "url": "mu1"},
+            {"videoId": "mu2", "channel": "C", "title": "마이크론", "publishedAt": "2026-06-25T13:00:00+09:00",
+             "views": 1000, "url": "mu2"},
+        ]
+        for row in videos:
+            self.write_transcript(row["videoId"], row["title"])
+        self.write_index(videos)
+
+        with mock.patch("market_rankings.quotes_for_rows", return_value={}):
+            payload = stock_search.popular_stocks(limit=2)
+
+        rows = payload["markets"]["us"]["rows"]
+        self.assertEqual(rows[0]["name"], "마이크론")
+        self.assertEqual(rows[0]["rawChannelCount"], 2)
+        self.assertEqual(rows[1]["name"], "엔비디아")
+        self.assertEqual(rows[1]["rawChannelCount"], 1)
+
+    def test_popular_stocks_uses_us_alias_candidates_from_cache(self):
+        self.write_us_stocks([
+            {"code": "AVGO", "market": "NASDAQ", "name": "Broadcom Inc.", "english": "Broadcom Inc.",
+             "corpName": "Broadcom Inc.", "aliases": ["AVGO", "Broadcom Inc.", "브로드컴"], "source": "NASDAQ_TRADER"},
+        ])
+        videos = [
+            {"videoId": "avgo1", "channel": "A", "title": "브로드컴 AI 반도체", "publishedAt": "2026-06-25T10:00:00+09:00",
+             "views": 10000, "url": "avgo1"},
+        ]
+        self.write_transcript("avgo1", "브로드컴은 AI 반도체 수요가 좋습니다.")
+        self.write_index(videos)
+
+        with mock.patch("market_rankings.quotes_for_rows", return_value={}):
+            payload = stock_search.popular_stocks(limit=5)
+
+        rows = payload["markets"]["us"]["rows"]
+        self.assertEqual(rows[0]["name"], "브로드컴")
+        self.assertEqual(rows[0]["code"], "AVGO")
+        self.assertEqual(rows[0]["rawChannelCount"], 1)
+
     def test_warm_popular_stocks_cache_saves_home_payload(self):
         videos = [
             {"videoId": "kr1", "channel": "A", "title": "삼성전자 전망", "publishedAt": "2026-06-24",
