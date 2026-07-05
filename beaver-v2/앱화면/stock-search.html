@@ -150,10 +150,21 @@
     .hero-copy.hide { display:none }
     h1 { margin:24px 0 16px; font-size:clamp(30px,5.2vw,42px); line-height:1.15; letter-spacing:0; text-wrap:balance }
     .lead { margin:0; color:var(--body); font-size:16px; line-height:1.65 }
+    .result-sticky-bar {
+      position:sticky; top:12px; z-index:30; margin-top:32px; isolation:isolate;
+    }
+    .result-sticky-bar::before {
+      content:""; position:absolute; z-index:-1; inset:-10px -14px -12px;
+      border-radius:26px; background:rgba(255,255,255,.68);
+      -webkit-backdrop-filter:saturate(180%) blur(18px);
+      backdrop-filter:saturate(180%) blur(18px);
+      pointer-events:none;
+    }
     .search {
-      position:sticky; top:12px; z-index:30; margin-top:32px; display:flex; gap:8px; padding:6px;
+      position:relative; display:flex; gap:8px; padding:6px;
       border:1px solid #dcdfe5; border-radius:20px; background:rgba(255,255,255,.94);
-      box-shadow:var(--shadow); backdrop-filter:saturate(180%) blur(16px);
+      box-shadow:var(--shadow); -webkit-backdrop-filter:saturate(180%) blur(16px);
+      backdrop-filter:saturate(180%) blur(16px);
     }
     .search input {
       width:100%; min-width:0; border:0; outline:0; padding:13px 16px;
@@ -280,7 +291,7 @@
     .result { margin-top:38px }
     body.result-mode .result { margin-top:18px }
     .result:empty { display:none }
-    .summary { padding:4px 0 0; scroll-margin-top:112px }
+    .summary { padding:4px 0 0; scroll-margin-top:146px }
     .summary-head { display:flex; align-items:flex-start; justify-content:space-between; gap:14px }
     .summary-title-row {
       display:flex; align-items:center; flex-wrap:wrap; gap:8px 10px; min-width:0;
@@ -474,7 +485,7 @@
     .count.mention,.badge.mention { color:var(--mention); background:var(--mention-bg) }
     .detail-section-title {
       margin:36px 0 15px; color:#1f2937; font-size:19px; font-weight:760;
-      line-height:1.35; letter-spacing:0; scroll-margin-top:112px;
+      line-height:1.35; letter-spacing:0; scroll-margin-top:146px;
     }
     .detail-filters {
       display:flex; flex-wrap:wrap; gap:8px; margin:-2px 0 16px;
@@ -501,7 +512,7 @@
     .mention-section .cards { margin-top:0 }
     .card {
       padding:26px 28px 27px; border:1px solid #e7e9ee; border-radius:8px;
-      background:#fff; box-shadow:none; scroll-margin-top:96px; transition:border-color .18s ease, box-shadow .18s ease;
+      background:#fff; box-shadow:none; scroll-margin-top:146px; transition:border-color .18s ease, box-shadow .18s ease;
     }
     .card.anchor-highlight { border-color:#9fc5ff; box-shadow:0 0 0 3px rgba(14,120,233,.10) }
     .card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:14px }
@@ -570,7 +581,9 @@
       .update-text { display:block; margin-left:0; margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
       .update-close { min-height:26px; padding:0 6px; font-size:15px }
       .page { padding-top:28px }
-      .search { top:10px; gap:6px; padding:6px }
+      .result-sticky-bar { top:10px }
+      .result-sticky-bar::before { inset:-8px -10px -10px; border-radius:23px }
+      .search { gap:6px; padding:6px }
       .search input { padding:10px 10px; font-size:16px }
       .search button { min-height:46px; padding:0 14px; font-size:15px; white-space:nowrap }
       body.result-mode .search { padding:5px }
@@ -593,8 +606,8 @@
       .verdict-card { padding:26px 20px 22px; border-radius:8px }
       .verdict-card > .sample-note:first-child { margin:-26px -20px 20px; padding:10px 20px }
       .verdict-top { display:grid; gap:8px }
-      .verdict-eyebrow { margin-bottom:12px; color:var(--blue); font-size:15px; font-weight:620 }
-      .verdict-eyebrow-stock { font-weight:760 }
+      .verdict-eyebrow { margin-bottom:12px; color:#6b7280; font-size:15px; font-weight:620 }
+      .verdict-eyebrow-stock { color:var(--blue); font-weight:760 }
       .verdict-card h2 { font-size:25px; font-weight:780; line-height:1.24 }
       .verdict-head-meta { gap:5px; margin-top:14px; color:#8a8f98; font-size:14px; font-weight:500; line-height:1.5 }
       .verdict-head-distribution { color:#5e6673; font-weight:610 }
@@ -633,6 +646,9 @@
       .related-tags { gap:7px }
       .related-tag { min-height:30px; padding:0 11px; font-size:12px }
       .verdict-distribution .count { flex:0 0 auto }
+      .summary,
+      .detail-section-title,
+      .card { scroll-margin-top:130px }
       .detail-section-title { margin:36px 0 16px; font-size:23px; font-weight:780; line-height:1.24 }
       .detail-filters { gap:8px; margin:0 0 20px }
       .detail-filter { min-height:34px; padding:0 13px; font-size:13px; font-weight:650 }
@@ -681,15 +697,17 @@
       <p class="lead">최근 2주 주식 유튜버들의 긍정·관망·주의 의견과 근거 영상을 종목별 요약리포트로 정리해드립니다.</p>
     </div>
 
-    <form class="search" id="form">
-      <input id="query" autocomplete="off" placeholder="예: 삼성전자, 엔비디아, 반도체, AI, 2차전지" aria-label="종목명, 섹터, 테마">
-      <button id="submit" type="submit">리포트 보기</button>
-      <div class="suggestions" id="suggestions" role="listbox" aria-label="종목, 섹터, 테마 추천"></div>
-    </form>
-    <nav class="result-tabs" id="resultTabs" aria-label="검색 결과 보기" role="tablist" hidden>
-      <button class="result-tab active" type="button" role="tab" aria-selected="true" data-result-tab="report">유튜버 현재 분위기 리포트<span class="tab-badge-new">N</span></button>
-      <button class="result-tab" type="button" role="tab" aria-selected="false" data-result-tab="details">유튜버 상세 의견</button>
-    </nav>
+    <div class="result-sticky-bar">
+      <form class="search" id="form">
+        <input id="query" autocomplete="off" placeholder="예: 삼성전자, 엔비디아, 반도체, AI, 2차전지" aria-label="종목명, 섹터, 테마">
+        <button id="submit" type="submit">리포트 보기</button>
+        <div class="suggestions" id="suggestions" role="listbox" aria-label="종목, 섹터, 테마 추천"></div>
+      </form>
+      <nav class="result-tabs" id="resultTabs" aria-label="검색 결과 보기" role="tablist" hidden>
+        <button class="result-tab active" type="button" role="tab" aria-selected="true" data-result-tab="report">유튜버 현재 분위기 리포트<span class="tab-badge-new">N</span></button>
+        <button class="result-tab" type="button" role="tab" aria-selected="false" data-result-tab="details">유튜버 상세 의견</button>
+      </nav>
+    </div>
     <section class="market-panel" id="marketPanel" aria-label="인기주식">
       <div class="market-tabs" role="tablist" aria-label="시장 선택">
         <button class="market-tab active" type="button" data-market="kr" role="tab" aria-selected="true">국내주식</button>
