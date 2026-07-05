@@ -400,6 +400,7 @@
     .verdict-chip.mixed { color:var(--neu); background:var(--neu-bg) }
     .verdict-chip.neg { color:var(--neg); background:var(--neg-bg) }
     .verdict-chip.hold { color:var(--mention); background:var(--mention-bg) }
+    .verdict-chip-inline { display:none }
     .verdict-core { margin-top:24px; max-width:980px }
     .verdict-report {
       display:grid; gap:0; margin-top:28px; padding:0;
@@ -608,6 +609,10 @@
       .verdict-top { display:grid; gap:8px }
       .verdict-eyebrow { margin-bottom:12px; color:#6b7280; font-size:15px; font-weight:620 }
       .verdict-eyebrow-stock { color:var(--blue); font-weight:760 }
+      .verdict-chip-side.neg { display:none }
+      .verdict-chip-inline.neg {
+        display:inline-flex; align-items:center; width:max-content; margin:18px 0 6px;
+      }
       .verdict-card h2 { font-size:25px; font-weight:780; line-height:1.24 }
       .verdict-head-meta { gap:5px; margin-top:14px; color:#8a8f98; font-size:14px; font-weight:500; line-height:1.5 }
       .verdict-head-distribution { color:#5e6673; font-weight:610 }
@@ -3378,12 +3383,13 @@
           <div class="verdict-top">
             <div class="verdict-title">
               <div class="verdict-eyebrow"><span class="verdict-eyebrow-stock">${esc(data.query)}</span> 유튜버 현재 분위기 리포트</div>
+              <span class="verdict-chip verdict-chip-inline ${esc(moodClass(mood.label))}">${esc(displayMoodLabel(mood.label))}</span>
               <h2 class="verdict-headline">
                 <span>${esc(headline)}</span>
               </h2>
               ${verdictHeadMetaHtml(data)}
             </div>
-            <span class="verdict-chip ${esc(moodClass(mood.label))}">${esc(displayMoodLabel(mood.label))}</span>
+            <span class="verdict-chip verdict-chip-side ${esc(moodClass(mood.label))}">${esc(displayMoodLabel(mood.label))}</span>
           </div>
           ${summaryHtml ? `
             <div class="market-mood ${esc(moodClass(mood.label))} verdict-core">
