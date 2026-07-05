@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="naver-site-verification" content="ddef5be53c5a428e2046ea2215b0eeb2c0ec7e67">
   <meta name="robots" content="index,follow,max-image-preview:large">
-  <meta name="description" content="지금사도될까요?는 차트 보기 전 최근 2주 주식 유튜버들의 긍정·관망·주의 의견과 근거 영상을 종목별 요약리포트로 정리해드립니다.">
+  <meta name="description" content="최근 2주 주식 유튜버들의 의견을 모아 긍정·관망·주의로 나누고, 현재 분위기 리포트까지 30초 만에 훑어볼 수 있게 정리해드려요.">
   <meta name="application-name" content="지금사도될까요?">
   <meta name="theme-color" content="#ffffff">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="지금사도될까요?">
   <meta property="og:title" content="지금사도될까요? | 주식 유튜브 의견 요약 리포트">
-  <meta property="og:description" content="지금사도될까요?에서 최근 2주 주식 유튜버들의 긍정·관망·주의 의견과 근거 영상을 종목별 요약리포트로 확인하세요.">
+  <meta property="og:description" content="최근 2주 주식 유튜버들의 의견을 모아 긍정·관망·주의로 나누고, 현재 분위기 리포트까지 30초 만에 훑어볼 수 있게 정리해드려요.">
   <meta property="og:url" content="https://stockzip.kr/">
   <link rel="canonical" href="https://stockzip.kr/">
   <meta property="og:image" content="https://stockzip.kr/assets/og-image.png">
@@ -22,7 +22,7 @@
   <meta property="og:image:alt" content="지금사도될까요? - 유튜브 분위기 요약리포트">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="지금사도될까요? | 주식 유튜브 의견 요약 리포트">
-  <meta name="twitter:description" content="지금사도될까요?에서 최근 2주 주식 유튜버들의 긍정·관망·주의 의견과 근거 영상을 종목별 요약리포트로 확인하세요.">
+  <meta name="twitter:description" content="최근 2주 주식 유튜버들의 의견을 모아 긍정·관망·주의로 나누고, 현재 분위기 리포트까지 30초 만에 훑어볼 수 있게 정리해드려요.">
   <meta name="twitter:image" content="https://stockzip.kr/assets/og-image.png">
   <meta name="twitter:image:alt" content="지금사도될까요? - 유튜브 분위기 요약리포트">
   <title>지금사도될까요? | 주식 유튜브 의견 요약 리포트</title>
@@ -44,7 +44,7 @@
         "name": "지금사도될까요?",
         "alternateName": ["지금사도될까요", "지금 사도 될까요", "stockzip", "stockzip.kr"],
         "url": "https://stockzip.kr/",
-        "description": "지금사도될까요?는 최근 2주 주식 유튜버들의 긍정·관망·주의 의견과 근거 영상을 종목별 요약리포트로 정리해드립니다.",
+        "description": "최근 2주 주식 유튜버들의 의견을 모아 긍정·관망·주의로 나누고, 현재 분위기 리포트까지 30초 만에 훑어볼 수 있게 정리해드려요.",
         "inLanguage": "ko-KR",
         "publisher": {
           "@id": "https://stockzip.kr/#organization"
@@ -152,7 +152,8 @@
     .brand-name strong { font-weight:700 }
     .hero-copy.hide { display:none }
     h1 { margin:24px 0 16px; font-size:clamp(30px,5.2vw,42px); line-height:1.15; letter-spacing:0; text-wrap:balance }
-    .lead { margin:0; color:var(--body); font-size:16px; line-height:1.65 }
+    .lead { margin:0; color:#4b5563; font-size:16px; line-height:1.65 }
+    .lead-emphasis { color:var(--blue); font-weight:760 }
     .result-sticky-bar {
       position:sticky; top:12px; z-index:30; margin-top:32px; isolation:isolate;
     }
@@ -754,14 +755,14 @@
       <span class="brand-name">지금사도될까요?</span>
     </button>
     <div class="hero-copy" id="heroCopy">
-      <h1>차트 보기 전,<br>유튜브 분위기도 보세요</h1>
-      <p class="lead">지금사도될까요?는 최근 2주 주식 유튜버들의 긍정·관망·주의 의견과 근거 영상을 종목별 요약리포트로 정리해드립니다.</p>
+      <h1>살까 말까 고민될 때,<br>유튜버들은 어떻게 생각할까?</h1>
+      <p class="lead">최근 2주 주식 유튜버들의 의견을 모아 긍정·관망·주의로 나누고,<br>현재 분위기 리포트까지 <span class="lead-emphasis">30초 만에</span> 훑어볼 수 있게 정리해드려요.</p>
     </div>
 
     <div class="result-sticky-bar">
       <form class="search" id="form">
         <input id="query" autocomplete="off" placeholder="예: 삼성전자, 엔비디아, 반도체, AI, 2차전지" aria-label="종목명, 섹터, 테마">
-        <button id="submit" type="submit">리포트 보기</button>
+        <button id="submit" type="submit">의견 보기</button>
         <div class="suggestions" id="suggestions" role="listbox" aria-label="종목, 섹터, 테마 추천"></div>
       </form>
       <nav class="result-tabs" id="resultTabs" aria-label="검색 결과 보기" role="tablist" hidden>
@@ -775,9 +776,9 @@
         <button class="market-tab" type="button" data-market="us" role="tab" aria-selected="false">미국주식</button>
       </div>
       <div class="rank-head">
-        <div class="rank-title-label" id="rankTitleLabel">오늘 유튜브가 주목한 종목</div>
+        <div class="rank-title-label" id="rankTitleLabel">최근 2주 유튜버가 주목한 종목</div>
         <div class="rank-actions">
-          <span class="rank-refresh-caption">최근 14일 유튜버 의견 기준</span>
+          <span class="rank-refresh-caption">유튜버 의견 기준</span>
           <button class="rank-refresh" id="rankRefreshButton" type="button">
             <span>새로고침</span><span class="rank-refresh-icon" aria-hidden="true">↻</span>
           </button>
@@ -3905,15 +3906,18 @@
       }
       if (reportRef) {
         const anchorId = reportRef.dataset.opinionAnchor || "";
-        const card = anchorId ? document.getElementById(anchorId) : null;
         closeReportRefPopovers();
         analytics.send("report_source_ref_click", {
           query:activeSearchQuery,
           anchorId,
           label:reportRef.textContent.trim(),
         });
+        activeDetailStance = "";
+        if (activeResultData) render(activeResultData);
+        setActiveResultTab("details");
+        const card = anchorId ? document.getElementById(anchorId) : null;
         if (card) {
-          card.scrollIntoView({ behavior:"smooth", block:"start" });
+          scrollElementBelowSticky(card);
           card.classList.add("anchor-highlight");
           setTimeout(() => card.classList.remove("anchor-highlight"), 1400);
         }
