@@ -2,7 +2,7 @@
 import datetime
 import json
 import re
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, TimeoutError, as_completed
 from urllib.parse import urlencode
 from zoneinfo import ZoneInfo
 
@@ -446,42 +446,66 @@ def _nasdaq_quote_number(value):
     return _float_number(value)
 
 
+def _fetch_us_quote(symbol):
+    url = NASDAQ_QUOTE_URL.format(symbol=symbol)
+    try:
+        response = requests.get(
+            url,
+            params={"assetclass": "stocks"},
+            headers=_nasdaq_headers(),
+            timeout=_POPULAR_QUOTE_REQUEST_TIMEOUT_SECONDS,
+        )
+        if not response.ok:
+            return symbol, None
+        payload = response.json()
+    except (requests.RequestException, ValueError):
+        return symbol, None
+    data = payload.get("data") or {}
+    primary = data.get("primaryData") or {}
+    price = _nasdaq_quote_number(primary.get("lastSalePrice"))
+    change = _nasdaq_quote_number(primary.get("netChange"))
+    change_rate = _nasdaq_quote_number(primary.get("percentageChange"))
+    if price is None:
+        return symbol, None
+    return symbol, {
+        "price": price,
+        "priceText": _format_price(price, "USD"),
+        "change": change,
+        "changeText": _format_price(change, "USD") if change is not None else "",
+        "changeRate": change_rate,
+        "changeRateText": _format_change_rate(change_rate),
+        "changeDirection": _change_direction(change_rate if change_rate is not None else change),
+        "priceBaseDate": None,
+        "quoteSource": "NASDAQ",
+        "quoteDelayText": "지연 시세",
+    }
+
+
 def fetch_us_quotes(symbols):
     """미국 인기 종목에 붙일 Nasdaq 지연 시세를 가져온다. 실패한 종목은 건너뛴다."""
     out = {}
-    for symbol in [str(item or "").strip().upper() for item in symbols if str(item or "").strip()]:
-        url = NASDAQ_QUOTE_URL.format(symbol=symbol)
+    normalized_symbols = []
+    for item in symbols:
+        symbol = str(item or "").strip().upper()
+        if not symbol or symbol in normalized_symbols:
+            continue
+        normalized_symbols.append(symbol)
+    if not normalized_symbols:
+        return out
+
+    max_workers = min(_POPULAR_QUOTE_MAX_WORKERS, len(normalized_symbols))
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = {executor.submit(_fetch_us_quote, symbol): symbol for symbol in normalized_symbols}
         try:
-            response = requests.get(
-                url,
-                params={"assetclass": "stocks"},
-                headers=_nasdaq_headers(),
-                timeout=8,
-            )
-            if not response.ok:
-                continue
-            payload = response.json()
-        except (requests.RequestException, ValueError):
-            continue
-        data = payload.get("data") or {}
-        primary = data.get("primaryData") or {}
-        price = _nasdaq_quote_number(primary.get("lastSalePrice"))
-        change = _nasdaq_quote_number(primary.get("netChange"))
-        change_rate = _nasdaq_quote_number(primary.get("percentageChange"))
-        if price is None:
-            continue
-        out[symbol] = {
-            "price": price,
-            "priceText": _format_price(price, "USD"),
-            "change": change,
-            "changeText": _format_price(change, "USD") if change is not None else "",
-            "changeRate": change_rate,
-            "changeRateText": _format_change_rate(change_rate),
-            "changeDirection": _change_direction(change_rate if change_rate is not None else change),
-            "priceBaseDate": None,
-            "quoteSource": "NASDAQ",
-            "quoteDelayText": "지연 시세",
-        }
+            for future in as_completed(futures, timeout=_POPULAR_QUOTE_REQUEST_TIMEOUT_SECONDS * 3):
+                try:
+                    symbol, quote = future.result(timeout=0)
+                except Exception:
+                    continue
+                if quote:
+                    out[symbol] = quote
+        except TimeoutError:
+            pass
     return out
 
 

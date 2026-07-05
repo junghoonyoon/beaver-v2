@@ -10,13 +10,14 @@ from zoneinfo import ZoneInfo
 import config
 import krx_listed
 import market_rankings
+import opinion_history
 import remote_cache
 import us_listed
 
 KST = ZoneInfo("Asia/Seoul")
-_STOCK_CACHE_VERSION = 5
+_STOCK_CACHE_VERSION = 6
 _SEARCH_INDEX_VERSION = 3
-_POPULAR_STOCKS_CACHE_VERSION = 6
+_POPULAR_STOCKS_CACHE_VERSION = 7
 _POPULAR_STOCKS_REMOTE_PATH = "popular_stocks.json"
 _POPULAR_QUOTES_TTL_SECONDS = 300
 _REMOTE_INDEX_CHECK_INTERVAL_SECONDS = 60
@@ -24,6 +25,21 @@ _REMOTE_INDEX_CHECKED_AT = 0
 CHOSEONG = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ"
 INITIAL_CHARS = set(CHOSEONG)
 MARKET_MOOD_BIAS_NOTICE = "강한 부정 의견은 적게 표현되는 경향이 있어 관망 의견도 함께 반영했어요."
+NEWS_SOURCE_LABEL = "뉴스 참고"
+CREATOR_SOURCE_LABEL = "유튜버 의견"
+
+
+def channel_source_type(channel_name, channel_id=""):
+    for channel in config.CHANNELS:
+        if channel_id and channel.get("channelId") == channel_id:
+            return channel.get("sourceType") or "creator"
+        if channel.get("name") == channel_name:
+            return channel.get("sourceType") or "creator"
+    return "creator"
+
+
+def channel_source_label(source_type):
+    return NEWS_SOURCE_LABEL if source_type == "news" else CREATOR_SOURCE_LABEL
 
 KNOWN_ALIASES = {
     "삼성전자": ["삼성전자", "삼전"],
@@ -141,6 +157,7 @@ FALLBACK_STOCK_MASTER = [
     {"name": "마이크로소프트", "code": "MSFT", "market": "NASDAQ", "english": "Microsoft", "aliases": ["Microsoft"], "keywords": ["MS", "Azure", "오픈AI"]},
     {"name": "알파벳", "code": "GOOGL", "market": "NASDAQ", "english": "Alphabet", "aliases": ["구글", "Google"], "keywords": ["유튜브", "YouTube", "검색"]},
     {"name": "마이크론", "code": "MU", "market": "NASDAQ", "english": "Micron", "aliases": ["마이크론테크놀로지", "Micron"], "keywords": ["메모리", "반도체", "DRAM"]},
+    {"name": "TSMC", "code": "TSM", "market": "NYSE", "english": "Taiwan Semiconductor Manufacturing", "aliases": ["대만반도체", "타이완반도체", "Taiwan Semiconductor"], "keywords": ["파운드리", "반도체", "미세공정"]},
     {"name": "Intel Corporation", "code": "INTC", "market": "NASDAQ", "english": "Intel Corporation", "aliases": ["인텔", "Intel"], "keywords": ["CPU", "반도체"]},
     {"name": "Advanced Micro Devices", "code": "AMD", "market": "NASDAQ", "english": "Advanced Micro Devices", "aliases": ["AMD", "에이엠디"], "keywords": ["CPU", "GPU", "반도체"]},
     {"name": "Palantir Technologies Inc.", "code": "PLTR", "market": "NASDAQ", "english": "Palantir Technologies Inc.", "aliases": ["팔란티어", "Palantir"], "keywords": ["AI", "데이터"]},
@@ -215,6 +232,8 @@ def _has_hangul(value):
 def _display_name(stock):
     """미국 주요 종목은 공식 영문명 대신 앱 사용자에게 익숙한 한국어 이름을 보여준다."""
     code = str(stock.get("code") or "").strip().upper()
+    if code in us_listed.US_DISPLAY_NAMES:
+        return us_listed.US_DISPLAY_NAMES[code]
     for alias in us_listed.US_KOREAN_ALIASES.get(code, []):
         if _has_hangul(alias):
             return alias
@@ -336,6 +355,23 @@ def suggest_stocks(query, limit=None):
     rows.sort(key=lambda row: (row[0], row[1]))
     results = [row[2] for row in rows]
     return results if limit is None else results[:limit]
+
+
+def stock_identity(query):
+    """검색어가 정확한 종목이면 코드/시장까지 반환하고, 아니면 이름 기반으로 저장한다."""
+    query = str(query or "").strip()
+    query_key = compact(query)
+    if not query_key:
+        return {"name": "", "code": "", "market": ""}
+    for stock in stock_master():
+        names = [_display_name(stock), stock.get("name", ""), stock.get("code", ""), *_stock_aliases(stock)]
+        if query_key in {compact(name) for name in names if name}:
+            return {
+                "name": _display_name(stock),
+                "code": str(stock.get("code") or ""),
+                "market": str(stock.get("market") or ""),
+            }
+    return {"name": query, "code": "", "market": ""}
 
 
 def query_aliases(query):
@@ -472,8 +508,8 @@ def popular_chips(limit=8):
     return rows
 
 
-def popular_stocks(limit=30, use_saved=True):
-    """첫 화면 노출용 인기주식: 최근 인덱스에서 많이 언급된 종목을 시장별로 고른다."""
+def popular_stocks(limit=30, use_saved=True, refresh_quotes=True):
+    """첫 화면 노출용 종목: 여러 유튜버의 의견 후보가 모인 종목을 시장별로 고른다."""
     index = load_index()
     index_updated_at = index.get("updatedAt")
     cache_key = (
@@ -484,11 +520,13 @@ def popular_stocks(limit=30, use_saved=True):
     cached_key = getattr(popular_stocks, "_cached_key", None)
     cached = getattr(popular_stocks, "_cached", None)
     if cached_key == cache_key and cached is not None:
-        _refresh_popular_quotes(cached)
+        if refresh_quotes:
+            _refresh_popular_quotes(cached)
         return cached
     saved = _read_saved_popular_stocks(limit, index_updated_at, allow_stale=True) if use_saved else None
     if saved:
-        _refresh_popular_quotes(saved)
+        if refresh_quotes:
+            _refresh_popular_quotes(saved)
         popular_stocks._cached_key = cache_key
         popular_stocks._cached = saved
         return saved
@@ -505,6 +543,8 @@ def popular_stocks(limit=30, use_saved=True):
         latest = ""
         recent_hits = 0
         matched_videos = 0
+        text_matched_videos = 0
+        text_channels = set()
         visible_matches = []
         for video in videos:
             text = transcript_by_id.get(video["videoId"], "")
@@ -515,6 +555,9 @@ def popular_stocks(limit=30, use_saved=True):
             channels.add(video.get("channel", ""))
             title_hits += title_count
             text_hits += text_count
+            if text_count:
+                text_matched_videos += 1
+                text_channels.add(video.get("channel", ""))
             views += int(video.get("views") or 0)
             visible_row = dict(video)
             visible_row["matchCount"] = text_count
@@ -534,13 +577,16 @@ def popular_stocks(limit=30, use_saved=True):
                 pass
         if not channels:
             continue
+        if len(channels) < 2 and text_matched_videos < 2:
+            continue
         score = (
-            matched_videos * 5 +
-            len(channels) * 8 +
-            title_hits * 4 +
-            min(text_hits, 20) +
-            recent_hits * 6 +
-            min(views / 100000, 8)
+            len(channels) * 16 +
+            len(text_channels) * 8 +
+            min(text_matched_videos, 12) * 5 +
+            min(text_hits, 24) * 2 +
+            recent_hits * 8 +
+            title_hits * 2 +
+            min(views / 200000, 5)
         )
         visible_rows = _sort_and_limit_matches(visible_matches, max_youtubers=config.SEARCH_MAX_YOUTUBERS)
         row = _chip_row(stock, score)
@@ -550,24 +596,40 @@ def popular_stocks(limit=30, use_saved=True):
             "channelCount": len({video.get("channel", "") for video in visible_rows}),
             "rawVideoCount": matched_videos,
             "rawChannelCount": len(channels),
+            "reportCandidateCount": len(channels),
+            "transcriptMentionVideoCount": text_matched_videos,
+            "transcriptMentionChannelCount": len(text_channels),
             "recentVideoCount": recent_hits,
             "latestPublishedAt": latest,
         })
-        buckets.setdefault(_market_group(stock), []).append((len(channels), score, latest, row["name"], row))
+        buckets.setdefault(_market_group(stock), []).append((
+            len(channels),
+            len(text_channels),
+            text_matched_videos,
+            score,
+            latest,
+            row["name"],
+            row,
+        ))
 
     markets = {}
     for market, scores in buckets.items():
-        ranked = sorted(scores, key=lambda item: (item[0], item[1], item[2], item[3], item[4].get("code", "")), reverse=True)
-        rows = _unique_chip_rows([row for _, _, _, _, row in ranked], limit)
+        ranked = sorted(scores, key=lambda item: (item[0], item[1], item[2], item[3], item[4], item[5], item[6].get("code", "")), reverse=True)
+        rows = _unique_chip_rows([row for _, _, _, _, _, _, row in ranked], limit)
         for idx, row in enumerate(rows, 1):
             row["rank"] = idx
-        try:
-            quotes = market_rankings.quotes_for_rows(market, rows)
-        except Exception:
-            quotes = {}
+        quotes = {}
+        if refresh_quotes:
+            try:
+                quotes = market_rankings.quotes_for_rows(market, rows)
+            except Exception:
+                quotes = {}
         for row in rows:
             row.update(quotes.get(str(row.get("code") or "").strip().upper(), {}))
             row.setdefault("rawChannelCount", 0)
+            row.setdefault("reportCandidateCount", row.get("rawChannelCount", 0))
+            row.setdefault("transcriptMentionVideoCount", 0)
+            row.setdefault("transcriptMentionChannelCount", 0)
             row.setdefault("changeRateText", "")
             row.setdefault("quoteSource", "")
             row.setdefault("quoteDelayText", "")
@@ -577,8 +639,8 @@ def popular_stocks(limit=30, use_saved=True):
         }
 
     payload = {
-        "title": "인기주식 TOP 10",
-        "basis": f"최근 {config.SEARCH_LOOKBACK_DAYS}일 유튜브 언급 기준",
+        "title": "유튜브 의견이 모인 종목",
+        "basis": f"최근 {config.SEARCH_LOOKBACK_DAYS}일 유튜버 의견 후보 기준",
         "updatedAt": index_updated_at,
         "quoteUpdatedAt": datetime.datetime.now(KST).isoformat(),
         "markets": markets,
@@ -586,6 +648,34 @@ def popular_stocks(limit=30, use_saved=True):
     popular_stocks._cached_key = cache_key
     popular_stocks._cached = payload
     return payload
+
+
+def popular_stock_quotes(market, codes):
+    """첫 화면 랭킹에 붙일 가격/등락률만 별도로 가져온다."""
+    market_key = str(market or "").strip().lower()
+    if market_key not in {"kr", "us"}:
+        return {
+            "market": market_key,
+            "quotes": {},
+            "quoteUpdatedAt": datetime.datetime.now(KST).isoformat(),
+        }
+    rows = []
+    seen = set()
+    for code in codes or []:
+        normalized = str(code or "").strip().upper()
+        if not normalized or normalized in seen:
+            continue
+        seen.add(normalized)
+        rows.append({"code": normalized})
+    try:
+        quotes = market_rankings.quotes_for_rows(market_key, rows) if rows else {}
+    except Exception:
+        quotes = {}
+    return {
+        "market": market_key,
+        "quotes": quotes,
+        "quoteUpdatedAt": datetime.datetime.now(KST).isoformat(),
+    }
 
 
 def _popular_quotes_are_fresh(payload):
@@ -658,12 +748,18 @@ def _read_saved_popular_stocks(limit, index_updated_at, allow_stale=False):
     if payload.get("markets").get("kr", {}).get("rows"):
         for row in payload["markets"]["kr"]["rows"]:
             row.setdefault("rawChannelCount", 0)
+            row.setdefault("reportCandidateCount", row.get("rawChannelCount", 0))
+            row.setdefault("transcriptMentionVideoCount", 0)
+            row.setdefault("transcriptMentionChannelCount", 0)
             row.setdefault("changeRateText", "")
             row.setdefault("quoteSource", "")
             row.setdefault("quoteDelayText", "")
     if payload.get("markets").get("us", {}).get("rows"):
         for row in payload["markets"]["us"]["rows"]:
             row.setdefault("rawChannelCount", 0)
+            row.setdefault("reportCandidateCount", row.get("rawChannelCount", 0))
+            row.setdefault("transcriptMentionVideoCount", 0)
+            row.setdefault("transcriptMentionChannelCount", 0)
             row.setdefault("changeRateText", "")
             row.setdefault("quoteSource", "")
             row.setdefault("quoteDelayText", "")
@@ -689,7 +785,7 @@ def _write_saved_popular_stocks(payload, limit):
 def warm_popular_stocks_cache(limit=10):
     """첫 화면에 필요한 인기주식/등락률 payload를 계산해 로컬·원격 캐시에 저장한다."""
     clear_popular_stocks_cache()
-    payload = popular_stocks(limit=limit, use_saved=False)
+    payload = popular_stocks(limit=limit, use_saved=False, refresh_quotes=True)
     _write_saved_popular_stocks(payload, limit)
     return {
         "rows": sum(len((market.get("rows") or [])) for market in payload.get("markets", {}).values()),
@@ -931,7 +1027,9 @@ def sync_index(channels):
             videos.append({
                 "videoId": video["videoId"],
                 "channel": video["channel"],
+                "channelId": video.get("channelId", ""),
                 "channelType": channel.get("type"),
+                "channelSourceType": channel.get("sourceType") or "creator",
                 "categories": channel.get("categories") or [],
                 "title": video["title"],
                 "publishedAt": video["publishedAt"].isoformat(),
@@ -953,11 +1051,13 @@ def sync_index(channels):
     return payload
 
 
-def _index_video_row(video, text="", channel_type=None, fallback=False):
+def _index_video_row(video, text="", channel_type=None, source_type=None, fallback=False):
     return {
         "videoId": video["videoId"],
         "channel": video["channel"],
+        "channelId": video.get("channelId", ""),
         "channelType": channel_type,
+        "channelSourceType": source_type or channel_source_type_for_video(video),
         "categories": video.get("categories") or [],
         "title": video["title"],
         "publishedAt": video["publishedAt"].isoformat() if hasattr(video["publishedAt"], "isoformat") else video["publishedAt"],
@@ -971,6 +1071,10 @@ def _index_video_row(video, text="", channel_type=None, fallback=False):
         "transcriptError": "",
         "fallback": fallback,
     }
+
+
+def channel_source_type_for_video(video):
+    return video.get("channelSourceType") or channel_source_type(video.get("channel", ""), video.get("channelId", ""))
 
 
 def _video_match_row(video, aliases):
@@ -989,6 +1093,7 @@ def _video_match_row(video, aliases):
     row = dict(video)
     if text is not None:
         row["_text"] = text
+    row["channelSourceType"] = channel_source_type_for_video(row)
     row["matchCount"] = count
     row["titleMatch"] = bool(title_count)
     row["hasTranscriptText"] = video.get("transcriptStatus") == "ok" or bool((text or "").strip())
@@ -1025,6 +1130,7 @@ def _fallback_search_matches(query, aliases, existing_ids):
     import youtube
 
     channel_type_by_id = {row.get("channelId"): row.get("type") for row in config.CHANNELS if row.get("channelId")}
+    source_type_by_id = {row.get("channelId"): row.get("sourceType") for row in config.CHANNELS if row.get("channelId")}
     out = []
     try:
         videos = youtube.search_videos(
@@ -1048,6 +1154,7 @@ def _fallback_search_matches(query, aliases, existing_ids):
             video,
             text=text,
             channel_type=channel_type_by_id.get(video.get("channelId")),
+            source_type=source_type_by_id.get(video.get("channelId")),
             fallback=True,
         )
         match = _video_match_row(row, aliases)
@@ -1057,12 +1164,17 @@ def _fallback_search_matches(query, aliases, existing_ids):
     return out
 
 
+def _match_source_priority(row):
+    return 0 if channel_source_type_for_video(row) == "news" else 1
+
+
 def _sort_and_limit_matches(matches, max_youtubers=None):
     matches.sort(
         key=lambda row: (
             row.get("hasTranscriptText", False),
             row["titleMatch"],
             row["matchCount"],
+            _match_source_priority(row),
             row["publishedAt"],
             row["views"],
         ),
@@ -1200,7 +1312,10 @@ def _read_cached_analysis(path, context_hash):
             cached = json.loads(path.read_text(encoding="utf-8"))
             if (cached.get("version") == _STOCK_CACHE_VERSION and
                     cached.get("contextHash") == context_hash):
-                return cached["data"], True
+                data = dict(cached["data"])
+                data["_contextHash"] = context_hash
+                data["_analysisProvider"] = cached.get("provider", "")
+                return data, True
         except (OSError, ValueError, KeyError):
             pass
     return None, False
@@ -1224,12 +1339,14 @@ def analyze_match(video, query):
 
     data = analyze.analyze_stock_opinion(query, aliases, context)
     data["sourceTimeSec"] = source_time_sec(video["videoId"], aliases, data.get("evidence", ""))
+    data["_contextHash"] = context_hash
+    data["_analysisProvider"] = analyze.LAST_GENERATION_PROVIDER or ""
     config.STOCK_ANALYSIS_CACHE_DIR.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(f".{time.monotonic_ns()}.tmp")
     tmp.write_text(json.dumps({
         "version": _STOCK_CACHE_VERSION,
         "contextHash": context_hash,
-        "provider": analyze.LAST_GENERATION_PROVIDER,
+        "provider": data["_analysisProvider"],
         "data": data,
     }, ensure_ascii=False), encoding="utf-8")
     tmp.replace(path)
@@ -1241,8 +1358,11 @@ def base_search_result(query, videos, stats=None):
     stats = stats or match_stats(videos, videos)
     analysis_limit = max(1, min(len(videos), config.SEARCH_MAX_ANALYZED_VIDEOS))
     counts = {"긍정": 0, "신중": 0, "부정": 0, "단순언급": 0}
+    identity = stock_identity(query)
+    display_query = identity.get("name") or query.strip()
     return {
-        "query": query.strip(),
+        "query": display_query,
+        "rawQuery": query.strip(),
         "aliases": query_aliases(query),
         "matchedVideos": stats["mentionedVideoCount"],
         "mentionedVideoCount": stats["mentionedVideoCount"],
@@ -1271,6 +1391,7 @@ def market_mood(counts):
     positive_share = positive / judged if judged else 0
     watch_share = watch / judged if judged else 0
     risk_share = risk / judged if judged else 0
+    risk_warning = risk >= 2 or risk_share >= 0.35 or score_ratio <= -0.35
 
     if judged < 3:
         label = "판단 보류"
@@ -1278,20 +1399,20 @@ def market_mood(counts):
         label = "긍정적 분위기"
     elif positive_share >= 0.45 and score_ratio > 0.15:
         label = "조건부 긍정"
-    elif risk_share >= 0.25 or score_ratio <= -0.35:
+    elif risk_warning:
         label = "주의 필요"
     elif watch_share >= 0.45:
         label = "관망 우세"
     else:
-        label = "의견 갈림"
+        label = "방향성 확인 필요"
 
     summaries = {
-        "긍정적 분위기": "상승 요인을 직접 언급한 의견이 관망·주의 의견보다 많아요.",
-        "조건부 긍정": "긍정적으로 보는 의견이 있지만, 조건을 달아 접근하자는 목소리도 함께 보여요.",
-        "관망 우세": "기대 요인은 있지만, 지금은 확인할 조건이 더 있다는 의견이 많아요.",
-        "주의 필요": "리스크나 가격 부담을 짚은 의견이 반복돼 원본 맥락을 먼저 확인해 보세요.",
-        "의견 갈림": "유튜버 의견이 한쪽으로 모이지 않아 긍정·관망·주의를 함께 봐야 해요.",
-        "판단 보류": "아직 의견 표본이 적어요. 최근 2주 공개 영상 기준으로 의견이 더 모이면 분위기가 선명해집니다.",
+        "긍정적 분위기": "유튜버들은 상승 재료를 더 많이 언급했어요.",
+        "조건부 긍정": "유튜버들은 실적 개선과 외국인 수급 확인 전까진 추세 전환보다 반등 기대에 가깝게 봤어요.",
+        "관망 우세": "유튜버들은 기대 재료는 보지만 아직 확인 단계라는 의견을 많이 냈어요.",
+        "주의 필요": "유튜버들은 리스크나 가격 부담을 반복해서 언급했어요.",
+        "방향성 확인 필요": "긍정과 신중 의견이 함께 있어 확인 변수를 먼저 봐야 해요.",
+        "판단 보류": "유튜버 의견을 판단하기엔 아직 표본이 적어요.",
     }
     show_bias_notice = (
         judged >= 3 and (
@@ -1310,11 +1431,189 @@ def market_mood(counts):
     }
 
 
-def opinion_from_result(video, result, cached):
+def _contains_any(text, words):
+    text = str(text or "")
+    return any(word in text for word in words)
+
+
+def _fact_check_warning(result):
+    text = f"{result.get('summary') or ''} {result.get('evidence') or ''}"
+    target_match = re.search(r"목표가[^0-9]{0,12}([0-9]+(?:\.[0-9]+)?)\s*만\s*원", text)
+    if target_match:
+        try:
+            if float(target_match.group(1)) >= 30:
+                return "목표가 수치가 커서 원문 확인이 필요해요."
+        except ValueError:
+            pass
+    return ""
+
+
+def _target_alias_keys(query):
+    if not query:
+        return set()
+    identity = stock_identity(query)
+    names = [query, identity.get("name", ""), identity.get("code", ""), *query_aliases(query)]
+    return {compact(name) for name in names if compact(name)}
+
+
+def _target_alias_patterns(query):
+    aliases = query_aliases(query) if query else []
+    return [re.escape(alias.strip()) for alias in aliases if alias and not _is_short_ticker_alias(alias)]
+
+
+def _has_target_alias(text, query):
+    keys = _target_alias_keys(query)
+    if not keys:
+        return False
+    compacted = compact(text)
+    return any(key in compacted for key in keys)
+
+
+def _target_counterparty_context(text, query):
+    """검색 종목이 고객사·경쟁사·도구로만 등장한 맥락을 걸러낸다."""
+    if not query or not text:
+        return False
+    alias_group = "|".join(_target_alias_patterns(query))
+    if not alias_group:
+        return False
+    if re.search(rf"(?:{alias_group}).{{0,16}}(?:와|과)의.{{0,32}}(?:공급|납품|발주|계약|논의).{{0,40}}(?:무산|재논의|협상|수주|기술력)", text):
+        return True
+    if re.search(rf"(?:{alias_group}).{{0,28}}(?:툴|GPU|칩|플랫폼|서비스).{{0,24}}(?:활용|사용).{{0,24}}[A-Za-z가-힣0-9]+의", text):
+        return True
+    if re.search(rf"(?:{alias_group}).{{0,48}}(?:공세|점유율|경쟁).{{0,36}}[A-Za-z가-힣0-9]+의\s*경쟁\s*환경", text):
+        return True
+    return False
+
+
+def _sector_or_tax_context(text, query, summary_text=""):
+    if not text:
+        return False
+    if _contains_any(text, ("양도세", "절세", "세금", "손실이 발생했을 때", "손실 확정")):
+        return True
+    sector_text = summary_text or text
+    if _contains_any(sector_text, ("ETF", "종목들은", "업종", "섹터", "주식들", "테마주")) and not _has_target_alias(sector_text, query):
+        return True
+    if _contains_any(text, ("수요처", "고객사", "주요 고객", "중요한 주체", "확보해야 하는 중요한 주체")):
+        direct_words = ("주가", "실적", "매출", "영업이익", "마진", "수익", "성장", "밸류", "매수", "매도", "보유", "투자", "전망")
+        if not _contains_any(summary_text or text, direct_words):
+            return True
+    return False
+
+
+def _infer_opinion_quality(result, video=None, query=""):
+    """리포트에 반영할 현재 투자 의견인지 보수적으로 분류한다."""
+    stance = result.get("stance") or "단순언급"
+    summary = str(result.get("summary") or "")
+    evidence = str(result.get("evidence") or "")
+    title = str((video or {}).get("title") or "")
+    opinion_text = f"{summary} {evidence}"
+    text = f"{opinion_text} {title}"
+    speech_type = result.get("speechType") or ""
+    time_orientation = result.get("timeOrientation") or ""
+    rationale_type = result.get("rationaleType") or ""
+
+    if stance == "단순언급":
+        return {
+            "opinionType": "정보성 언급",
+            "reportable": False,
+            "qualityReason": "방향성 있는 현재 투자 의견이 아니에요.",
+        }
+
+    if _contains_any(opinion_text, (
+            "성공적인 투자 사례", "수익을 낸", "수익을 얻", "수익을 얻었던 경험",
+            "과거", "매수하여", "매수했어야", "팔았더니", "종가 매매", "단기 수익",
+    )):
+        if not _contains_any(opinion_text, ("보유해야", "가져가야", "팔지 않고", "장기 보유")):
+            return {
+                "opinionType": "과거 투자 사례",
+                "reportable": False,
+                "qualityReason": "과거 성과 사례라 현재 의견 카운트에서 제외했어요.",
+            }
+        if _contains_any(opinion_text, ("매수했어야", "종가 매매", "단기 수익", "수익을 얻었던 경험")):
+            return {
+                "opinionType": "과거 투자 사례",
+                "reportable": False,
+                "qualityReason": "과거 매매 사례라 현재 의견 카운트에서 제외했어요.",
+            }
+
+    if (
+            _contains_any(opinion_text, ("관련주", "수혜주", "주변주", "낙수 효과")) or
+            re.search(r"의 성장은 .{0,18}에 긍정", opinion_text) or
+            re.search(r"[가-힣A-Za-z0-9]+의 단기 반등", opinion_text)
+    ):
+        return {
+            "opinionType": "관련주/비교 맥락",
+            "reportable": False,
+            "qualityReason": "다른 종목 판단을 설명하는 맥락이라 리포트 핵심근거에서 제외했어요.",
+        }
+
+    if _target_counterparty_context(opinion_text, query):
+        return {
+            "opinionType": "고객사/경쟁사 맥락",
+            "reportable": False,
+            "qualityReason": "검색 종목 자체가 아니라 다른 기업 판단의 고객사·경쟁사 맥락이라 제외했어요.",
+        }
+
+    if _sector_or_tax_context(opinion_text, query, summary_text=summary):
+        return {
+            "opinionType": "섹터/포트폴리오 맥락",
+            "reportable": False,
+            "qualityReason": "개별 종목 투자 판단이 아니라 섹터·세금·포트폴리오 맥락이라 제외했어요.",
+        }
+
+    current_action_words = (
+        "매수할 만", "매수 전략", "보유해야", "장기 보유", "가져가야", "팔지", "관망", "신중", "확인", "접근",
+        "긍정적으로 볼", "부정적으로 볼", "상승 가능", "하락 가능", "전망", "기대",
+        "주의", "리스크", "고평가", "저평가",
+    )
+    has_current_action = _contains_any(text, current_action_words)
+
+    if speech_type == "사후 해석" or time_orientation == "과거 설명":
+        if has_current_action and speech_type != "뉴스 전달":
+            return {
+                "opinionType": "현재 투자 의견",
+                "reportable": True,
+                "qualityReason": "",
+            }
+        opinion_type = "단기 수급 해석" if rationale_type == "수급" else "사후 흐름 해석"
+        return {
+            "opinionType": opinion_type,
+            "reportable": False,
+            "qualityReason": "이미 일어난 주가·수급 설명이라 현재 의견 카운트에서 제외했어요.",
+        }
+
+    if speech_type == "뉴스 전달" and not has_current_action:
+        return {
+            "opinionType": "시황/뉴스 전달",
+            "reportable": False,
+            "qualityReason": "뉴스 전달 중심이라 리포트 핵심근거에서 제외했어요.",
+        }
+
+    if speech_type == "조건부 전망":
+        opinion_type = "조건부 투자 의견"
+    elif stance == "신중":
+        opinion_type = "보유/관망 의견"
+    else:
+        opinion_type = "현재 투자 의견"
+    return {
+        "opinionType": opinion_type,
+        "reportable": True,
+        "qualityReason": "",
+    }
+
+
+def opinion_from_result(video, result, cached, query=""):
     if not result.get("mentioned"):
         return None
+    source_type = channel_source_type_for_video(video)
+    quality = _infer_opinion_quality(result, video, query=query)
+    fact_check_warning = _fact_check_warning(result)
     return {
         "channel": video["channel"],
+        "channelId": video.get("channelId", ""),
+        "channelType": video.get("channelType") or "",
+        "channelSourceType": source_type,
+        "sourceLabel": channel_source_label(source_type),
         "title": video["title"],
         "publishedAt": video["publishedAt"],
         "views": video["views"],
@@ -1323,8 +1622,69 @@ def opinion_from_result(video, result, cached):
         "summary": result["summary"],
         "evidence": result["evidence"],
         "sourceTimeSec": result.get("sourceTimeSec"),
+        "speechType": result.get("speechType") or "명시적 전망",
+        "timeOrientation": result.get("timeOrientation") or "미래 전망",
+        "confidence": result.get("confidence") or "보통",
+        "rationaleType": result.get("rationaleType") or "",
+        "evaluable": bool(result.get("evaluable")),
+        "opinionType": quality["opinionType"],
+        "reportable": quality["reportable"],
+        "qualityReason": quality["qualityReason"],
+        "factCheckWarning": fact_check_warning,
         "cached": cached,
     }
+
+
+def _attach_history(query, video, result, opinion):
+    if not opinion:
+        return opinion
+    identity = stock_identity(query)
+    context_hash = result.get("_contextHash") or ""
+    try:
+        record = opinion_history.opinion_record(
+            identity["name"],
+            video,
+            result,
+            context_hash,
+            analysis_provider=result.get("_analysisProvider") or "",
+            analysis_version=f"stock-cache-v{_STOCK_CACHE_VERSION}",
+            stock_code=identity["code"],
+            market=identity["market"],
+        )
+        opinion_history.save_opinion(record)
+        summary = opinion_history.history_summary(
+            identity["name"],
+            stock_code=identity["code"],
+            channel_id=video.get("channelId", ""),
+            channel_name=video.get("channel", ""),
+        )
+        if summary.get("sameStockOpinionCount"):
+            summary.update({
+                "stockName": identity["name"],
+                "stockCode": identity["code"],
+                "channelId": video.get("channelId", ""),
+                "channelName": video.get("channel", ""),
+            })
+            opinion["history"] = summary
+    except Exception:
+        pass
+    return opinion
+
+
+def opinion_from_analysis(query, video, result, cached):
+    """분석 결과를 카드 의견으로 만들고 히스토리 저장/요약을 붙인다."""
+    return _attach_history(query, video, result, opinion_from_result(video, result, cached, query=query))
+
+
+def youtuber_history_detail(query, channel_id="", channel_name="", period_days=None):
+    identity = stock_identity(query)
+    return opinion_history.history_detail(
+        identity["name"],
+        stock_code=identity["code"],
+        channel_id=channel_id,
+        channel_name=channel_name,
+        period_days=period_days,
+    )
 
 
 def add_opinion(search_result, opinion):
@@ -1332,7 +1692,10 @@ def add_opinion(search_result, opinion):
         return
     opinion["_order"] = len(search_result["opinions"])
     search_result["opinions"].append(opinion)
-    search_result["counts"][opinion["stance"]] += 1
+    if opinion.get("reportable", True) and opinion.get("stance") != "단순언급":
+        search_result["counts"][opinion["stance"]] += 1
+    else:
+        search_result["counts"]["단순언급"] += 1
     search_result["marketMood"] = market_mood(search_result["counts"])
 
 
@@ -1380,7 +1743,7 @@ def search_stock(query, include_fallback=True):
             search_result["errors"].append(f"{video['channel']}: {str(exc)[:120]}")
             search_result["processedVideos"] += 1
             continue
-        add_opinion(search_result, opinion_from_result(video, result, cached))
+        add_opinion(search_result, opinion_from_analysis(query, video, result, cached))
         search_result["processedVideos"] += 1
     sort_opinions(search_result)
     search_result["done"] = True

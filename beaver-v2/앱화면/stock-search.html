@@ -4,10 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="naver-site-verification" content="ddef5be53c5a428e2046ea2215b0eeb2c0ec7e67">
-  <meta name="description" content="긴 주식 유튜브를 다 볼 필요 없이, 최근 2주 종목별 유튜버 의견을 긍정적·관망·주의로 빠르게 요약해 시간을 아껴드립니다.">
+  <meta name="description" content="차트 보기 전, 유튜브 분위기도 보세요. 최근 2주 주식 유튜버들의 긍정·관망·주의 의견과 근거 영상을 종목별 요약리포트로 정리해드립니다.">
   <meta property="og:type" content="website">
   <meta property="og:title" content="지금사도될까요?">
-  <meta property="og:description" content="주식 유튜브 핵심 의견을 종목별로 빠르게 요약해 영상 탐색 시간을 줄여드립니다.">
+  <meta property="og:description" content="최근 2주 주식 유튜버들의 긍정·관망·주의 의견과 근거 영상을 종목별 요약리포트로 정리해드립니다.">
   <meta property="og:url" content="https://stockzip.kr/">
   <link rel="canonical" href="https://stockzip.kr/">
   <meta property="og:image" content="https://stockzip.kr/assets/og-image.png">
@@ -15,10 +15,10 @@
   <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="지금사도될까요? - 주식 유튜브 의견 요약">
+  <meta property="og:image:alt" content="지금사도될까요? - 유튜브 분위기 요약리포트">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="지금사도될까요?">
-  <meta name="twitter:description" content="주식 유튜브 핵심 의견을 종목별로 빠르게 요약해 영상 탐색 시간을 줄여드립니다.">
+  <meta name="twitter:description" content="최근 2주 주식 유튜버들의 긍정·관망·주의 의견과 근거 영상을 종목별 요약리포트로 정리해드립니다.">
   <meta name="twitter:image" content="https://stockzip.kr/assets/og-image.png">
   <title>지금사도될까요?</title>
   <style>
@@ -44,8 +44,40 @@
       font-family:Inter,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",sans-serif;
       background:#fff;
     }
+    body.result-mode { background:#fff }
     button,input { font:inherit }
-    .page { width:min(760px,calc(100% - 28px)); margin:0 auto; padding:64px 0 88px }
+    .update-popup {
+      display:none; width:100%; background:#3f3f3f; color:#fff;
+    }
+    .update-popup.show { display:block }
+    .update-popup-inner {
+      display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center;
+      gap:10px; width:min(760px,calc(100% - 28px)); min-height:44px; margin:0 auto; padding:0;
+    }
+    .update-badge {
+      display:inline-flex; align-items:center; justify-content:center; min-height:18px;
+      border-radius:999px; padding:0 6px; background:rgba(255,255,255,.14); color:#fff;
+      font-size:10px; font-weight:820; line-height:1; letter-spacing:0;
+    }
+    .update-copy { min-width:0 }
+    .update-title { display:inline; color:#fff; font-size:14px; font-weight:760; line-height:1.35 }
+    .update-text { display:inline; margin-left:4px; color:rgba(255,255,255,.74); font-size:14px; font-weight:520; line-height:1.35 }
+    .update-close {
+      appearance:none; border:0; border-radius:999px; padding:0 8px;
+      min-height:28px; background:transparent; color:rgba(255,255,255,.72); font-size:16px; font-weight:720;
+      cursor:pointer; white-space:nowrap;
+    }
+    .update-close:hover { background:rgba(255,255,255,.1); color:#fff }
+    .copy-toast {
+      position:fixed; left:50%; bottom:28px; z-index:120; transform:translate(-50%,12px);
+      display:flex; align-items:center; justify-content:center; max-width:calc(100% - 32px);
+      min-height:42px; border-radius:999px; padding:0 16px;
+      background:rgba(22,25,32,.94); color:#fff; font-size:14px; font-weight:700;
+      line-height:1; box-shadow:0 14px 34px rgba(0,0,0,.18);
+      opacity:0; pointer-events:none; transition:opacity .18s ease, transform .18s ease;
+    }
+    .copy-toast.show { opacity:1; transform:translate(-50%,0) }
+    .page { width:min(760px,calc(100% - 28px)); margin:0 auto; padding:40px 0 88px }
     .brand {
       display:inline-flex; align-items:center; gap:8px; border:0; padding:0;
       background:transparent; color:var(--ink); font-size:17px; font-weight:750;
@@ -94,6 +126,23 @@
       box-shadow:0 5px 14px rgba(0,113,227,.14);
     }
     .search button:disabled { opacity:.55; cursor:wait }
+    .result-tabs {
+      display:none; align-items:center; gap:3px; margin-top:18px; padding:3px;
+      border:1px solid #eceff3; border-radius:999px; background:#f5f6f8;
+    }
+    body.result-mode .result-tabs.show { display:flex }
+    .result-tab {
+      appearance:none; flex:1 1 0; min-width:0; border:0; border-radius:999px; padding:8px 12px;
+      background:transparent; color:#7a818d; font-size:13px; font-weight:720; cursor:pointer;
+      line-height:1.2; white-space:nowrap;
+    }
+    .result-tab.active { background:#fff; color:var(--ink); box-shadow:0 1px 3px rgba(20,28,45,.08) }
+    .result-tab:disabled { color:#b8bec8; cursor:default }
+    .tab-badge-new {
+      display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px;
+      margin-left:6px; padding:0; border-radius:50%; background:#ff3b30; color:#fff;
+      font-size:10px; font-weight:800; line-height:1; letter-spacing:0; vertical-align:middle;
+    }
     .suggestions {
       display:none; position:absolute; z-index:20; left:0; right:0; top:calc(100% + 8px);
       overflow:auto; max-height:430px; border:1px solid #dfe3ea; border-radius:14px;
@@ -181,8 +230,9 @@
       display:block; width:min(210px,58vw); height:auto; margin:0 auto 10px;
     }
     .result { margin-top:38px }
+    body.result-mode .result { margin-top:18px }
     .result:empty { display:none }
-    .summary { padding:4px 0 0 }
+    .summary { padding:4px 0 0; scroll-margin-top:112px }
     .summary-head { display:flex; align-items:flex-start; justify-content:space-between; gap:14px }
     .summary-title-row {
       display:flex; align-items:center; flex-wrap:wrap; gap:8px 10px; min-width:0;
@@ -193,60 +243,263 @@
       transform:translateY(1px);
     }
     .share-button {
-      appearance:none; flex:0 0 auto; display:inline-flex; align-items:center; justify-content:center;
-      gap:5px; min-height:30px; border:1px solid #d8e5fb; border-radius:999px; padding:0 12px 0 11px;
-      background:#fff; color:var(--blue); font-size:12px; font-weight:700;
+      appearance:none; flex:1 1 100%; display:inline-flex; align-items:center; justify-content:center;
+      width:100%;
+      gap:8px; min-height:46px; border:0; border-radius:10px; padding:0 16px;
+      background:#f3f4f6; color:#1f2937; font-size:14px; font-weight:720;
       cursor:pointer; white-space:nowrap;
     }
     .share-button::before {
-      content:""; display:block; width:14px; height:14px; background:currentColor;
+      content:""; display:block; width:16px; height:16px; background:currentColor;
       -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7'/%3E%3Cpath d='M12 16V4'/%3E%3Cpath d='m7 9 5-5 5 5'/%3E%3C/svg%3E") center/contain no-repeat;
       mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7'/%3E%3Cpath d='M12 16V4'/%3E%3Cpath d='m7 9 5-5 5 5'/%3E%3C/svg%3E") center/contain no-repeat;
     }
-    .share-button:hover { background:var(--blue-wash) }
+    .share-button:hover { background:#eceff3 }
     .summary-meta { margin-top:10px; color:#6e7682; font-size:13px; font-weight:500; line-height:1.6 }
     .summary-period { color:inherit; font-weight:inherit }
     .market-mood { margin-top:10px; padding:0; border:0; background:transparent; box-shadow:none }
     .mood-label { color:var(--ink); font-size:20px; font-weight:790; line-height:1.32; letter-spacing:0; word-break:keep-all }
-    .mood-summary { margin:0; color:#4c535d; font-size:14px; line-height:1.65; word-break:keep-all }
+    .mood-summary {
+      margin:0; color:#343841; font-size:16px; font-weight:430;
+      line-height:1.72; word-break:keep-all;
+    }
+    .mood-count { font-weight:700; white-space:nowrap }
+    .mood-count.pos { color:var(--pos) }
+    .mood-count.neu { color:var(--neu) }
+    .mood-count.neg { color:var(--neg) }
     .sample-note {
       margin-top:10px; color:#7a5a09; background:#fff8e5; border:1px solid #f2dfaa;
       border-radius:10px; padding:10px 12px; font-size:13px; line-height:1.55;
     }
+    .verdict-card > .sample-note:first-child {
+      margin:-34px -36px 24px; border-width:0 0 1px;
+      border-radius:8px 8px 0 0; padding:11px 36px;
+    }
+    .verdict-card {
+      padding:34px 36px 24px; border:1px solid #e5e7eb; border-radius:8px;
+      background:#fff; box-shadow:none;
+    }
+    .report-skeleton { pointer-events:none }
+    .skeleton-line {
+      display:block; width:100%; height:16px; border-radius:999px;
+      background:linear-gradient(90deg,#eef1f5 0%,#f8fafc 44%,#eef1f5 88%);
+      background-size:220% 100%; animation:skeleton-shimmer 1.35s ease-in-out infinite;
+    }
+    .skeleton-eyebrow { width:250px; max-width:62%; height:18px; margin-bottom:24px }
+    .skeleton-title { width:min(520px,86%); height:48px; border-radius:12px }
+    .skeleton-chip { width:82px; height:18px; flex:0 0 auto }
+    .skeleton-summary { margin-top:34px; display:grid; gap:12px; max-width:980px }
+    .skeleton-summary .short { width:72% }
+    .skeleton-report { margin-top:30px; border-top:0 }
+    .skeleton-report-row {
+      display:grid; grid-template-columns:120px minmax(0,1fr); gap:26px;
+      padding:17px 0; border-bottom:0;
+    }
+    .skeleton-label { width:70px; height:14px }
+    .skeleton-body { display:grid; gap:10px }
+    .skeleton-body .wide { width:88% }
+    .skeleton-body .medium { width:64% }
+    .skeleton-footer { display:flex; align-items:center; justify-content:space-between; gap:14px; margin-top:18px }
+    .skeleton-flow { width:340px; max-width:70%; height:14px }
+    .skeleton-button { width:112px; height:32px; border-radius:8px }
+    @keyframes skeleton-shimmer {
+      0% { background-position:120% 0 }
+      100% { background-position:-120% 0 }
+    }
+    .verdict-top { display:flex; align-items:flex-start; justify-content:space-between; gap:20px }
+    .verdict-title { min-width:0 }
+    .verdict-eyebrow {
+      margin-bottom:18px; color:#6b7280; font-size:16px; font-weight:650; line-height:1.25;
+    }
+    .verdict-eyebrow-stock { color:var(--blue); font-weight:760 }
+    .verdict-card h2 {
+      color:#111318; font-size:32px; font-weight:720; line-height:1.18;
+      letter-spacing:0;
+    }
+    .verdict-headline {
+      display:flex; align-items:center; flex-wrap:wrap; gap:6px 10px;
+    }
+    .verdict-headline .summary-arrow {
+      color:#a0a6b0; font-size:25px; font-weight:760; transform:translateY(0);
+    }
+    .verdict-head-meta {
+      display:grid; gap:4px; margin-top:12px; color:#7c8490;
+      font-size:13px; font-weight:560; line-height:1.45;
+    }
+    .verdict-head-distribution {
+      color:#4b5563; font-weight:720;
+    }
+    .verdict-head-flow {
+      color:#8a93a1; font-weight:560;
+    }
+    .verdict-chip {
+      flex:0 0 auto; border-radius:999px; padding:7px 10px; font-size:12px; font-weight:740;
+      line-height:1; white-space:nowrap;
+    }
+    .verdict-chip.pos { color:var(--pos); background:var(--pos-bg) }
+    .verdict-chip.neu,
+    .verdict-chip.mixed { color:var(--neu); background:var(--neu-bg) }
+    .verdict-chip.neg { color:var(--neg); background:var(--neg-bg) }
+    .verdict-chip.hold { color:var(--mention); background:var(--mention-bg) }
+    .verdict-core { margin-top:24px; max-width:980px }
+    .verdict-report {
+      display:grid; gap:0; margin-top:28px; padding:0;
+      border-top:0; border-radius:0; background:transparent;
+    }
+    .report-row {
+      display:grid; grid-template-columns:120px minmax(0,1fr); gap:26px; align-items:start;
+      padding:10px 0; border-bottom:0;
+    }
+    .report-label { color:#747b87; font-size:13px; font-weight:620; line-height:1.5; white-space:nowrap }
+    .report-text { margin:0; color:#242832; font-size:15px; font-weight:430; line-height:1.7; word-break:keep-all }
+    .report-row.muted .report-label,
+    .report-row.muted .report-text { color:#9aa2af }
+    .report-body { min-width:0 }
+    .report-refs { display:flex; flex-wrap:wrap; align-items:center; gap:5px; margin-top:5px }
+    .report-refs::before { content:"↳"; color:#b3bbc8; font-size:11px; font-weight:600; line-height:1.4 }
+    .report-ref,
+    .report-ref-more {
+      appearance:none; border:0; border-radius:0; padding:0; background:transparent;
+      color:#8a93a1; font-size:11px; font-weight:600; line-height:1.4; cursor:pointer;
+      text-align:left;
+    }
+    .report-ref-separator { color:#b3bbc8; font-size:11px; font-weight:600; line-height:1.4 }
+    .report-ref-more-wrap { position:relative; display:inline-flex; align-items:center }
+    .report-ref-popover {
+      position:absolute; z-index:30; top:calc(100% + 7px); right:0;
+      display:grid; gap:3px; min-width:142px; max-width:220px; padding:7px;
+      border:1px solid #dfe4ec; border-radius:8px; background:#fff;
+      box-shadow:0 10px 24px rgba(15,23,42,.14);
+    }
+    .report-ref-popover[hidden] { display:none }
+    .report-ref-popover .report-ref {
+      display:block; width:100%; border-radius:6px; padding:6px 7px;
+      color:#4b5563; font-size:12px; line-height:1.35; white-space:nowrap;
+    }
+    .report-ref-popover .report-ref:hover {
+      background:#f5f8fc; text-decoration:none;
+    }
+    .report-ref:hover,
+    .report-ref-more:hover { color:var(--blue); text-decoration:underline; text-underline-offset:3px }
+    .verdict-flow {
+      display:flex; align-items:center; flex-wrap:wrap; gap:4px 6px;
+      margin-top:18px; color:#8a93a1; font-size:12px; font-weight:500; line-height:1.5;
+    }
+    .flow-step { display:inline-flex; align-items:baseline; gap:2px; min-width:0 }
+    .flow-step b { color:#6f7783; font-size:12px; font-weight:700; line-height:1.4 }
+    .flow-step span { color:inherit; font-size:12px; font-weight:560; line-height:1.4 }
+    .flow-step.confidence b { color:var(--blue) }
+    .flow-arrow { color:#c3cad5; font-size:11px; font-weight:700 }
+    .verdict-footer {
+      display:flex; align-items:center; justify-content:stretch; gap:14px; margin-top:16px;
+    }
+    .verdict-footer .verdict-flow {
+      flex:1 1 auto; margin-top:0;
+    }
+    .related-stocks {
+      margin-top:16px;
+    }
+    .related-title {
+      margin:0 0 8px; color:#8a93a1; font-size:12px; font-weight:620; line-height:1.35;
+    }
+    .related-tags { display:flex; flex-wrap:wrap; gap:7px }
+    .related-tag {
+      appearance:none; min-height:28px; border:1px solid #dbe3ef; border-radius:999px;
+      padding:0 10px; background:#fff; color:#4b5563; font-size:12px; font-weight:650;
+      cursor:pointer; line-height:1; white-space:nowrap;
+    }
+    .related-tag:hover { border-color:#bcd3f5; color:var(--blue); background:#f7fbff }
+    .verdict-distribution { display:flex; flex-wrap:wrap; gap:10px }
     .counts { display:flex; flex-wrap:wrap; gap:8px; margin-top:28px }
     .count {
-      appearance:none; border:0; border-radius:999px; padding:6px 10px;
-      font-size:12px; font-weight:740; cursor:pointer;
+      appearance:none; border:0; border-radius:0; padding:0;
+      background:transparent; color:#6b7280; font-size:13px; font-weight:560; cursor:pointer;
     }
-    .count:hover { filter:brightness(.98) }
-    .count.pos,.badge.pos { color:var(--pos); background:var(--pos-bg) }
-    .count.neu,.badge.neu { color:var(--neu); background:var(--neu-bg) }
-    .count.neg,.badge.neg { color:var(--neg); background:var(--neg-bg) }
+    .count:hover { color:#111318; text-decoration:underline; text-underline-offset:3px }
+    .count.pos,.count.neu,.count.neg { color:#6b7280; background:transparent }
+    .badge.pos { color:var(--pos); background:var(--pos-bg) }
+    .badge.neu { color:var(--neu); background:var(--neu-bg) }
+    .badge.neg { color:var(--neg); background:var(--neg-bg) }
+    .card .badge.pos { color:var(--pos); background:var(--pos-bg) !important }
+    .card .badge.neu { color:var(--neu); background:var(--neu-bg) !important }
+    .card .badge.neg { color:var(--neg); background:var(--neg-bg) !important }
     .count.mention,.badge.mention { color:var(--mention); background:var(--mention-bg) }
-    .cards { display:grid; gap:18px; margin-top:22px }
-    .card {
-      padding:24px 26px 25px; border:1px solid var(--line); border-radius:18px;
-      background:var(--card); box-shadow:0 1px 0 rgba(0,0,0,.02);
+    .detail-section-title {
+      margin:36px 0 15px; color:#1f2937; font-size:19px; font-weight:760;
+      line-height:1.35; letter-spacing:0; scroll-margin-top:112px;
     }
-    .card-head { display:flex; align-items:center; gap:12px }
-    .opinion-block { margin-top:22px; min-width:0 }
+    .detail-filters {
+      display:flex; flex-wrap:wrap; gap:8px; margin:-2px 0 16px;
+    }
+    .detail-filter {
+      appearance:none; min-height:30px; border:1px solid #dbe3ef; border-radius:999px;
+      padding:0 11px; background:#fff; color:#4b5563; font-size:12px; font-weight:650;
+      cursor:pointer; line-height:1; white-space:nowrap;
+    }
+    .detail-filter:hover { border-color:#bcd3f5; color:var(--blue); background:#f7fbff }
+    .detail-filter.active { border-color:#9fc5ff; color:var(--blue); background:var(--blue-wash) }
+    .detail-filter.pos.active { border-color:#b7dfc4; color:var(--pos); background:var(--pos-bg) }
+    .detail-filter.neu.active { border-color:#ead18c; color:var(--neu); background:var(--neu-bg) }
+    .detail-filter.neg.active { border-color:#f1b7b2; color:var(--neg); background:var(--neg-bg) }
+    .detail-filter-empty {
+      padding:20px 18px; border:1px solid #e7e9ee; border-radius:8px;
+      background:#fff; color:#7a818d; font-size:14px; font-weight:620; line-height:1.55;
+    }
+    .cards { display:grid; gap:16px; margin-top:0 }
+    .mention-section { margin-top:26px }
+    .mention-section-title {
+      margin:0 0 10px; color:#4b5563; font-size:14px; font-weight:820; line-height:1.35;
+    }
+    .mention-section .cards { margin-top:0 }
+    .card {
+      padding:26px 28px 27px; border:1px solid #e7e9ee; border-radius:8px;
+      background:#fff; box-shadow:none; scroll-margin-top:96px; transition:border-color .18s ease, box-shadow .18s ease;
+    }
+    .card.anchor-highlight { border-color:#9fc5ff; box-shadow:0 0 0 3px rgba(14,120,233,.10) }
+    .card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:14px }
+    .card-meta {
+      display:flex; flex-wrap:wrap; align-items:center; gap:7px; min-width:0;
+      color:#6f7783; font-size:14px; font-weight:500; line-height:1.5;
+    }
+    .meta-dot { color:#aeb5bf }
+    .opinion-block { margin-top:18px; min-width:0 }
     .channel {
-      display:inline-flex; color:#6f7783; font-size:14px; font-weight:500; text-decoration:underline;
+      display:inline-flex; color:#2f3540; font-size:14px; font-weight:650; text-decoration:none;
       text-decoration-thickness:1px; text-underline-offset:3px;
     }
-    .channel:hover { color:var(--blue) }
-    .video-meta { color:#6f7783; font-size:14px; font-weight:500; line-height:1.35 }
-    .badge { margin-left:auto; border-radius:999px; padding:6px 10px; font-size:12px; font-weight:750 }
-    .field-label { margin-top:20px; color:var(--muted); font-size:11px; font-weight:750 }
-    .opinion { margin:5px 0 0; font-size:18px; font-weight:700; line-height:1.58; letter-spacing:0; word-break:keep-all }
-    .evidence-label { margin-top:17px }
-    .evidence { margin:7px 0 0; color:#4b5058; font-size:15px; line-height:1.78; word-break:keep-all }
+    .channel:hover { color:#111318; text-decoration:underline; text-underline-offset:3px }
+    .video-meta { color:inherit; font-size:14px; font-weight:500; line-height:1.45 }
+    .source-chip {
+      display:inline-flex; align-items:center; min-height:22px; border:1px solid #d8dee8;
+      border-radius:999px; padding:2px 7px; background:#f7f9fc; color:#687386;
+      font-size:12px; font-weight:650; line-height:1; white-space:nowrap;
+    }
+    .badge {
+      margin-left:auto; border-radius:999px; padding:6px 10px;
+      font-size:12px; font-weight:650; line-height:1;
+    }
+    .field-label { margin-top:18px; color:var(--muted); font-size:11px; font-weight:750 }
+    .opinion {
+      margin:0; color:#17191f; font-size:17px; font-weight:500;
+      line-height:1.72; letter-spacing:0; word-break:keep-all;
+    }
+    .evidence-label { display:none }
+    .evidence {
+      margin:20px 0 0; padding-top:0; border-top:0;
+      color:#59616d; font-size:14px; line-height:1.78; word-break:keep-all;
+    }
+    .quality-warning {
+      margin:12px 0 0; color:#7a5a09; background:#fff8e5; border:1px solid #f2dfaa;
+      border-radius:8px; padding:9px 10px; font-size:12px; font-weight:620; line-height:1.45;
+    }
+    .evidence-prefix { color:#8a929e; font-weight:600 }
     .evidence-source {
-      display:inline-flex; align-items:center; margin-left:6px; color:#7a8491;
-      font-size:13px; font-weight:400; line-height:1; text-decoration:underline;
+      display:inline-flex; align-items:center; margin-left:6px; color:var(--blue);
+      font-size:13px; font-weight:620; line-height:1; text-decoration:underline;
       text-decoration-thickness:1px; text-underline-offset:3px; white-space:nowrap;
     }
-    .evidence-source:hover { color:var(--blue) }
+    .evidence-source::after { content:"↗"; margin-left:4px; font-size:12px; line-height:1 }
+    .evidence-source:hover { color:#185abc }
     .source-actions { display:flex; justify-content:flex-end; min-width:0; margin-top:20px }
     .source-link {
       display:inline-flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; max-width:100%; min-height:30px;
@@ -262,13 +515,22 @@
     .error { color:var(--neg); border-color:#f2c8c5 }
     .foot { margin-top:28px; color:var(--muted); font-size:12px; line-height:1.6 }
     @media (max-width:560px) {
-      .page { padding-top:40px }
+      .update-popup-inner { width:calc(100% - 28px); min-height:42px; gap:7px }
+      .update-badge { min-height:17px; padding:0 5px; font-size:9px }
+      .update-title,.update-text { font-size:14px }
+      .update-title { display:block }
+      .update-text { display:block; margin-left:0; margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+      .update-close { min-height:26px; padding:0 6px; font-size:15px }
+      .page { padding-top:28px }
       .search { top:10px; gap:6px; padding:6px }
       .search input { padding:10px 10px; font-size:16px }
       .search button { min-height:46px; padding:0 14px; font-size:15px; white-space:nowrap }
       body.result-mode .search { padding:5px }
       body.result-mode .search input { padding:9px 10px; font-size:15px }
       body.result-mode .search button { min-height:40px; padding:0 13px; font-size:14px }
+      .result-tabs { margin-top:14px }
+      .result-tab { padding:8px 8px; font-size:12px }
+      body.result-mode .result { margin-top:16px }
       .market-panel { margin-top:30px }
       .market-tab { font-size:14px; padding:8px 13px }
       .rank-head { gap:10px; margin-top:20px }
@@ -279,37 +541,105 @@
       .rank-more { min-height:36px; font-size:12px }
       .summary-head { align-items:flex-start; gap:10px }
       .summary h2 { font-size:24px }
-      .share-button { min-height:32px; padding:0 11px; font-size:12px }
+      .share-button { min-height:44px; padding:0 13px; font-size:13px }
+      .verdict-card { padding:20px 15px 18px; border-radius:8px }
+      .verdict-card > .sample-note:first-child { margin:-20px -15px 18px; padding:10px 15px }
+      .verdict-top { display:grid; gap:8px }
+      .verdict-eyebrow { margin-bottom:10px; color:#7b828e; font-size:14px; font-weight:560 }
+      .verdict-eyebrow-stock { font-weight:670 }
+      .verdict-card h2 { font-size:22px; font-weight:650; line-height:1.3 }
+      .verdict-head-meta { gap:5px; margin-top:12px; font-size:13px; font-weight:500; line-height:1.55 }
+      .verdict-head-distribution { color:#5e6673; font-weight:610 }
+      .verdict-head-flow { color:#8d95a2; font-weight:500 }
+      .skeleton-eyebrow { width:68%; height:15px; margin-bottom:17px }
+      .skeleton-title { width:92%; height:34px }
+      .skeleton-chip { width:70px; height:14px }
+      .skeleton-summary { margin-top:24px; gap:10px }
+      .skeleton-report { margin-top:22px }
+      .skeleton-report-row { grid-template-columns:1fr; gap:9px; padding:14px 0 }
+      .skeleton-label { width:62px; height:12px }
+      .skeleton-footer { align-items:flex-start; flex-direction:column; gap:12px }
+      .skeleton-flow { width:78%; max-width:100% }
+      .skeleton-button { width:104px; height:30px }
+      .verdict-chip { width:max-content; font-size:12px; font-weight:650 }
+      .verdict-core { margin-top:20px }
+      .mood-summary { color:#3f4650; font-weight:400; line-height:1.76 }
+      .verdict-report { gap:24px; margin-top:24px; padding:0; border-top:0 }
+      .report-row { grid-template-columns:1fr; gap:10px; padding:0; border-bottom:0 }
+      .report-label { font-size:13px; line-height:1.5 }
+      .report-text { font-size:15px; line-height:1.66 }
+      .report-refs { margin-top:9px; gap:7px }
+      .report-refs::before,
+      .report-ref-separator,
+      .report-ref,
+      .report-ref-more { font-size:12px }
+      .verdict-flow { gap:3px 5px; margin-top:8px; font-size:11px }
+      .flow-step b,.flow-step span { font-size:11px }
+      .verdict-footer { align-items:stretch; flex-direction:row; gap:8px; margin-top:22px }
+      .verdict-footer .verdict-flow { margin-top:0 }
+      .related-stocks { margin-top:22px }
+      .related-title { margin-bottom:10px; font-size:12px }
+      .related-tags { gap:7px }
+      .related-tag { min-height:30px; padding:0 11px; font-size:12px }
+      .verdict-distribution .count { flex:0 0 auto }
+      .detail-section-title { margin:30px 0 14px; font-size:18px; font-weight:760 }
+      .detail-filters { gap:8px; margin:0 0 18px }
+      .detail-filter { min-height:34px; padding:0 13px; font-size:13px; font-weight:650 }
+      .cards { gap:16px }
+      .card { padding:22px 18px 24px; border-radius:8px }
+      .card-head { gap:12px }
+      .card-meta { gap:6px 7px; font-size:13px; font-weight:500; line-height:1.5 }
+      .channel { font-size:14px; font-weight:650 }
+      .video-meta { font-size:13px; font-weight:500 }
+      .source-chip { min-height:23px; padding:2px 8px; font-size:12px; font-weight:650 }
+      .badge { padding:6px 10px; font-size:12px; font-weight:650 }
+      .opinion-block { margin-top:20px }
+      .opinion { font-size:16px; font-weight:500; line-height:1.72 }
+      .evidence { margin-top:18px; padding-top:0; font-size:13px; line-height:1.78 }
       .suggestion { grid-template-columns:72px minmax(0,1fr) 64px; gap:10px; padding:12px 14px }
       .suggestion-code,.suggestion-name,.suggestion-market { font-size:14px }
     }
   </style>
 </head>
 <body>
+  <aside class="update-popup" id="updatePopup" role="status" aria-live="polite" aria-label="업데이트 안내">
+    <div class="update-popup-inner">
+      <span class="update-badge">NEW</span>
+      <span class="update-copy">
+        <strong class="update-title">현재 분위기 리포트 추가</strong>
+        <span class="update-text">최근 14일 유튜버 의견과 근거를 한 번에 확인하세요.</span>
+      </span>
+      <button class="update-close" id="updatePopupClose" type="button" aria-label="업데이트 안내 닫기">×</button>
+    </div>
+  </aside>
   <main class="page">
     <button class="brand" type="button" id="homeButton" aria-label="첫 화면으로 이동">
       <span class="brand-mark" aria-hidden="true"><span>?</span></span>
       <span class="brand-name">지금사도될까요?</span>
     </button>
     <div class="hero-copy" id="heroCopy">
-      <h1>사기 전에,<br>유튜버 의견부터 빠르게</h1>
-      <p class="lead">긴 주식 유튜브를 다 볼 필요 없이, 최근 2주 동안 이 종목이 어떻게 언급됐는지 긍정적·관망·주의 의견으로 정리해드려요.</p>
+      <h1>차트 보기 전,<br>유튜브 분위기도 보세요</h1>
+      <p class="lead">최근 2주 주식 유튜버들의 긍정·관망·주의 의견과 근거 영상을 종목별 요약리포트로 정리해드립니다.</p>
     </div>
 
     <form class="search" id="form">
-      <input id="query" autocomplete="off" placeholder="예: 삼성전자, 엔비디아, 반도체 ETF" aria-label="종목명">
-      <button id="submit" type="submit">의견 확인하기</button>
-      <div class="suggestions" id="suggestions" role="listbox" aria-label="종목 추천"></div>
+      <input id="query" autocomplete="off" placeholder="예: 삼성전자, 엔비디아, 반도체, AI, 2차전지" aria-label="종목명, 섹터, 테마">
+      <button id="submit" type="submit">리포트 보기</button>
+      <div class="suggestions" id="suggestions" role="listbox" aria-label="종목, 섹터, 테마 추천"></div>
     </form>
+    <nav class="result-tabs" id="resultTabs" aria-label="검색 결과 보기" role="tablist" hidden>
+      <button class="result-tab active" type="button" role="tab" aria-selected="true" data-result-tab="report">유튜버 현재 분위기 리포트<span class="tab-badge-new">N</span></button>
+      <button class="result-tab" type="button" role="tab" aria-selected="false" data-result-tab="details">유튜버 상세 의견</button>
+    </nav>
     <section class="market-panel" id="marketPanel" aria-label="인기주식">
       <div class="market-tabs" role="tablist" aria-label="시장 선택">
         <button class="market-tab active" type="button" data-market="kr" role="tab" aria-selected="true">국내주식</button>
         <button class="market-tab" type="button" data-market="us" role="tab" aria-selected="false">미국주식</button>
       </div>
       <div class="rank-head">
-        <div class="rank-title-label" id="rankTitleLabel">최근 2주 유튜브에서 많이 언급된 종목</div>
+        <div class="rank-title-label" id="rankTitleLabel">오늘 유튜브가 주목한 종목</div>
         <div class="rank-actions">
-          <span class="rank-refresh-caption">최근 14일 언급 기준</span>
+          <span class="rank-refresh-caption">최근 14일 유튜버 의견 기준</span>
           <button class="rank-refresh" id="rankRefreshButton" type="button">
             <span>새로고침</span><span class="rank-refresh-icon" aria-hidden="true">↻</span>
           </button>
@@ -323,7 +653,7 @@
     <section class="loading" id="loading">
       <img class="loading-visual" src="assets/youtube-search-loading.svg" alt="" aria-hidden="true">
       <b id="loadingTitle">언급 영상을 찾고 있어요</b>
-      <div id="loadingText" style="margin-top:7px;color:var(--muted);font-size:13px">최근 2주 유튜브 영상에서 종목 언급을 찾고 있어요.</div>
+      <div id="loadingText" style="margin-top:7px;color:var(--muted);font-size:13px">오늘 기준 최근 2주 유튜브 영상에서 종목·섹터·테마 언급을 찾고 있어요.</div>
     </section>
     <section class="result" id="result"></section>
 
@@ -333,27 +663,41 @@
     const $ = id => document.getElementById(id);
     const form = $("form"), input = $("query"), submit = $("submit"), homeButton = $("homeButton"), heroCopy = $("heroCopy");
     const loading = $("loading"), loadingTitle = $("loadingTitle"), loadingText = $("loadingText");
-    const result = $("result"), statusEl = $("status"), suggestionsEl = $("suggestions");
+    const result = $("result"), statusEl = $("status"), suggestionsEl = $("suggestions"), resultTabs = $("resultTabs");
     const marketPanel = $("marketPanel"), rankListEl = $("rankList"), rankRefreshButton = $("rankRefreshButton"), rankMoreButton = $("rankMoreButton");
+    const updatePopup = $("updatePopup"), updatePopupClose = $("updatePopupClose");
     const RANK_INITIAL_LIMIT = 10, RANK_STEP = 10, RANK_MAX_LIMIT = 30;
+    const UPDATE_POPUP_STORAGE_KEY = "beaver.update.report.v1";
     const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const stanceClass = stance => ({긍정:"pos",신중:"neu",부정:"neg",단순언급:"mention"}[stance] || "mention");
     const stanceShortLabel = stance => ({긍정:"긍정적",신중:"관망",부정:"주의",단순언급:"정보성"}[stance] || stance);
     const countLabel = stance => ({긍정:"긍정적",신중:"관망",부정:"주의",단순언급:"정보성 언급"}[stance] || stance);
+    const isReportableOpinion = opinion => opinion?.stance !== "단순언급" && opinion?.reportable !== false;
+    const reportableOpinions = opinions => (opinions || []).filter(isReportableOpinion);
+    const detailFilterStances = ["긍정", "신중", "부정"];
+    const opinionBadgeClass = opinion => isReportableOpinion(opinion) ? stanceClass(opinion.stance) : "mention";
+    const opinionBadgeLabel = opinion => isReportableOpinion(opinion)
+      ? stanceShortLabel(opinion.stance)
+      : (opinion.opinionType || "참고");
     const moodClass = label => ({
       "긍정적 분위기":"pos",
       "조건부 긍정":"neu",
       "관망 우세":"neu",
       "주의 필요":"neg",
+      "방향성 확인 필요":"mixed",
       "의견 갈림":"mixed",
       "판단 보류":"hold",
     }[label] || "hold");
+    const displayMoodLabel = label => ({
+      "의견 갈림":"방향성 확인 필요",
+    }[label] || label || "");
     const moodHeadline = label => ({
       "긍정적 분위기":"긍정적으로 보는 의견이 많아요",
       "조건부 긍정":"좋게 보지만 조건을 함께 봐야 해요",
       "관망 우세":"지켜보자는 의견이 많아요",
       "주의 필요":"리스크 언급이 반복됐어요",
-      "의견 갈림":"의견이 한쪽으로 모이지 않았어요",
+      "방향성 확인 필요":"확인할 변수가 남아 있어요",
+      "의견 갈림":"확인할 변수가 남아 있어요",
       "판단 보류":"아직 판단할 의견이 적어요",
     }[label] || label || "의견을 정리하고 있어요");
     function marketMoodFromCounts(counts = {}) {
@@ -367,19 +711,21 @@
       const positiveShare = judged ? positive / judged : 0;
       const watchShare = judged ? watch / judged : 0;
       const riskShare = judged ? risk / judged : 0;
-      let label = "의견 갈림";
+      const riskWarning = risk >= 2 || riskShare >= 0.35 || scoreRatio <= -0.35;
+      let label = "방향성 확인 필요";
       if (judged < 3) label = "판단 보류";
       else if (positiveShare >= 0.6 && watchShare < 0.35) label = "긍정적 분위기";
       else if (positiveShare >= 0.45 && scoreRatio > 0.15) label = "조건부 긍정";
-      else if (riskShare >= 0.25 || scoreRatio <= -0.35) label = "주의 필요";
+      else if (riskWarning) label = "주의 필요";
       else if (watchShare >= 0.45) label = "관망 우세";
       const summaries = {
-        "긍정적 분위기":"상승 요인을 직접 언급한 의견이 관망·주의 의견보다 많아요.",
-        "조건부 긍정":"긍정적으로 보는 의견이 있지만, 조건을 달아 접근하자는 목소리도 함께 보여요.",
-        "관망 우세":"기대 요인은 있지만, 지금은 확인할 조건이 더 있다는 의견이 많아요.",
-        "주의 필요":"리스크나 가격 부담을 짚은 의견이 반복돼 원본 맥락을 먼저 확인해 보세요.",
-        "의견 갈림":"유튜버 의견이 한쪽으로 모이지 않아 긍정·관망·주의를 함께 봐야 해요.",
-        "판단 보류":"아직 의견 표본이 적어요. 최근 2주 공개 영상 기준으로 의견이 더 모이면 분위기가 선명해집니다.",
+        "긍정적 분위기":"유튜버들은 상승 재료를 더 많이 언급했어요.",
+        "조건부 긍정":"유튜버들은 실적 개선과 외국인 수급 확인 전까지 추세 전환을 유보했어요.",
+        "관망 우세":"유튜버들은 상승 재료보다 검증 변수를 더 크게 다뤘어요.",
+        "주의 필요":"유튜버들은 리스크나 가격 부담을 반복해서 언급했어요.",
+        "방향성 확인 필요":"긍정과 신중 의견이 함께 있어 확인 변수를 먼저 봐야 해요.",
+        "의견 갈림":"긍정과 신중 의견이 함께 있어 확인 변수를 먼저 봐야 해요.",
+        "판단 보류":"유튜버 의견을 판단하기엔 아직 표본이 적어요.",
       };
       const showBiasNotice = judged >= 3 && (
         watchShare >= 0.5 ||
@@ -389,28 +735,1514 @@
       return {
         label,
         summary:summaries[label],
-        biasNotice:showBiasNotice ? "강한 부정 의견은 적게 표현되는 경향이 있어 관망 의견도 함께 반영했어요." : null,
+        biasNotice:showBiasNotice ? "강한 부정 의견은 적게 표현되는 경향이 있어 관망 의견도 함께 분석했어요." : null,
         judgedCount:judged,
         mentionOnlyCount:mentionOnly,
         scoreRatio,
       };
     }
-    const includesAny = (text, words) => words.some(word => text.includes(word));
+    const includesAny = (text, words) => {
+      const haystack = String(text ?? "").toLowerCase();
+      return words.some(word => haystack.includes(String(word).toLowerCase()));
+    };
+    const defaultKeySignalRules = [
+      { label:"AI 수요", words:["AI", "인공지능"] },
+      { label:"실적 개선", words:["실적", "어닝", "매출", "영업이익", "서프라이즈", "호실적"] },
+      { label:"투자 확대", words:["투자 확대", "증설", "공장", "생산", "CAPEX", "가동"] },
+      { label:"외국인 수급", words:["외국인", "수급", "기관", "매수세"] },
+      { label:"수급·주가 흐름", words:["주가", "수급", "거래량", "반등", "차익 실현", "매수세"] },
+    ];
+    const semiconductorSignalRules = [
+      { label:"CPU 수요", words:["CPU", "중앙처리장치", "추론", "서버 CPU", "프로세서"] },
+      { label:"파운드리 회복", words:["파운드리", "TSMC", "생산 능력", "수율", "미세 공정", "공정", "레퍼런스"] },
+      { label:"미국 제조·정책 지원", words:["미국 제조", "정부 지원", "트럼프", "보조금", "CHIPS", "칩스법", "지원 사격"] },
+      { label:"ADR·지수 편입", words:["ADR", "미국 상장", "미국상장", "필라델피아", "반도체 지수", "지수 편입", "재평가"] },
+      { label:"HBM·메모리", words:["HBM", "메모리", "DRAM", "D램", "낸드", "고대역폭", "첨단 패키징", "패키징"] },
+      { label:"AI 반도체 수요", words:["AI", "인공지능", "데이터센터", "GPU", "엔비디아", "서버"] },
+      { label:"업황 회복", words:["수요 회복", "공급 부족", "업황", "반도체", "가격 상승", "재고"] },
+      { label:"실적 개선", words:["실적", "어닝", "매출", "영업이익", "마진", "서프라이즈", "호실적"] },
+      { label:"투자 확대", words:["투자 확대", "증설", "공장", "생산", "CAPEX", "가동", "M17"] },
+      { label:"외국인 수급", words:["외국인", "수급", "기관", "매수세"] },
+    ];
+    const teslaSignalRules = [
+      { label:"로보택시·자율주행", words:["로보택시", "자율주행", "FSD", "완전자율주행", "오토파일럿"] },
+      { label:"옵티머스·로봇", words:["옵티머스", "휴머노이드", "로봇", "피지컬 AI"] },
+      { label:"전기차 수요", words:["전기차", "인도량", "판매량", "수요", "차량 판매", "가격 인하"] },
+      { label:"실적·마진", words:["실적", "어닝", "매출", "영업이익", "마진", "수익성"] },
+      { label:"에너지·배터리", words:["ESS", "에너지", "배터리", "메가팩", "충전"] },
+    ];
+    const autoSignalRules = [
+      { label:"전기차·하이브리드", words:["전기차", "하이브리드", "미래차", "SDV", "소프트웨어 중심 차량", "친환경차"] },
+      { label:"판매·마진", words:["판매", "인도량", "실적", "매출", "영업이익", "마진", "수익성"] },
+      { label:"로봇·보스턴 다이내믹스", words:["보스턴 다이내믹스", "로봇", "휴머노이드", "피지컬 AI"] },
+      { label:"주주환원·배당", words:["주주환원", "배당", "자사주", "밸류업"] },
+      { label:"수급·주가 흐름", words:["외국인", "기관", "수급", "매수세", "반등", "주가"] },
+    ];
+    const appleSignalRules = [
+      { label:"iPhone·제품 출시", words:["아이폰", "iPhone", "제품", "모델", "출시", "디바이스"] },
+      { label:"AI 전략", words:["AI", "인공지능", "애플 인텔리전스", "시리", "Siri"] },
+      { label:"서비스·마진", words:["서비스", "마진", "총이익률", "매출", "실적", "수익성", "이익률"] },
+      { label:"중국·공급망", words:["중국", "공급망", "메모리", "부품", "협상", "가격 압박", "스펙 관리"] },
+      { label:"빅테크 주가 흐름", words:["시가총액", "주가", "수익률", "빅테크", "차익 실현", "상승"] },
+    ];
+    const platformSignalRules = [
+      { label:"AI 서비스", words:["AI", "인공지능", "모델", "에이전트", "서비스"] },
+      { label:"클라우드·광고", words:["클라우드", "Azure", "AWS", "광고", "검색", "유튜브"] },
+      { label:"실적·마진", words:["실적", "어닝", "매출", "영업이익", "마진", "수익성"] },
+      { label:"빅테크 주가 흐름", words:["시가총액", "주가", "수익률", "빅테크", "차익 실현", "상승"] },
+      { label:"제품·서비스", words:["제품", "서비스", "구독", "플랫폼", "이용자"] },
+    ];
+    const powerInfraSignalRules = [
+      { label:"전력기기·전력망", words:["전력기기", "전력 기기", "전력 설비", "전력설비", "전력망", "전력 인프라", "전력 3대", "전력 전기", "변압기", "배전", "송전"] },
+      { label:"AI 전력수요", words:["AI", "인공지능", "데이터센터", "전력 수요", "전력수요", "전력 부족"] },
+      { label:"해저케이블·전선", words:["해저케이블", "해저 케이블", "전선", "케이블", "버스덕트"] },
+      { label:"실적·수주", words:["실적", "어닝", "매출", "영업이익", "마진", "수익성", "수주", "수주 호조", "목표가"] },
+      { label:"계열사 재평가", words:["자회사", "계열사", "LS전선", "LS에코에너지", "LS마린솔루션", "LS머트리얼즈", "재평가"] },
+    ];
+    const detailSignalRules = [
+      { label:"맞춤칩·AI 네트워킹", words:["맞춤칩", "맞춤형 칩", "AI 네트워킹", "네트워킹 칩", "AI 프로세서", "ASIC", "주문형 반도체", "A6", "할라피뇨"] },
+      { label:"지분가치·지주사 할인", words:["지분 가치", "지분율", "지주사 할인", "순자산", "순자산 가치", "NAV", "지분법", "보유 지분", "최대 주주"] },
+      { label:"투자금 회수·배당", words:["투자금 회수", "배당", "배당금", "지분 매각", "매각", "시세 차익", "원스토어", "티맵", "SK쉴더스"] },
+      { label:"목표가·상승 여력", words:["목표가", "상승 여력", "저평가", "재평가", "목표 주가", "할인율 해소"] },
+      { label:"계약·수주", words:["계약", "장기 계약", "공급 계약", "수주", "발주", "고객사", "협력", "파트너십"] },
+      { label:"마진·EPS 성장", words:["EPS", "이익률", "마진", "영업이익", "수익성", "성장세", "매출 성장"] },
+      { label:"차트·수급 대응", words:["차트", "반등", "물량 축소", "비중", "추가 매수", "외국인", "수급", "순매수", "순매도"] },
+      { label:"규제·정책 변수", words:["규제", "정책", "정부", "보조금", "관세", "법안", "승인"] },
+    ];
+    function queryIncludes(query, terms) {
+      const q = compact(query);
+      return terms.some(term => {
+        const key = compact(term);
+        return q && key && (q.includes(key) || key.includes(q));
+      });
+    }
+    function keySignalRulesForQuery(query) {
+      if (queryIncludes(query, ["테슬라", "tesla", "tsla"])) return teslaSignalRules;
+      if (queryIncludes(query, ["현대차", "현대자동차", "기아", "hyundai", "kia"])) return autoSignalRules;
+      if (queryIncludes(query, ["애플", "apple", "aapl"])) return appleSignalRules;
+      if (queryIncludes(query, ["마이크로소프트", "구글", "알파벳", "아마존", "메타", "넷플릭스", "microsoft", "google", "amazon", "meta", "netflix"])) return platformSignalRules;
+      if (queryIncludes(query, ["ls", "엘에스", "ls electric", "ls일렉트릭", "ls에코에너지", "ls마린솔루션", "ls머트리얼즈", "전력기기", "전력설비", "전선", "해저케이블"])) return powerInfraSignalRules;
+      if (queryIncludes(query, ["sk하이닉스", "하이닉스", "삼성전자", "삼성전기", "마이크론", "TSMC", "대만반도체", "타이완반도체", "엔비디아", "인텔", "반도체", "micron", "taiwan semiconductor", "tsm", "nvidia", "intel", "nvda", "intc"])) return semiconductorSignalRules;
+      return defaultKeySignalRules;
+    }
+    const cautionSignalRules = [
+      { label:"실적 이벤트 확인", words:["실적 발표", "어닝 발표", "가이던스", "예측", "엇갈", "중요한 지표", "지표가 될", "실적 둔화"] },
+      { label:"밸류 부담", words:["고평가", "밸류", "PER", "멀티플", "선반영", "가격 부담"] },
+      { label:"추격 매수 부담", words:["추격", "급등", "과열", "단기 부담"] },
+      { label:"차익 실현·수급 부담", words:["차익 실현", "매물", "수급", "동조화", "낙폭", "청산"] },
+      { label:"공급 과잉 우려", words:["공급 과잉", "과잉", "수요 둔화", "반도체 수출 증가세", "둔화"] },
+      { label:"확인 필요", words:["확인", "조건", "관망", "지켜", "보유"] },
+      { label:"기술 경쟁력 검증", words:["기술 경쟁력", "수율", "미세 공정", "레퍼런스", "점유율", "매출이 낮", "성과를 보여주지", "투자 매력"] },
+      { label:"리스크", words:["리스크", "하락", "부진", "악화", "둔화", "회피", "매도"] },
+    ];
+    function collectSignals(opinions, rules, limit = 2, stanceFilter = null) {
+      const allowed = stanceFilter ? new Set(stanceFilter) : null;
+      const rows = opinions.filter(o => isReportableOpinion(o) && (!allowed || allowed.has(o.stance)));
+      const scored = rules.map(rule => ({
+        label: rule.label,
+        count: rows.filter(o => includesAny(`${o.summary || ""} ${o.evidence || ""}`, rule.words)).length,
+      })).filter(row => row.count > 0);
+      scored.sort((a, b) => b.count - a.count);
+      return scored.map(row => row.label).slice(0, limit);
+    }
+    function mergeSignals(...groups) {
+      const seen = new Set();
+      return groups.flat().filter(signal => {
+        if (!signal || seen.has(signal)) return false;
+        seen.add(signal);
+        return true;
+      });
+    }
+    const signalText = signals => signals.join(", ");
+    function conciseOpinionText(text) {
+      const normalized = String(text || "").replace(/\s+/g, " ").trim();
+      if (!normalized) return "";
+      return normalized.length > 72 ? `${normalized.slice(0, 72).replace(/[,.·\s]+$/, "")}...` : normalized;
+    }
+    function representativeOpinionTexts(opinions, stances, limit = 2) {
+      const allowed = new Set(stances);
+      const seen = new Set();
+      return (opinions || [])
+        .filter(opinion => isReportableOpinion(opinion) && allowed.has(opinion.stance))
+        .map(opinion => conciseOpinionText(opinion.summary || opinion.evidence))
+        .filter(text => {
+          const key = compact(text);
+          if (!key || seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        })
+        .slice(0, limit);
+    }
+    function opinionDetailText(texts) {
+      if (!texts.length) return "";
+      return texts.join(" / ");
+    }
+    function cleanReportSentence(text, maxLength = 104) {
+      let normalized = String(text || "")
+        .replace(/\s+/g, " ")
+        .replace(/^화자는\s*/, "")
+        .replace(/^(해당|이)\s*종목은\s*/, "")
+        .trim();
+      if (!normalized) return "";
+      const first = normalized.split(/(?<=[.!?])\s+/)[0] || normalized;
+      normalized = first
+        .replace(/\s*(라고|다고)\s*언급했습니다\.?$/g, "")
+        .replace(/\s*말했습니다\.?$/g, "")
+        .replace(/[.。]+$/g, "")
+        .trim();
+      if (normalized.length > maxLength) {
+        normalized = `${normalized.slice(0, maxLength).replace(/[,.·\s]+$/, "")}...`;
+      }
+      return normalized;
+    }
+    function detailPhraseScore(text, opinion, sourceRank = 0) {
+      const value = String(text || "");
+      if (!value.trim()) return -100;
+      let score = sourceRank;
+      if (/[0-9]/.test(value)) score += 5;
+      if (includesAny(value, ["목표가", "상승 여력", "PER", "EPS", "마진", "영업이익", "매출", "수주", "계약", "배당", "지분", "순자산", "맞춤칩", "AI", "데이터센터", "수급", "차트", "반등", "비중"])) score += 6;
+      if (opinion.confidence === "강함") score += 2;
+      if (opinion.opinionType === "현재 투자 의견") score += 2;
+      if (value.length < 18) score -= 4;
+      if (includesAny(value, ["좋습니다", "나쁩니다", "확인해야 합니다"]) && value.length < 28) score -= 3;
+      return score;
+    }
+    function selectDetailPhrases(opinions, stances, limit = 2, options = {}) {
+      const allowed = new Set(stances);
+      const rows = reportableOpinions(opinions || []).filter(opinion => allowed.has(opinion.stance));
+      const candidates = [];
+      rows.forEach((opinion, order) => {
+        [
+          [opinion.summary, 12],
+          [opinion.evidence, 6],
+        ].forEach(([text, sourceRank]) => {
+          const phrase = cleanReportSentence(text, options.maxLength || 88);
+          if (!phrase) return;
+          candidates.push({
+            phrase,
+            key: compact(phrase),
+            score: detailPhraseScore(phrase, opinion, sourceRank) - order * 0.1,
+          });
+        });
+      });
+      const seen = new Set();
+      return candidates
+        .sort((a, b) => b.score - a.score)
+        .filter(item => {
+          if (!item.key || seen.has(item.key)) return false;
+          seen.add(item.key);
+          return true;
+        })
+        .slice(0, limit)
+        .map(item => item.phrase);
+    }
+    function quotedList(items) {
+      return items.map(item => `"${item}"`).join(", ");
+    }
+    function escapeRegExp(text) {
+      return String(text || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
+    function analystClause(text, query = "", maxLength = 72) {
+      let clause = cleanReportSentence(text, maxLength)
+        .replace(new RegExp(`^${escapeRegExp(query)}(?:은|는|이|가)?\\s*`), "")
+        .replace(/\s*(입니다|습니다|됩니다|합니다)$/g, "")
+        .replace(/\s*것으로\s*(전망|예상|기대)$/g, "")
+        .replace(/\s*(전망|예상|기대)됩니다$/g, "")
+        .replace(/\s*필요합니다$/g, "필요")
+        .replace(/\s*좋습니다$/g, "긍정적")
+        .replace(/[.。]+$/g, "")
+        .trim();
+      if (clause.length > maxLength) {
+        clause = `${clause.slice(0, maxLength).replace(/[,.·\s]+$/, "")}...`;
+      }
+      return clause;
+    }
+    function analystSignalText(signals, fallback = "") {
+      const texts = (signals || []).map(signal => cautionDisplayLabel(signal)).filter(Boolean);
+      return texts.length ? signalText([...new Set(texts)].slice(0, 3)) : fallback;
+    }
+    function analystDetailText(details, query, limit = 2) {
+      const seen = new Set();
+      return (details || [])
+        .map(text => analystClause(text, query))
+        .filter(text => {
+          const key = compact(text);
+          if (!key || seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        })
+        .slice(0, limit)
+        .join(", ");
+    }
+    function analystCaseText(signals, details, query, fallback) {
+      const signalPart = analystSignalText(signals);
+      const detailPart = analystDetailText(details, query, 1);
+      return signalPart || detailPart || fallback;
+    }
+    function analystCheckText(signals, fallback = "다음 실적과 수급 지표") {
+      return signalCheckText(signals) || fallback;
+    }
+    function headlineTopic(text, maxLength = 18) {
+      return String(text || "")
+        .replace(/\s*(것으로\s*)?(전망|예상|기대)됩니다?$/g, "")
+        .replace(/\s*(할|될)\s*것$/g, "")
+        .replace(/[.。]+$/g, "")
+        .slice(0, maxLength)
+        .replace(/[,.·\s]+$/, "");
+    }
+    function reportEvidenceContext(data, mood) {
+      const opinions = reportableOpinions(data.opinions || []);
+      const keyRules = keySignalRulesForQuery(data.query);
+      const queryFirst = keyRules !== defaultKeySignalRules;
+      const queryKeySignals = collectSignals(opinions, keyRules, 3, ["긍정"]);
+      const detailKeySignals = collectSignals(opinions, detailSignalRules, 3, ["긍정"]);
+      const detailCautionSignals = collectSignals(opinions, detailSignalRules, 3, ["신중", "부정"]);
+      const ruleCautionSignals = collectSignals(opinions, cautionSignalRules, 3, ["신중", "부정"]);
+      const keySignals = (queryFirst
+        ? mergeSignals(queryKeySignals, detailKeySignals)
+        : mergeSignals(detailKeySignals, queryKeySignals)
+      ).slice(0, 3);
+      const cautionSignals = mergeSignals(detailCautionSignals, ruleCautionSignals).slice(0, 3);
+      return {
+        opinions,
+        keySignals,
+        cautionSignals,
+        positiveDetails:selectDetailPhrases(opinions, ["긍정"], 2),
+        cautionDetails:selectDetailPhrases(opinions, ["신중", "부정"], 2),
+        allDetails:selectDetailPhrases(opinions, ["긍정", "신중", "부정"], 3),
+      };
+    }
+    function cautionDisplayLabel(signal) {
+      return {
+        "실적 이벤트 확인":"실적 발표·가이던스",
+      }[signal] || signal;
+    }
+    function cautionSignalText(signals) {
+      return signals.map(cautionDisplayLabel).join(", ");
+    }
+    function cautionHeadlineLabel(signal) {
+      return {
+        "실적 이벤트 확인":"실적 확인",
+      }[signal] || signal;
+    }
+    function cautionReasonText(signals) {
+      const refined = signals.filter(signal => signal !== "확인 필요");
+      if (signals.includes("확인 필요")) {
+        return refined.length ? `${cautionSignalText(refined)} 및 아직 확인할 조건` : "아직 확인할 조건";
+      }
+      return cautionSignalText(signals);
+    }
+    function opinionCountText(count, label) {
+      return `${count}명은 ${label}`;
+    }
+    function expectationText(signals) {
+      return signals.length ? signalText(signals) : "상승 재료";
+    }
+    function riskText(signals) {
+      return signals.length ? cautionReasonText(signals) : "확인할 리스크";
+    }
+    const signalInsightMap = {
+      "HBM·메모리": {
+        thesis:"HBM·메모리 수요와 가격 사이클",
+        check:"HBM 수주, 메모리 가격, 재고 흐름",
+      },
+      "AI 반도체 수요": {
+        thesis:"데이터센터 투자와 AI 칩 수요가 실적 기여로 이어지는지",
+        check:"AI 서버 수요, 수주 전망, 주요 고객 투자 계획",
+      },
+      "ADR·지수 편입": {
+        thesis:"글로벌 자금 유입과 비교 밸류에이션 재평가",
+        check:"ADR 상장 일정, 지수 편입 여부, 외국인 수급",
+      },
+      "AI 수요": {
+        thesis:"AI 투자가 실제 매출 기여로 이어지는지",
+        check:"AI 매출 비중, 신규 고객, 투자 지속성",
+      },
+      "업황 회복": {
+        thesis:"재고·가격·수요가 동시에 개선되는 업황 회복",
+        check:"재고 감소, 판가 흐름, 업황 가이던스",
+      },
+      "CPU 수요": {
+        thesis:"CPU 수요와 가격 인상이 실제 매출 회복으로 이어지는지",
+        check:"CPU 가격, 서버·PC 수요, 다음 분기 가이던스",
+      },
+      "파운드리 회복": {
+        thesis:"파운드리 경쟁력이 수율과 고객 레퍼런스로 증명되는지",
+        check:"수율 개선, 고객사 확보, 파운드리 매출",
+      },
+      "미국 제조·정책 지원": {
+        thesis:"정책 지원이 투자 부담을 줄이고 생산 경쟁력으로 연결되는지",
+        check:"보조금 집행, 미국 공장 가동률, 주요 고객 계약",
+      },
+      "실적 개선": {
+        thesis:"매출 성장보다 이익률까지 좋아지는 실적 체력",
+        check:"매출 성장률, 영업이익률, 다음 분기 가이던스",
+      },
+      "실적·마진": {
+        thesis:"외형 성장과 마진 회복이 동시에 나오는지",
+        check:"매출 성장률, 영업이익률, 비용 부담",
+      },
+      "투자 확대": {
+        thesis:"증설·CAPEX가 미래 매출로 연결되는지",
+        check:"투자 집행 속도, 가동률, 신규 수주",
+      },
+      "외국인 수급": {
+        thesis:"외국인·기관 매수세가 단기 수급을 넘어 지속되는지",
+        check:"외국인·기관 순매수 지속일수와 거래대금",
+      },
+      "수급·주가 흐름": {
+        thesis:"거래량을 동반한 추세 회복인지",
+        check:"거래량, 지지선 이탈 여부, 기관·외국인 수급",
+      },
+      "로보택시·자율주행": {
+        thesis:"로보택시/FSD가 승인 일정과 상용화로 이어지는지",
+        check:"규제 승인 일정, 실제 운행 지역, 매출 기여 시점",
+      },
+      "옵티머스·로봇": {
+        thesis:"로봇 사업이 시연을 넘어 양산과 수요로 연결되는지",
+        check:"양산 일정, 원가, 실제 고객 수요",
+      },
+      "로봇·피지컬 AI": {
+        thesis:"로봇 사업이 수주·매출·수익성으로 확인되는지",
+        check:"수주 공시, 상용화 일정, 사업부 수익성",
+      },
+      "로봇·보스턴 다이내믹스": {
+        thesis:"로봇 사업이 자동차 본업과 시너지를 내는지",
+        check:"상용화 일정, 수주, 자동차 생산 적용 사례",
+      },
+      "전기차 수요": {
+        thesis:"인도량 회복과 가격 인하 후 마진 방어",
+        check:"분기 인도량, 평균판매단가, 자동차 마진",
+      },
+      "전기차·미래차": {
+        thesis:"전기차·하이브리드 판매와 미래차 투자가 실적으로 이어지는지",
+        check:"차종별 판매량, 전동화 투자, 마진 흐름",
+      },
+      "전기차·하이브리드": {
+        thesis:"전기차와 하이브리드 믹스가 판매·마진을 개선하는지",
+        check:"차종별 판매량, 인센티브, 영업이익률",
+      },
+      "판매·마진": {
+        thesis:"판매량 회복이 할인·인센티브 부담을 이기는지",
+        check:"판매량, 인센티브, 영업이익률",
+      },
+      "주주환원·배당": {
+        thesis:"주주환원이 일회성 이벤트가 아니라 반복 가능한 정책인지",
+        check:"배당 정책, 자사주 규모, 현금흐름",
+      },
+      "에너지·배터리": {
+        thesis:"에너지·배터리 사업이 이익 비중 확대로 이어지는지",
+        check:"사업부 매출 비중, 수익률, 신규 계약",
+      },
+      "iPhone·제품 출시": {
+        thesis:"신제품 출시가 교체 수요와 매출 성장으로 이어지는지",
+        check:"iPhone 출하량, 출시 일정, 평균판매단가",
+      },
+      "AI 전략": {
+        thesis:"AI 기능이 서비스·기기 판매의 차별화로 이어지는지",
+        check:"AI 기능 공개 일정, 사용자 반응, 유료 서비스 연결 여부",
+      },
+      "서비스·마진": {
+        thesis:"서비스 매출과 마진이 하드웨어 둔화를 보완하는지",
+        check:"서비스 매출 성장률, 총이익률, iPhone 매출 흐름",
+      },
+      "중국·공급망": {
+        thesis:"중국 수요와 부품 조달 이슈가 마진에 주는 영향",
+        check:"중국 판매 흐름, 공급망 이슈, 부품 원가 압박",
+      },
+      "빅테크 주가 흐름": {
+        thesis:"빅테크 내 상대 수익률과 차익 실현 압력",
+        check:"주가 과열 여부, 거래량, 주요 빅테크 대비 흐름",
+      },
+      "AI 서비스": {
+        thesis:"AI 서비스가 실제 매출이나 이용자 증가로 연결되는지",
+        check:"AI 서비스 출시 일정, 유료 전환, 이용자 지표",
+      },
+      "클라우드·광고": {
+        thesis:"클라우드·광고 매출이 이익 성장을 이끄는지",
+        check:"클라우드 성장률, 광고 매출, 영업마진",
+      },
+      "제품·서비스": {
+        thesis:"제품과 서비스 생태계가 반복 매출로 이어지는지",
+        check:"신제품 반응, 구독 매출, 이용자 유지율",
+      },
+      "전력기기·전력망": {
+        thesis:"전력 인프라 수요가 수주와 마진으로 이어지는지",
+        check:"전력기기 수주, 변압기 수요, 전력망 투자 일정",
+      },
+      "맞춤칩·AI 네트워킹": {
+        thesis:"맞춤형 AI 칩과 네트워킹 수요가 실적 성장으로 이어지는지",
+        check:"AI 칩 수주, 네트워킹 매출, 주요 고객 협력",
+      },
+      "지분가치·지주사 할인": {
+        thesis:"보유 지분 가치와 지주사 할인 해소가 주가 재평가로 이어지는지",
+        check:"보유 지분 가치, NAV 할인율, 주요 자회사 주가",
+      },
+      "투자금 회수·배당": {
+        thesis:"투자금 회수와 배당 재원이 주주가치로 연결되는지",
+        check:"자회사 매각 일정, 배당 규모, 현금 유입 시점",
+      },
+      "목표가·상승 여력": {
+        thesis:"목표가 상향과 상승 여력이 실제 실적·수급으로 뒷받침되는지",
+        check:"목표가 근거, 컨센서스 변화, 현재 주가 대비 괴리",
+      },
+      "계약·수주": {
+        thesis:"고객사 계약과 수주가 반복 매출로 이어지는지",
+        check:"계약 규모, 공급 일정, 고객사 투자 계획",
+      },
+      "마진·EPS 성장": {
+        thesis:"매출 증가가 EPS와 마진 개선으로 연결되는지",
+        check:"EPS 추정치, 영업이익률, 비용 부담",
+      },
+      "차트·수급 대응": {
+        thesis:"단기 반등이 추세 회복인지 매물 소화인지",
+        check:"거래량, 외국인 수급, 지지선 이탈 여부",
+      },
+      "규제·정책 변수": {
+        thesis:"정책 변화가 매출·비용·밸류에이션에 미치는 영향",
+        check:"정책 일정, 승인 여부, 비용 증가 폭",
+      },
+      "AI 전력수요": {
+        thesis:"AI 데이터센터 전력 수요가 실제 발주로 연결되는지",
+        check:"데이터센터 투자, 전력설비 발주, 고객사 투자 계획",
+      },
+      "해저케이블·전선": {
+        thesis:"케이블·전선 수요가 프로젝트 수주와 수익성으로 이어지는지",
+        check:"해저케이블 수주, 전선 판가, 프로젝트 마진",
+      },
+      "실적·수주": {
+        thesis:"수주 호조가 매출과 이익률 개선으로 전환되는지",
+        check:"수주잔고, 매출 인식 속도, 영업이익률",
+      },
+      "계열사 재평가": {
+        thesis:"계열사 가치가 지주사 할인 해소로 이어지는지",
+        check:"주요 계열사 실적, 지분 가치, 지주사 할인율",
+      },
+    };
+    const cautionInsightMap = {
+      "밸류 부담":"주가가 선행해서 움직이면 추가 상승 여력은 축소됩니다",
+      "추격 매수 부담":"급등 이후 신규 진입 구간에서는 손익비 점검이 필요합니다",
+      "실적 이벤트 확인":"실적 발표 이후 수요와 마진 가이던스가 확인돼야 합니다",
+      "확인 필요":"전망이 숫자나 일정으로 검증되기 전까지 주가 방향성은 제한적입니다",
+      "차익 실현·수급 부담":"단기 급등 이후 매물 출회와 수급 변동성이 남아 있습니다",
+      "공급 과잉 우려":"AI 칩 수요와 공급 균형이 확인돼야 이익 추정 신뢰도가 높아집니다",
+      "리스크":"실적 둔화, 업황 악화, 규제·경쟁 이슈가 투자심리를 약화시킬 수 있습니다",
+      "기술 경쟁력 검증":"수율, 고객 레퍼런스, 점유율이 확인돼야 경쟁력 평가가 가능합니다",
+    };
+    function ensureSentence(text) {
+      const value = String(text || "").trim();
+      if (!value) return "";
+      if (/[.!?。]$/.test(value)) return value;
+      return `${value}.`;
+    }
+    function thesisToResearchSentence(text) {
+      const value = String(text || "").trim();
+      if (!value) return "";
+      if (value.endsWith("는지")) return `${value.replace(/는지$/, "는지 여부")}가 실적과 주가 방향을 좌우합니다.`;
+      if (value.endsWith("인지")) return `${value.replace(/인지$/, "인지 여부")}가 실적과 주가 방향을 좌우합니다.`;
+      if (value.includes("사이클")) return `${value}이 이익 추정 변화의 출발점입니다.`;
+      if (value.endsWith("영향")) return `${value}이 실적 추정과 밸류에이션을 좌우합니다.`;
+      if (value.includes("회복") || value.includes("개선")) return `${value}이 실적 회복 논리를 강화하고 있습니다.`;
+      if (value.includes("재평가")) return `${value}가 밸류에이션 할인 축소 요인입니다.`;
+      return `${value}이 매출, 이익, 수급 변화로 이어지는지 봐야 합니다.`;
+    }
+    function cautionSignalSentence(signal) {
+      if (cautionInsightMap[signal]) return cautionInsightMap[signal];
+      if (signalInsightMap[signal]?.check) return `${signalInsightMap[signal].check} 확인 전까지 투자심리 회복은 제한적입니다`;
+      const label = cautionDisplayLabel(signal);
+      if (!label) return "";
+      return `${label} 검증 전까지 투자심리 회복은 제한적입니다`;
+    }
+    function signalThesisText(signals) {
+      const texts = signals.map(signal => signalInsightMap[signal]?.thesis || signal);
+      return signalText([...new Set(texts)].slice(0, 3));
+    }
+    function signalCheckText(signals) {
+      const items = [];
+      signals
+        .map(signal => signalInsightMap[signal]?.check)
+        .filter(Boolean)
+        .flatMap(check => check.split(","))
+        .map(item => item.trim())
+        .filter(Boolean)
+        .forEach(item => {
+          const narrowerIndex = items.findIndex(existing => item.includes(existing));
+          if (narrowerIndex >= 0) {
+            items[narrowerIndex] = item;
+            return;
+          }
+          if (items.some(existing => existing.includes(item))) return;
+          items.push(item);
+        });
+      return signalText(items.slice(0, 6));
+    }
+    function cautionInsightText(signals, limit = 2) {
+      const texts = signals.map(cautionSignalSentence).filter(Boolean);
+      return [...new Set(texts)].slice(0, limit).map(ensureSentence).join(" ");
+    }
+    function thesisToInvestmentPoint(text) {
+      return thesisToResearchSentence(text);
+    }
+    function signalInvestmentText(signals, limit = 2) {
+      const texts = (signals || [])
+        .map(signal => signalInsightMap[signal]?.thesis || signal)
+        .map(thesisToInvestmentPoint)
+        .filter(Boolean);
+      return [...new Set(texts)].slice(0, limit).join(" ");
+    }
+    function checkVariableSentence(checkText) {
+      return `${checkText} 확인 여부가 핵심 변수입니다.`;
+    }
+    function checkEvidenceSentence(checkText) {
+      return `${checkText} 확인 여부가 관건입니다.`;
+    }
+    const briefSignalMap = {
+      "HBM·메모리":{
+        topic:"HBM 수급",
+        thesis:"HBM 수요와 판가 개선이 실적 회복을 이끕니다.",
+        basis:"HBM 수요와 ASP 개선이 핵심입니다.",
+        check:"HBM 수주와 메모리 가격을 점검해야 합니다.",
+      },
+      "AI 반도체 수요":{
+        topic:"AI 반도체",
+        thesis:"AI 서버 투자가 반도체 수요를 견인합니다.",
+        basis:"AI 서버 수요가 실적의 핵심입니다.",
+        check:"AI 서버 수요와 고객 투자를 점검해야 합니다.",
+      },
+      "AI 수요":{
+        topic:"AI 수요",
+        thesis:"AI 투자가 매출 성장의 핵심 축입니다.",
+        basis:"AI 매출 전환 속도가 핵심입니다.",
+        check:"AI 매출 비중과 신규 고객을 점검해야 합니다.",
+      },
+      "업황 회복":{
+        topic:"업황 반등",
+        thesis:"재고 감소와 판가 반등이 업황 회복을 이끕니다.",
+        basis:"재고 감소와 판가 반등이 핵심입니다.",
+        check:"재고와 판가 흐름을 점검해야 합니다.",
+      },
+      "실적 개선":{
+        topic:"실적 체력",
+        thesis:"매출 성장과 마진 개선이 이익 체력을 높입니다.",
+        basis:"매출 성장과 마진 개선이 핵심입니다.",
+        check:"매출 성장률과 영업이익률을 점검해야 합니다.",
+      },
+      "실적·마진":{
+        topic:"실적·마진",
+        thesis:"외형 성장과 마진 회복이 이익을 좌우합니다.",
+        basis:"매출과 마진 동반 개선이 핵심입니다.",
+        check:"매출 성장률과 영업이익률을 점검해야 합니다.",
+      },
+      "맞춤칩·AI 네트워킹":{
+        topic:"AI칩 수요",
+        thesis:"AI 맞춤칩 수요가 매출 성장을 이끕니다.",
+        basis:"AI 맞춤칩 수주가 핵심입니다.",
+        check:"AI 칩 수주와 네트워킹 매출을 점검해야 합니다.",
+      },
+      "계약·수주":{
+        topic:"계약·수주",
+        thesis:"고객사 수주가 반복 매출의 핵심입니다.",
+        basis:"계약 규모와 공급 일정이 핵심입니다.",
+        check:"계약 규모와 공급 일정을 점검해야 합니다.",
+      },
+      "마진·EPS 성장":{
+        topic:"마진·EPS",
+        thesis:"EPS와 마진 개선이 밸류에이션을 좌우합니다.",
+        basis:"EPS와 영업이익률 개선이 핵심입니다.",
+        check:"EPS 추정치와 영업이익률을 점검해야 합니다.",
+      },
+      "차트·수급 대응":{
+        topic:"수급",
+        thesis:"거래량과 외국인 수급이 단기 방향을 좌우합니다.",
+        basis:"거래량과 외국인 수급이 핵심입니다.",
+        check:"거래량과 외국인 수급을 점검해야 합니다.",
+      },
+      "지분가치·지주사 할인":{
+        topic:"NAV 할인",
+        thesis:"NAV 할인 축소가 주가 재평가의 축입니다.",
+        basis:"NAV 할인 축소가 핵심입니다.",
+        check:"NAV 할인율과 자회사 주가를 점검해야 합니다.",
+      },
+      "투자금 회수·배당":{
+        topic:"주주환원",
+        thesis:"현금 유입과 배당 재원이 주주환원을 좌우합니다.",
+        basis:"현금 유입과 배당 재원이 핵심입니다.",
+        check:"매각 일정과 배당 규모를 점검해야 합니다.",
+      },
+      "전기차·하이브리드":{
+        topic:"전동화 믹스",
+        thesis:"전기차·하이브리드 믹스가 마진을 좌우합니다.",
+        basis:"차종 믹스와 마진 방어가 핵심입니다.",
+        check:"차종별 판매량과 영업이익률을 점검해야 합니다.",
+      },
+      "판매·마진":{
+        topic:"판매·마진",
+        thesis:"판매량과 인센티브가 마진을 좌우합니다.",
+        basis:"판매량과 인센티브가 핵심입니다.",
+        check:"판매량과 영업이익률을 점검해야 합니다.",
+      },
+      "로봇·보스턴 다이내믹스":{
+        topic:"로봇 사업",
+        thesis:"로봇 사업의 상용화가 재평가를 좌우합니다.",
+        basis:"상용화 일정과 수주가 핵심입니다.",
+        check:"상용화 일정과 수주를 점검해야 합니다.",
+      },
+      "목표가·상승 여력":{
+        topic:"목표가",
+        thesis:"목표가와 현 주가의 괴리가 투자 매력을 좌우합니다.",
+        basis:"목표가 근거와 주가 괴리가 핵심입니다.",
+        check:"목표가 근거와 컨센서스를 점검해야 합니다.",
+      },
+    };
+    const briefCautionMap = {
+      "밸류 부담":{topic:"밸류", text:"주가 선행 구간은 상승 여력이 제한됩니다."},
+      "추격 매수 부담":{topic:"추격매수", text:"급등 후 진입은 손익비 점검이 우선입니다."},
+      "실적 이벤트 확인":{topic:"실적", text:"실적 발표 전까지 변동성에 유의해야 합니다."},
+      "확인 필요":{topic:"검증", text:"숫자 검증 전까지 방향성은 제한적입니다."},
+      "차익 실현·수급 부담":{topic:"수급", text:"차익 매물은 단기 변동성을 키울 수 있습니다."},
+      "공급 과잉 우려":{topic:"공급", text:"공급 균형 훼손 시 이익 추정이 낮아집니다."},
+      "리스크":{topic:"리스크", text:"업황 둔화와 규제 이슈가 투자심리를 누릅니다."},
+      "기술 경쟁력 검증":{topic:"기술", text:"수율과 고객 확보가 검증돼야 합니다."},
+    };
+    const briefVariableMap = {
+      "HBM·메모리":"HBM 수주와 메모리 가격이 실적 눈높이를 좌우합니다.",
+      "AI 반도체 수요":"AI 서버 수요와 고객 투자가 단기 방향을 좌우합니다.",
+      "AI 수요":"AI 매출 비중과 신규 고객이 단기 방향을 좌우합니다.",
+      "업황 회복":"재고와 판가 흐름이 실적 눈높이를 좌우합니다.",
+      "실적 개선":"매출 성장률과 영업이익률이 주가 방향을 좌우합니다.",
+      "실적·마진":"매출 성장률과 영업이익률이 주가 방향을 좌우합니다.",
+      "맞춤칩·AI 네트워킹":"AI 칩 수주와 네트워킹 매출이 단기 방향을 좌우합니다.",
+      "계약·수주":"계약 규모와 공급 일정이 매출 가시성을 좌우합니다.",
+      "마진·EPS 성장":"EPS 추정치와 영업이익률이 주가 방향을 좌우합니다.",
+      "차트·수급 대응":"거래량과 외국인 매매가 단기 방향을 좌우합니다.",
+      "지분가치·지주사 할인":"NAV 할인율과 자회사 주가가 단기 방향을 좌우합니다.",
+      "투자금 회수·배당":"매각 일정과 배당 규모가 주주환원을 좌우합니다.",
+      "전기차·하이브리드":"차종별 판매량과 영업이익률이 마진을 좌우합니다.",
+      "판매·마진":"판매량과 영업이익률이 마진을 좌우합니다.",
+      "로봇·보스턴 다이내믹스":"상용화 일정과 수주가 재평가를 좌우합니다.",
+      "목표가·상승 여력":"목표가 근거와 컨센서스가 단기 방향을 좌우합니다.",
+      "밸류 부담":"현 주가와 이익 추정의 괴리가 관건입니다.",
+      "추격 매수 부담":"거래량과 단기 수익률을 함께 봐야 합니다.",
+      "실적 이벤트 확인":"다음 가이던스가 단기 방향을 좌우합니다.",
+      "확인 필요":"숫자 검증이 주가 방향을 좌우합니다.",
+      "차익 실현·수급 부담":"차익 매물과 거래대금이 단기 방향을 좌우합니다.",
+      "공급 과잉 우려":"수요와 공급 균형이 이익 추정을 좌우합니다.",
+      "리스크":"업황과 규제 이슈가 투자심리를 좌우합니다.",
+      "기술 경쟁력 검증":"수율과 고객 확보가 경쟁력을 좌우합니다.",
+    };
+    const plainSignalMap = {
+      "HBM·메모리":{
+        reason:"메모리 가격과 재고가 동시에 개선되면 HBM 중심 매출이 늘고 이익 추정이 올라갈 수 있습니다.",
+        next:"다음 실적에서 HBM 수주, 메모리 가격, 영업이익률이 함께 개선되는지 확인하세요.",
+      },
+      "AI 반도체 수요":{
+        reason:"AI 서버 투자가 늘면 고성능 반도체 주문이 늘고 공급사 실적 가시성이 높아질 수 있습니다.",
+        next:"AI 서버 출하와 주요 고객의 투자 계획이 실제 주문으로 이어지는지 확인하세요.",
+      },
+      "AI 수요":{
+        reason:"AI 서비스가 매출로 전환되면 투자비 부담보다 성장성이 더 크게 평가될 수 있습니다.",
+        next:"AI 매출 비중, 이용자 증가, 신규 고객 확보가 이어지는지 확인하세요.",
+      },
+      "업황 회복":{
+        reason:"가격 반등과 재고 감소가 함께 나타나면 업황 바닥 통과 인식이 강해질 수 있습니다.",
+        next:"다음 실적에서 ASP, 재고일수, 영업이익률 흐름을 함께 확인하세요.",
+      },
+      "실적 개선":{
+        reason:"매출 성장과 이익률 개선이 동시에 확인되면 현재 주가의 부담을 낮출 수 있습니다.",
+        next:"다음 실적의 매출 성장률, 영업이익률, 가이던스 변화를 확인하세요.",
+      },
+      "실적·마진":{
+        reason:"매출 증가가 마진 회복으로 이어져야 성장 기대가 실제 이익 개선으로 연결됩니다.",
+        next:"다음 실적의 매출, 영업이익률, 비용 증가 여부를 확인하세요.",
+      },
+      "맞춤칩·AI 네트워킹":{
+        reason:"AI 맞춤칩과 네트워킹 수요가 늘면 기존 제품보다 높은 성장률을 만들 수 있습니다.",
+        next:"AI 칩 수주, 네트워킹 매출, 주요 고객 확대 여부를 확인하세요.",
+      },
+      "계약·수주":{
+        reason:"계약 규모와 공급 일정이 구체화되면 향후 매출에 대한 불확실성이 줄어듭니다.",
+        next:"계약 금액, 공급 시작 시점, 반복 수주 가능성을 확인하세요.",
+      },
+      "마진·EPS 성장":{
+        reason:"EPS와 이익률이 함께 오르면 주가가 비싸다는 부담을 완화할 수 있습니다.",
+        next:"EPS 추정치, 영업이익률, 비용 통제 여부를 확인하세요.",
+      },
+      "차트·수급 대응":{
+        reason:"거래량이 붙고 외국인 매수가 이어지면 단기 반등의 지속력이 강해질 수 있습니다.",
+        next:"거래량, 외국인 순매수, 주요 지지선 이탈 여부를 확인하세요.",
+      },
+      "지분가치·지주사 할인":{
+        reason:"자회사 가치가 오르고 주주환원이 강화되면 지주사 할인 축소가 가능해집니다.",
+        next:"NAV 할인율, 자회사 주가, 배당·자사주 정책을 확인하세요.",
+      },
+      "투자금 회수·배당":{
+        reason:"투자금 회수로 현금이 늘면 배당과 자사주 등 주주환원 여력이 커질 수 있습니다.",
+        next:"매각 일정, 유입 현금 규모, 배당 정책 변화를 확인하세요.",
+      },
+      "전기차·하이브리드":{
+        reason:"전기차와 하이브리드 판매 믹스가 개선되면 가격 경쟁 속에서도 마진 방어가 가능합니다.",
+        next:"차종별 판매량, 인센티브, 영업이익률 변화를 확인하세요.",
+      },
+      "판매·마진":{
+        reason:"판매량 증가가 할인 축소와 함께 나타나야 매출 성장보다 이익 개선 효과가 커집니다.",
+        next:"월별 판매량, 평균판매가격, 영업이익률을 확인하세요.",
+      },
+      "로봇·보스턴 다이내믹스":{
+        reason:"로봇 사업이 상용 수주로 이어지면 장기 성장 동력에 대한 평가가 달라질 수 있습니다.",
+        next:"상용화 일정, 수주 규모, 손익분기 시점을 확인하세요.",
+      },
+      "목표가·상승 여력":{
+        reason:"목표가 상향이 실적 추정 개선을 동반하면 단순 기대보다 신뢰도가 높아집니다.",
+        next:"목표가 산정 근거, 실적 추정치, 밸류에이션 변화를 확인하세요.",
+      },
+      "투자 확대":{
+        reason:"설비와 데이터센터 투자가 매출 증가로 이어져야 비용 부담을 정당화할 수 있습니다.",
+        next:"CAPEX 증가폭, 신규 설비 가동률, 투자 이후 매출 기여도를 확인하세요.",
+      },
+      "외국인 수급":{
+        reason:"외국인과 기관 매수가 이어지면 단기 반등에 필요한 거래대금이 붙을 수 있습니다.",
+        next:"순매수 지속 여부, 거래대금, 주요 지지선 이탈 여부를 확인하세요.",
+      },
+      "수급·주가 흐름":{
+        reason:"거래량이 늘고 매물이 줄어야 단기 반등이 추세 회복으로 이어질 수 있습니다.",
+        next:"거래량, 차익 매물, 주요 지지선과 저항선 흐름을 확인하세요.",
+      },
+      "CPU 수요":{
+        reason:"서버 CPU 주문이 회복되면 데이터센터 투자 둔화 우려를 완화할 수 있습니다.",
+        next:"서버 CPU 출하, 고객사 투자 계획, 데이터센터 재고 흐름을 확인하세요.",
+      },
+      "파운드리 회복":{
+        reason:"수율과 고객 확보가 개선되면 파운드리 손익 개선 시점이 앞당겨질 수 있습니다.",
+        next:"첨단 공정 수율, 신규 고객, 가동률과 마진 변화를 확인하세요.",
+      },
+      "미국 제조·정책 지원":{
+        reason:"보조금과 현지 생산 투자가 구체화되면 중장기 공급망 경쟁력이 높아질 수 있습니다.",
+        next:"보조금 집행, 공장 가동 일정, 고객사 물량 배정을 확인하세요.",
+      },
+      "ADR·지수 편입":{
+        reason:"상장 구조와 지수 편입 이슈가 부각되면 해외 자금 유입 경로가 넓어질 수 있습니다.",
+        next:"ADR 거래대금, 지수 편입 일정, 해외 투자자 수급을 확인하세요.",
+      },
+      "주주환원·배당":{
+        reason:"배당과 자사주 정책이 강화되면 이익 안정성이 주가 하방을 지지할 수 있습니다.",
+        next:"배당성향, 자사주 규모, 잉여현금흐름 변화를 확인하세요.",
+      },
+      "에너지·배터리":{
+        reason:"에너지 저장장치와 배터리 매출이 늘면 자동차 판매 의존도를 낮출 수 있습니다.",
+        next:"ESS 매출, 신규 계약, 사업부 수익률 변화를 확인하세요.",
+      },
+      "iPhone·제품 출시":{
+        reason:"신제품 교체 수요가 늘면 하드웨어 매출 둔화 우려를 완화할 수 있습니다.",
+        next:"iPhone 출하량, 평균판매단가, 출시 초기 수요를 확인하세요.",
+      },
+      "AI 전략":{
+        reason:"AI 기능이 기기 사용성과 서비스 매출을 높여야 밸류에이션 재평가가 가능합니다.",
+        next:"AI 기능 공개 일정, 이용자 반응, 유료 서비스 연결 여부를 확인하세요.",
+      },
+      "서비스·마진":{
+        reason:"서비스 매출과 마진이 늘면 하드웨어 사이클 둔화를 보완할 수 있습니다.",
+        next:"서비스 매출 성장률, 총이익률, 기기 매출 둔화 폭을 확인하세요.",
+      },
+      "중국·공급망":{
+        reason:"중국 수요와 부품 원가가 안정돼야 제품 마진 하락을 방어할 수 있습니다.",
+        next:"중국 판매량, 부품 조달 비용, 공급망 차질 여부를 확인하세요.",
+      },
+      "빅테크 주가 흐름":{
+        reason:"빅테크 전반의 차익 매물이 커지면 개별 호재보다 시장 수급이 주가를 흔들 수 있습니다.",
+        next:"나스닥 흐름, 빅테크 거래대금, 실적 발표 후 주가 반응을 확인하세요.",
+      },
+      "AI 서비스":{
+        reason:"AI 검색과 신규 서비스 사용이 늘면 이용자 유지와 광고 효율 개선으로 이어질 수 있습니다.",
+        next:"AI 서비스 이용률, 유료 전환, 광고 매출 영향을 확인하세요.",
+      },
+      "클라우드·광고":{
+        reason:"클라우드 수요와 광고 매출이 함께 버티면 AI 투자 부담을 흡수할 실적 체력이 커집니다.",
+        next:"클라우드 성장률, 광고 매출, AI 투자비 증가폭을 확인하세요.",
+      },
+      "제품·서비스":{
+        reason:"핵심 서비스 이용자가 유지되고 신규 기능 사용이 늘면 플랫폼 경쟁력이 방어됩니다.",
+        next:"MAU, 검색 점유율, 신규 서비스 이용률을 확인하세요.",
+      },
+      "전력기기·전력망":{
+        reason:"전력망 투자가 늘면 변압기와 전력기기 수주가 매출 가시성을 높일 수 있습니다.",
+        next:"전력기기 수주, 수주잔고, 프로젝트 마진을 확인하세요.",
+      },
+      "AI 전력수요":{
+        reason:"AI 데이터센터 증설은 전력설비 발주를 늘려 중장기 수주 기반을 키울 수 있습니다.",
+        next:"데이터센터 투자, 전력설비 발주, 고객사 투자 계획을 확인하세요.",
+      },
+      "해저케이블·전선":{
+        reason:"전력망과 해상풍력 프로젝트가 늘면 케이블 수요와 프로젝트 마진이 개선될 수 있습니다.",
+        next:"해저케이블 수주, 전선 판가, 프로젝트 마진을 확인하세요.",
+      },
+      "실적·수주":{
+        reason:"수주잔고가 매출로 전환되고 마진이 유지돼야 실적 개선 신뢰도가 높아집니다.",
+        next:"수주잔고, 매출 인식 속도, 영업이익률을 확인하세요.",
+      },
+      "계열사 재평가":{
+        reason:"주요 계열사 가치가 오르면 지주사 할인 축소 논리가 강화될 수 있습니다.",
+        next:"계열사 실적, 지분 가치, NAV 할인율 변화를 확인하세요.",
+      },
+    };
+    const plainCautionMap = {
+      "밸류 부담":"주가가 이미 많이 올랐다면 좋은 뉴스가 나와도 추가 상승 여력은 제한될 수 있습니다.",
+      "추격 매수 부담":"급등 직후에는 기대가 주가에 먼저 반영돼 새로 진입하는 투자자의 손익비가 나빠질 수 있습니다.",
+      "실적 이벤트 확인":"실적 발표 전에는 가이던스와 컨센서스 변화에 따라 시장 평가가 빠르게 바뀔 수 있습니다.",
+      "확인 필요":"아직 숫자로 검증된 내용이 적다면 분위기 변화만으로 판단하기 어렵습니다.",
+      "차익 실현·수급 부담":"단기 상승 이후 차익 매물이 늘면 좋은 재료가 있어도 주가가 쉽게 흔들릴 수 있습니다.",
+      "공급 과잉 우려":"공급이 수요보다 빠르게 늘면 가격과 이익률이 다시 눌릴 수 있습니다.",
+      "리스크":"업황 둔화, 규제, 경쟁 심화가 다시 부각되면 투자심리가 약해질 수 있습니다.",
+      "기술 경쟁력 검증":"수율, 고객 확보, 양산 일정이 늦어지면 기술 기대가 실적으로 이어지기 어렵습니다.",
+      "차트·수급 대응":"외국인 매수와 거래량이 약해지면 단기 반등은 짧게 끝날 수 있습니다.",
+      "목표가·상승 여력":"목표가 상향의 근거가 실적 개선보다 기대에 치우치면 상승 여력은 제한될 수 있습니다.",
+      "계약·수주":"계약 규모가 작거나 공급 일정이 늦어지면 매출 반영 시점에 대한 눈높이가 낮아질 수 있습니다.",
+      "마진·EPS 성장":"매출은 늘어도 이익률이 따라오지 않으면 EPS 개선 속도는 기대보다 느릴 수 있습니다.",
+      "지분가치·지주사 할인":"자회사 주가가 흔들리거나 환원 정책이 약하면 지주사 할인 해소가 늦어질 수 있습니다.",
+    };
+    function clipText(text, maxLength) {
+      const value = String(text || "").trim();
+      return value.length > maxLength ? `${value.slice(0, Math.max(0, maxLength - 1))}…` : value;
+    }
+    function briefSignal(signal) {
+      return briefSignalMap[signal] || {
+        topic:clipText(cautionHeadlineLabel(signal || "투자 논리"), 8),
+        thesis:`${cautionHeadlineLabel(signal || "투자 논리")}이 단기 방향을 좌우합니다.`,
+        basis:`${cautionHeadlineLabel(signal || "투자 논리")}이 숫자로 확인돼야 합니다.`,
+        check:`${cautionHeadlineLabel(signal || "주요 변수")}이 실적과 수급에 반영되는지 봐야 합니다.`,
+      };
+    }
+    function briefCaution(signal) {
+      if (briefCautionMap[signal]) return briefCautionMap[signal];
+      const mapped = briefSignalMap[signal];
+      if (mapped) return {
+        topic:mapped.topic,
+        text:`${mapped.topic} 확인 전까지 변동성에 유의해야 합니다.`,
+      };
+      const label = cautionHeadlineLabel(signal || "리스크");
+      return {
+        topic:clipText(label, 8),
+        text:`${label} 점검 전까지 변동성에 유의해야 합니다.`,
+      };
+    }
+    function isUsListedQuery(query) {
+      const row = localSuggest(query)[0];
+      return row && !["KOSPI", "KOSDAQ"].includes(row.market);
+    }
+    function plainSignalForData(data, signal) {
+      if (signal === "차트·수급 대응" && isUsListedQuery(data.query)) {
+        return {
+          reason:"거래량이 줄고 차익 매물이 늘면 호재가 있어도 단기 주가 탄력은 약해질 수 있습니다.",
+          next:"거래량, 차익 매물, 실적 발표 이후 주가 반응을 함께 확인하세요.",
+        };
+      }
+      return plainSignalMap[signal];
+    }
+    function plainCautionTextForData(data, signal) {
+      if (signal === "차트·수급 대응" && isUsListedQuery(data.query)) {
+        return "거래량이 줄고 차익 매물이 늘면 실적 기대가 있어도 단기 주가가 흔들릴 수 있습니다.";
+      }
+      return plainCautionMap[signal];
+    }
+    function plainSignalFallback(signal) {
+      const label = cautionHeadlineLabel(signal || "긍정 의견");
+      return {
+        reason:`${label}이 실제 매출, 이익, 수급 개선으로 이어질 때 주가 판단의 신뢰도가 높아집니다.`,
+        next:`${label}이 다음 실적과 거래 흐름에서 숫자로 확인되는지 보세요.`,
+      };
+    }
+    function plainCautionFallback(signal) {
+      const label = cautionHeadlineLabel(signal || "확인 변수");
+      return `${label}이 숫자로 확인되기 전까지는 주가가 뉴스와 수급에 민감하게 움직일 수 있습니다.`;
+    }
+    function reportOpinionScore(opinion, mode = "positive") {
+      const text = `${opinion?.summary || ""} ${opinion?.evidence || ""}`;
+      if (!text.trim()) return -100;
+      let score = 0;
+      if (/[0-9]/.test(text)) score += 4;
+      if (includesAny(text, ["실적", "매출", "영업이익", "이익", "마진", "판매량", "출하", "수주", "계약", "ASP", "재고", "가이던스"])) score += 10;
+      if (includesAny(text, ["HBM", "ADR", "상장", "지수 편입", "재평가", "점유율"])) score += 7;
+      if (includesAny(text, ["점유율", "순위", "품질", "기술력"])) score += 4;
+      if (includesAny(text, ["관망", "추가 매수", "평균 단가", "고평가", "밸류", "부담", "차익", "리스크", "하락"])) score += mode === "caution" ? 8 : 1;
+      if (opinion?.confidence === "강함") score += 3;
+      if (opinion?.opinionType === "현재 투자 의견") score += 3;
+      if (opinion?.opinionType === "보유/관망 의견") score += mode === "caution" ? 3 : 0;
+      if (opinion?.channelSourceType === "news") score -= 1;
+      if (includesAny(text, ["재생 에너지", "재생에너지", "보급 목표", "kW당"])) score -= 10;
+      if (includesAny(text, ["좋은 기업", "좋다고 생각", "좋아요", "제일 좋", "추천"]) && !includesAny(text, ["매출", "이익", "마진", "판매량", "수주", "계약"])) score -= 8;
+      return score;
+    }
+    function selectReportOpinions(data, stances, limit = 2, mode = "positive") {
+      const allowed = new Set(stances);
+      const seen = new Set();
+      return reportableOpinions(data.opinions || [])
+        .filter(opinion => allowed.has(opinion.stance))
+        .map((opinion, order) => ({
+          opinion,
+          score:reportOpinionScore(opinion, mode) - order * 0.05,
+        }))
+        .sort((a, b) => b.score - a.score)
+        .filter(({ opinion }) => {
+          const key = compact(`${opinion.channel || ""}-${opinion.summary || ""}`);
+          if (!key || seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        })
+        .slice(0, limit)
+        .map(row => row.opinion);
+    }
+    const reportThemeRules = [
+      { label:"AI·신사업 방향", words:["AI", "인공지능", "신사업", "비전", "수익화", "카카오톡", "톡비즈", "플랫폼"] },
+      { label:"데이터센터 투자 여력", words:["데이터센터", "현금 흐름", "자금", "돈", "투자 여력", "대규모 투자"] },
+      { label:"주가 저점·반등 시점", words:["주가", "3만", "하락", "바닥", "반등", "물타기", "정리", "지지"] },
+      { label:"클라우드·AI 매출", words:["클라우드", "Azure", "AWS", "AI 매출", "데이터센터"] },
+      { label:"광고·커머스 수익화", words:["광고", "커머스", "MAU", "거래액", "수익화"] },
+      { label:"실적·마진 개선", words:["실적", "매출", "영업이익", "마진", "이익", "수익성"] },
+      { label:"수요·가격 흐름", words:["수요", "판가", "가격", "ASP", "재고", "업황"] },
+      { label:"수급·차익 매물", words:["수급", "외국인", "기관", "차익", "매물", "거래량"] },
+      { label:"밸류에이션 부담", words:["밸류", "고평가", "PER", "선반영", "부담"] },
+      { label:"주주환원·할인율", words:["주주환원", "배당", "자사주", "NAV", "할인"] },
+      { label:"판매량·마진", words:["판매량", "판매", "마진", "인센티브", "믹스", "환율"] },
+    ];
+    function reportThemeLabels(opinions, limit = 3) {
+      const rows = reportThemeRules
+        .map(rule => ({
+          label:rule.label,
+          count:opinions.filter(opinion => includesAny(`${opinion.summary || ""} ${opinion.evidence || ""}`, rule.words)).length,
+        }))
+        .filter(row => row.count > 0)
+        .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+      return rows.map(row => row.label).slice(0, limit);
+    }
+    function stanceDistributionLead(opinions) {
+      const counts = opinions.reduce((acc, opinion) => {
+        acc[opinion.stance] = (acc[opinion.stance] || 0) + 1;
+        return acc;
+      }, {});
+      return [
+        ["긍정", "긍정"],
+        ["신중", "관망"],
+        ["부정", "주의"],
+      ]
+        .filter(([stance]) => counts[stance])
+        .map(([stance, label]) => `${label} ${counts[stance]}명`)
+        .join(" · ");
+    }
+    function consensusBackedText(opinions, query, mode = "positive", fallback = "") {
+      const detailText = detailBackedText(opinions, query, mode, fallback);
+      if (opinions.length < 3) return detailText;
+      const themes = reportThemeLabels(opinions, 3);
+      const distribution = stanceDistributionLead(opinions);
+      if (!themes.length || !distribution) return detailText;
+      const consensus = `${distribution} 의견은 ${themes.join(", ")} 등을 핵심 변수로 보고 있어요.`;
+      return detailText ? `${consensus} ${detailText}` : consensus;
+    }
+    const headlineKeywordRules = [
+      { label:"CPU·파운드리", words:["CPU", "서버 CPU", "프로세서", "파운드리", "공정", "수율", "미세 공정", "미국 제조", "보조금", "CHIPS", "칩스법"], context:["인텔", "Intel", "INTC"] },
+      { label:"AI 가속기", words:["MI300", "MI350", "가속기", "AI 칩", "AI 반도체", "GPU", "서버 CPU", "데이터센터"], context:["AMD", "에이엠디", "Advanced Micro Devices"] },
+      { label:"GPU·AI 서버", words:["AI", "GPU", "AI 서버", "AI 수요", "AI 반도체", "데이터센터", "CUDA", "랙", "블랙웰", "Blackwell"], context:["엔비디아", "NVIDIA", "NVDA"] },
+      { label:"파운드리·첨단공정", words:["파운드리", "첨단 공정", "미세 공정", "수율", "2나노", "3나노", "CoWoS", "패키징"], context:["TSMC", "대만반도체", "타이완반도체", "Taiwan Semiconductor", "TSM"] },
+      { label:"AI ASIC·네트워크", words:["ASIC", "AI 칩", "AI 반도체", "네트워크", "스위치", "커스텀 칩", "데이터센터"], context:["브로드컴", "Broadcom", "AVGO"] },
+      { label:"HBM·DRAM", words:["HBM", "DRAM", "디램", "D램", "고대역폭", "메모리", "ASP", "실적", "가이던스", "매출", "영업이익"], context:["SK하이닉스", "하이닉스", "마이크론", "Micron", "MU"] },
+      { label:"메모리·파운드리", words:["HBM", "DRAM", "디램", "D램", "메모리", "파운드리", "수율", "AI 반도체"], context:["삼성전자", "삼전", "005930"] },
+      { label:"전기차·배터리", words:["전기차", "배터리", "2차전지", "셀", "판가", "IRA", "ESS", "수주", "증설"], context:["LG에너지솔루션", "LG엔솔", "삼성SDI", "에코프로", "에코프로비엠"] },
+      { label:"플랫폼·AI", words:["AI", "제미나이", "클라우드", "검색", "광고", "MAU", "수익화", "커머스"], context:["구글", "알파벳", "Google", "Alphabet", "GOOGL", "NAVER", "네이버", "카카오", "Meta", "메타"] },
+      { label:"클라우드·AI", words:["AI", "클라우드", "Azure", "AWS", "데이터센터", "수익화"], context:["마이크로소프트", "Microsoft", "MSFT", "아마존", "Amazon", "AMZN"] },
+      { label:"콘텐츠·가입자", words:["가입자", "구독", "광고", "콘텐츠", "요금제", "마진", "스트리밍"], context:["넷플릭스", "Netflix", "NFLX"] },
+      { label:"주주환원·NAV", words:["NAV", "지주사 할인", "자회사", "배당", "자사주", "주주환원"], context:["삼성물산", "SK스퀘어", "LS"] },
+      { label:"판매·하이브리드", words:["판매", "판매량", "하이브리드", "신차", "미국 판매", "믹스", "환율"], context:["현대차", "현대자동차", "기아", "Kia"] },
+      { label:"AI·서비스", words:["AI", "애플 인텔리전스", "서비스", "총이익률", "마진", "시가총액", "수익률"], context:["애플", "APPLE", "AAPL"] },
+      { label:"AI 수요", words:["AI 수요", "AI 붐", "AI 연산", "데이터 센터", "데이터센터", "GPU"] },
+      { label:"DRAM 가격", words:["DRAM", "디램", "D램"] },
+      { label:"HBM 실적", words:["HBM", "고대역폭", "AI 투자", "AI 반도체"] },
+      { label:"ADR 재평가", words:["ADR", "나스닥 상장", "지수 편입", "재평가"] },
+      { label:"실적 개선", words:["실적", "영업이익", "매출", "마진", "컨센서스"] },
+      { label:"ESS 수주", words:["ESS 시장", "ESS 부문", "ESS 공급", "ESS 공급 계약", "에너지 저장"] },
+      { label:"흑자 전환", words:["흑자 전환", "흑자전환"] },
+      { label:"미국 판매", words:["미국 판매", "미국 시장"] },
+      { label:"하이브리드", words:["하이브리드"] },
+      { label:"FSD·로봇", words:["FSD", "로보택시", "옵티머스", "자율주행", "휴머노이드", "로보틱스", "로봇", "점유율"], context:["테슬라", "TESLA", "TSLA"] },
+      { label:"로봇·미래차", words:["보스턴 다이내믹스", "보스턴다이내믹스", "현대 다이내믹 로보틱스", "피지컬 AI", "미래차", "SDV", "소프트웨어 중심 차량", "휴머노이드", "로봇"], context:["현대차", "현대자동차", "005380", "기아", "Kia"] },
+      { label:"자율주행", words:["FSD", "자율주행", "로보택시"] },
+      { label:"로봇", words:["로보틱스", "휴머노이드", "로봇"] },
+      { label:"AI 서비스", words:["AI", "제미나이", "클라우드"] },
+      { label:"지주사 할인", words:["NAV", "지주사 할인", "자회사"] },
+    ];
+    const headlineRiskRules = [
+      { label:"공정·마진 확인", words:["파운드리", "공정", "수율", "적자", "마진", "영업손실", "가이던스", "구조조정"], context:["인텔", "Intel", "INTC"] },
+      { label:"실적 눈높이 확인", words:["컨센서스", "가이던스", "마진", "매출", "영업이익", "실적", "눈높이"], context:["엔비디아", "NVIDIA", "NVDA", "AMD", "에이엠디", "마이크론", "Micron", "MU", "브로드컴", "Broadcom", "AVGO"] },
+      { label:"수요·판가 확인", words:["수요", "판가", "재고", "가동", "가동률", "생산", "증설", "수주", "출하", "마진"], context:["LG에너지솔루션", "LG엔솔", "삼성SDI", "에코프로", "에코프로비엠"] },
+      { label:"규제·수익화 확인", words:["규제", "소송", "반독점", "광고", "수익화", "MAU", "성장 둔화"], context:["구글", "알파벳", "Google", "Alphabet", "GOOGL", "NAVER", "네이버", "카카오", "Meta", "메타"] },
+      { label:"가입자·마진 확인", words:["가입자", "광고", "콘텐츠", "마진", "성장 둔화", "요금제"], context:["넷플릭스", "Netflix", "NFLX"] },
+      { label:"중국·마진 확인", words:["중국", "CXMT", "창신", "반도체", "메모리", "공급망", "마진", "가격", "과열", "100불"], context:["애플", "APPLE", "AAPL"] },
+      { label:"할인율 확인", words:["NAV", "할인", "자회사", "배당", "자사주", "주주환원"], context:["삼성물산", "SK스퀘어", "LS"] },
+      { label:"판매·마진 확인", words:["판매", "판매량", "마진", "환율", "재고", "인센티브", "신차", "북미"], context:["현대차", "현대자동차", "기아", "Kia"] },
+      { label:"컨센서스 확인", words:["컨센서스", "예상보다", "기대에 못", "실적이 낮"] },
+      { label:"수급 확인", words:["차익", "매물", "수급", "거래량", "순매수"] },
+      { label:"주가 회복 확인", words:["현재 주가", "주가 흐름", "부진한 흐름", "50만원", "이탈"], context:["현대차", "현대자동차", "005380", "기아", "Kia"] },
+      { label:"가격 부담", words:["현재 주가", "고평가", "밸류", "부담", "추가 매수", "선반영"] },
+      { label:"공급 과잉", words:["공급 과잉", "과잉 투자", "대규모 투자"] },
+      { label:"조정 가능성 점검", words:["조정", "하락", "급락", "추세가 꺾"] },
+      { label:"가동률 확인", words:["북미 공장", "가동", "생산 효율"] },
+    ];
+    function headlineContextText(data) {
+      return `${data?.query || ""} ${data?.rawQuery || ""} ${(data?.aliases || []).join(" ")} ${data?.stockCode || ""}`;
+    }
+    function headlineRuleMatchesContext(rule, contextText) {
+      if (rule.context && !includesAny(contextText, rule.context)) return false;
+      if (rule.excludeContext && includesAny(contextText, rule.excludeContext)) return false;
+      return true;
+    }
+    function firstMatchedLabel(data, opinions, rules) {
+      const text = opinions.map(opinion => `${opinion.summary || ""} ${opinion.evidence || ""}`).join(" ");
+      const contextText = headlineContextText(data);
+      const found = rules.find(rule => headlineRuleMatchesContext(rule, contextText) && includesAny(text, rule.words));
+      return found?.label || "";
+    }
+    const headlineUpsideText = label => ({
+      "DRAM 가격":"DRAM 가격은 좋아요",
+      "HBM 실적":"HBM 실적은 좋아요",
+      "CPU·파운드리":"CPU·파운드리 재료는 있어요",
+      "AI 가속기":"AI 가속기 수요는 좋아요",
+      "GPU·AI 서버":"GPU·AI 서버 수요는 강해요",
+      "파운드리·첨단공정":"첨단공정 수요는 좋아요",
+      "AI ASIC·네트워크":"AI ASIC 수요는 좋아요",
+      "HBM·DRAM":"HBM·DRAM 흐름은 좋아요",
+      "메모리·파운드리":"메모리·파운드리 재료는 있어요",
+      "전기차·배터리":"배터리 수요는 지켜볼 만해요",
+      "플랫폼·AI":"플랫폼 AI 재료는 있어요",
+      "클라우드·AI":"클라우드 AI 수요는 좋아요",
+      "콘텐츠·가입자":"가입자·콘텐츠 흐름을 봐야 해요",
+      "주주환원·NAV":"주주환원·NAV 재료는 있어요",
+      "판매·하이브리드":"판매·하이브리드 흐름은 좋아요",
+      "AI·서비스":"AI·서비스 재료는 있어요",
+      "AI 수요":"AI 수요는 강해요",
+      "ADR 재평가":"재평가 기대는 있어요",
+      "실적 개선":"실적은 좋아요",
+      "ESS 수주":"ESS 수주는 좋아요",
+      "흑자 전환":"흑자 전환은 좋아요",
+      "미국 판매":"미국 판매는 좋아요",
+      "하이브리드":"하이브리드는 좋아요",
+      "FSD·로봇":"FSD·로봇 기대는 있어요",
+      "로봇·미래차":"로봇·미래차 재료는 있어요",
+      "자율주행":"자율주행 기대는 있어요",
+      "로봇":"로봇 재료는 있어요",
+      "AI 서비스":"AI 서비스는 좋아요",
+      "지주사 할인":"할인 축소 기대는 있어요",
+    }[label] || label);
+    const headlineRiskText = label => ({
+      "컨센서스 확인":"실적 눈높이는 봐야 해요",
+      "공정·마진 확인":"공정·마진은 확인해야 해요",
+      "실적 눈높이 확인":"실적 눈높이는 봐야 해요",
+      "수요·판가 확인":"수요·판가는 확인해야 해요",
+      "규제·수익화 확인":"규제·수익화는 봐야 해요",
+      "가입자·마진 확인":"가입자·마진은 봐야 해요",
+      "중국·마진 확인":"중국·마진 이슈는 봐야 해요",
+      "할인율 확인":"할인율 축소는 확인해야 해요",
+      "판매·마진 확인":"판매·마진은 확인해야 해요",
+      "수급 확인":"수급은 봐야 해요",
+      "주가 회복 확인":"주가 회복은 확인해야 해요",
+      "가격 부담":"주가 선반영은 조심해야 해요",
+      "공급 과잉":"공급 부담은 봐야 해요",
+      "조정 가능성 점검":"단기 주가 변동은 커요",
+      "가동률 확인":"가동률은 봐야 해요",
+    }[label] || label);
+    function evidenceBackedHeadline(data, mood) {
+      const positives = selectReportOpinions(data, ["긍정"], 2, "positive");
+      const cautions = selectReportOpinions(data, ["신중", "부정"], 2, "caution");
+      const upside = firstMatchedLabel(data, positives, headlineKeywordRules);
+      const risk = firstMatchedLabel(data, cautions, headlineRiskRules);
+      const label = mood?.label || data.marketMood?.label || "";
+      if (upside && risk) return `${headlineUpsideText(upside)}. 다만 ${headlineRiskText(risk)}`;
+      if (upside) return label === "긍정적 분위기" ? headlineUpsideText(upside) : `${headlineUpsideText(upside)}, 확인은 필요해요`;
+      if (risk) return `${headlineRiskText(risk)}`;
+      return "";
+    }
+    function refsFromOpinions(opinions = [], limit = 2) {
+      const refs = [];
+      const seenLabels = new Set();
+      for (const opinion of opinions) {
+        const label = sourceRefLabel(opinion);
+        const labelKey = compact(label);
+        if (!labelKey || seenLabels.has(labelKey)) continue;
+        seenLabels.add(labelKey);
+        refs.push({ id:opinionAnchorId(opinion), label });
+      }
+      const visibleRefs = refs.slice(0, limit);
+      visibleRefs.hiddenRefs = refs.slice(limit);
+      visibleRefs.extraCount = visibleRefs.hiddenRefs.length;
+      return visibleRefs;
+    }
+    function reportSentenceFromOpinion(opinion, query, mode = "positive") {
+      const sources = mode === "caution"
+        ? [[opinion?.summary, 10], [opinion?.evidence, 0]]
+        : [[opinion?.evidence, 8], [opinion?.summary, 4]];
+      const candidates = sources
+        .map(([source, sourceScore]) => {
+          const cleaned = cleanReportSentence(source, 112);
+          return {
+            sourceScore,
+            truncated:cleaned.includes("..."),
+            sentence:cleaned
+              .replace(new RegExp(`^${escapeRegExp(query)}\\s+등\\s+`), "")
+              .replace(new RegExp(`^${escapeRegExp(query)}(?:은|는|이|가|의)?\\s*`), "")
+              .replace(/^(은|는|이|가|을|를|의)\s+/, "")
+              .replace(/^기존\s+/, "")
+              .replace(/죽어가는\s*스마트폰\s*부품\s*회사/g, "성장성이 낮은 스마트폰 부품 회사")
+              .replace(/정신을\s*못\s*차리고\s*갑질하다가는\s*주가가\s*100불까지\s*떨어질\s*수\s*있다고\s*봅니다/g, "공급망 협상과 가격 정책이 부담으로 작용하면 주가 하방 리스크가 커질 수 있습니다")
+              .replace(/갑질하려\s*하고\s*가격을\s*엄청\s*올리고\s*있습니다/g, "공급망 협상력과 가격 정책이 마진 부담으로 이어지고 있습니다")
+              .replace(/\s*하는 것이 좋습니다$/g, "할 필요가 있습니다")
+              .replace(/\s*좋다고 생각합니다$/g, "긍정적으로 언급됐습니다")
+              .replace(/\s*좋습니다$/g, "긍정적으로 언급됐습니다")
+              .replace(/\s*매력적인 구간에 진입했습니다$/g, "긍정 요인으로 언급됐습니다")
+              .replace(/[.。]+$/g, "")
+              .trim()
+          };
+        })
+        .filter(item => item.sentence)
+        .filter(item => !item.truncated)
+        .filter(item => !/^의\s/.test(item.sentence))
+        .filter(item => !/(라고|이라고|다고|것이라고|상황이|해야 한|할 것|수 있|있|다르|것이)$/.test(item.sentence))
+        .filter(item => item.sentence.length >= 12)
+        .map(item => ({
+          ...item,
+          score:item.sourceScore + detailPhraseScore(item.sentence, opinion, 0),
+        }))
+        .sort((a, b) => b.score - a.score);
+      let sentence = candidates[0]?.sentence || "";
+      sentence = sentence
+        .replace(/^기존\s+/, "")
+        .replace(/[.。]+$/g, "")
+        .trim();
+      if (!sentence) return "";
+      return ensureSentence(sentence);
+    }
+    function detailBackedText(opinions, query, mode = "positive", fallback = "") {
+      const sentences = [];
+      const seen = new Set();
+      const maxPerOpinion = mode === "caution" && opinions.length > 1 ? 1 : 2;
+      for (const opinion of opinions) {
+        const candidates = mode === "caution"
+          ? [
+            reportSentenceFromOpinion(opinion, query, "caution"),
+            reportSentenceFromOpinion(opinion, query, "positive"),
+          ]
+          : [reportSentenceFromOpinion(opinion, query, mode)];
+        for (const sentence of candidates) {
+          const key = compact(sentence);
+          if (!key || seen.has(key)) continue;
+          seen.add(key);
+          sentences.push(sentence);
+          if (mode === "caution" && candidates.indexOf(sentence) + 1 >= maxPerOpinion) break;
+        }
+      }
+      if (!sentences.length) return fallback;
+      return sentences.slice(0, 2).join(" ");
+    }
+    function subjectWithParticle(items) {
+      const values = (items || []).filter(Boolean);
+      if (!values.length) return "";
+      const last = values[values.length - 1] || "";
+      const lastChar = [...last].pop() || "";
+      const code = lastChar.charCodeAt(0);
+      const particle = code >= 0xac00 && code <= 0xd7a3 && (code - 0xac00) % 28 === 0 ? "가" : "이";
+      return `${values.join(", ")}${particle}`;
+    }
+    function riskCheckSentence(items) {
+      const values = (items || []).filter(Boolean).slice(0, 2);
+      if (!values.length) return "";
+      if (values.includes("실적 컨센서스")) {
+        const others = values.filter(item => item !== "실적 컨센서스");
+        if (others.length) {
+          return `실적 컨센서스가 낮아지거나 ${subjectWithParticle(others)} 리스크로 커지는지도 봐야 합니다.`;
+        }
+        return "실적 컨센서스가 낮아지는지도 봐야 합니다.";
+      }
+      if (values.includes("북미 공장 가동률")) {
+        const others = values.filter(item => item !== "북미 공장 가동률");
+        if (others.length) {
+          return `북미 공장 가동률과 생산 효율이 실적 부담으로 이어지거나 ${subjectWithParticle(others)} 리스크로 커지는지도 봐야 합니다.`;
+        }
+        return "북미 공장 가동률과 생산 효율이 실적 부담으로 이어지지 않는지도 봐야 합니다.";
+      }
+      return `${subjectWithParticle(values)} 리스크로 커지는지도 봐야 합니다.`;
+    }
+    const checkVariableRules = [
+      { item:"DRAM 가격", words:["DRAM", "디램", "D램"] },
+      { item:"실적 컨센서스", words:["컨센서스", "예상보다", "기대에 못", "실적이 낮", "실적 발표"] },
+      { item:"반도체 수출 증가율", words:["반도체 수출", "수출 증가율"] },
+      { item:"공급 과잉 여부", words:["공급 과잉", "과잉 투자", "공급 부담"] },
+      { item:"흑자 전환", words:["흑자 전환", "흑자전환"] },
+      { item:"ESS 수주", words:["ESS 시장", "ESS 부문", "ESS 공급", "ESS 공급 계약", "에너지 저장"] },
+      { item:"리튬 가격", words:["리튬 가격", "리튬"] },
+      { item:"북미 공장 가동률", words:["북미 공장", "공장", "가동"] },
+      { item:"미국 판매량", words:["미국 판매", "미국 판매량"] },
+      { item:"하이브리드 비중", words:["하이브리드"] },
+      { item:"영업이익률", words:["영업이익", "이익", "마진", "수익성"] },
+      { item:"현재 주가 부담", words:["현재 주가", "추가 매수", "평균 단가", "고평가", "밸류", "부담", "차익"] },
+      { item:"중국 공급망", words:["중국", "CXMT", "창신", "공급망", "반도체 사용"] },
+      { item:"가격 정책", words:["가격", "가격 정책", "인상", "원가"] },
+      { item:"금리 변수", words:["금리"] },
+      { item:"전기차 판매량", words:["전기차", "EV"] },
+      { item:"판매량", words:["판매량", "판매"] },
+      { item:"시장 점유율", words:["점유율", "순위", "글로벌"] },
+      { item:"품질 경쟁력", words:["품질", "기술력"] },
+      { item:"매출 성장률", words:["매출"] },
+      { item:"수주 규모", words:["수주", "계약"] },
+      { item:"고객사 투자", words:["고객사", "투자 계획"] },
+      { item:"AI 신사업 방향", words:["신사업", "비전", "사업 방향"] },
+      { item:"데이터센터 투자 여력", words:["데이터센터", "현금 흐름", "자금", "투자 여력", "대규모 투자"] },
+      { item:"AI 매출", words:["AI", "인공지능"] },
+      { item:"클라우드 성장률", words:["클라우드"] },
+      { item:"광고 매출", words:["광고"] },
+      { item:"재고 흐름", words:["재고"] },
+      { item:"ASP", words:["ASP", "판가", "평균판매가격"] },
+      { item:"배당·자사주 정책", words:["배당", "자사주", "주주환원"] },
+    ];
+    function nextCheckFromOpinions(opinions, fallback = "") {
+      const text = opinions.map(opinion => `${opinion.summary || ""} ${opinion.evidence || ""}`).join(" ");
+      const items = [];
+      checkVariableRules.forEach(rule => {
+        if (includesAny(text, rule.words) && !items.includes(rule.item)) items.push(rule.item);
+      });
+      const hasSpecificSales = items.some(item => item !== "판매량" && item.includes("판매량"));
+      if (hasSpecificSales) {
+        const index = items.indexOf("판매량");
+        if (index >= 0) items.splice(index, 1);
+      }
+      if (items.includes("ESS 수주")) {
+        const index = items.indexOf("수주 규모");
+        if (index >= 0) items.splice(index, 1);
+      }
+      if (items.includes("수주 규모") && includesAny(text, ["애플", "CXMT", "창신", "중국 반도체"])) {
+        const index = items.indexOf("수주 규모");
+        if (index >= 0) items.splice(index, 1);
+      }
+      const selected = items.slice(0, 4);
+      if (!selected.length) return fallback;
+      const cautionItems = selected.filter(item => includesAny(item, ["부담", "밸류", "차익", "주가"]));
+      const riskItems = selected.filter(item => cautionItems.includes(item) || includesAny(item, ["컨센서스", "수출", "공급", "가격", "금리", "재고", "가동률"]));
+      const positiveItems = selected.filter(item => !cautionItems.includes(item)).slice(0, 3);
+      const upsideItems = selected.filter(item => !riskItems.includes(item)).slice(0, 3);
+      if (upsideItems.length && riskItems.length) {
+        return `${subjectWithParticle(upsideItems)} 실적 개선으로 이어지는지 확인하세요. 동시에 ${riskCheckSentence(riskItems)}`;
+      }
+      if (positiveItems.length && cautionItems.length) {
+        const caution = cautionItems.slice(0, 1).join(", ");
+        return `${subjectWithParticle(positiveItems)} 이어지는지와 ${subjectWithParticle([caution])} 완화되는지를 함께 확인하세요.`;
+      }
+      const last = selected[selected.length - 1] || "";
+      const lastChar = [...last].pop() || "";
+      const code = lastChar.charCodeAt(0);
+      const particle = code >= 0xac00 && code <= 0xd7a3 && (code - 0xac00) % 28 === 0 ? "를" : "을";
+      return `${selected.join(", ")}${particle} 확인하세요. 이 변수들이 다음 분기 실적과 주가 눈높이를 바꾸는 핵심 조건입니다.`;
+    }
+    function opinionAnchorId(opinion) {
+      const raw = opinion?.videoId || `${opinion?.channel || ""}-${opinion?.publishedAt || ""}-${opinion?.summary || ""}`;
+      const key = compact(raw).slice(0, 64);
+      return `opinion-${key || "unknown"}`;
+    }
+    function sourceRefLabel(opinion) {
+      return String(opinion?.channel || "상세 의견").trim();
+    }
+    function signalWordsForData(data, signal) {
+      if (!signal) return [];
+      const ruleGroups = [
+        keySignalRulesForQuery(data.query),
+        detailSignalRules,
+        cautionSignalRules,
+        defaultKeySignalRules,
+      ];
+      const words = [];
+      ruleGroups.forEach(group => {
+        const rule = group.find(item => item.label === signal);
+        if (rule) words.push(...rule.words);
+      });
+      return [...new Set(words)];
+    }
+    function opinionSourceRefs(data, stances = [], signal = "", limit = 1, options = {}) {
+      const allowed = stances.length ? new Set(stances) : null;
+      const excluded = new Set(options.excludeIds || []);
+      const words = signalWordsForData(data, signal);
+      const rows = reportableOpinions(data.opinions || [])
+        .filter(opinion => !allowed || allowed.has(opinion.stance))
+        .filter(opinion => !excluded.has(opinionAnchorId(opinion)))
+        .map((opinion, order) => {
+          const text = `${opinion.summary || ""} ${opinion.evidence || ""}`;
+          const signalMatch = words.length && includesAny(text, words);
+          return {
+            opinion,
+            order,
+            score:(signalMatch ? 100 : 0) + (Number(opinion.views) || 0) / 1000000 - order * 0.01,
+          };
+        })
+        .sort((a, b) => b.score - a.score);
+      const refs = [];
+      const seenLabels = new Set();
+      for (const { opinion } of rows) {
+        const label = sourceRefLabel(opinion);
+        const labelKey = compact(label);
+        if (!labelKey || seenLabels.has(labelKey)) continue;
+        seenLabels.add(labelKey);
+        refs.push({
+          id:opinionAnchorId(opinion),
+          label,
+        });
+      }
+      const visibleRefs = refs.slice(0, limit);
+      visibleRefs.extraCount = Math.max(0, refs.length - visibleRefs.length);
+      return visibleRefs;
+    }
+    function briefContext(data, mood) {
+      const detail = reportEvidenceContext(data, mood);
+      const key = detail.keySignals[0] || "";
+      const secondaryKey = detail.keySignals.find(signal => signal !== key) || "";
+      const caution = detail.cautionSignals.find(signal => signal !== key) || detail.cautionSignals[0] || "";
+      const primary = briefSignal(key || headlineTopic(detail.positiveDetails[0]) || "투자 논리");
+      const secondary = secondaryKey ? briefSignal(secondaryKey) : null;
+      const risk = caution ? briefCaution(caution) : null;
+      return { detail, key, secondaryKey, caution, primary, secondary, risk };
+    }
+    function briefSummaryText(data, mood) {
+      const { key, caution, primary } = briefContext(data, mood);
+      const first = primary.thesis;
+      const second = briefVariableMap[caution] || briefVariableMap[key] || primary.check;
+      return `${clipText(first, 44)} ${clipText(second, 44)}`;
+    }
+    function plainDecisionTitle(mood) {
+      const label = mood?.label || "";
+      if (label === "긍정적 분위기") return "긍정 신호가 우세한 구간";
+      if (label === "주의 필요") return "리스크 확인이 먼저인 구간";
+      if (label === "방향성 확인 필요" || label === "의견 갈림") return "지금은 확신보다 확인이 필요한 구간";
+      if (label === "판단 보류") return "아직 판단하기 이릅니다";
+      return "바로 사기보다 확인이 필요한 구간";
+    }
+    function plainBriefRows(data, mood) {
+      const { detail, key, caution } = briefContext(data, mood);
+      const hasPositive = Number(data.counts?.긍정 || 0) > 0 && Boolean(key || detail.positiveDetails.length);
+      const fallbackSignal = key || headlineTopic(detail.positiveDetails[0]) || "긍정 의견";
+      const positiveOpinions = hasPositive ? selectReportOpinions(data, ["긍정"], Number.POSITIVE_INFINITY, "positive") : [];
+      const cautionOpinions = selectReportOpinions(data, ["신중", "부정"], Number.POSITIVE_INFINITY, "caution");
+      const hasCaution = cautionOpinions.length > 0;
+      const templatePositive = hasPositive ? (plainSignalForData(data, key) || plainSignalFallback(fallbackSignal)) : null;
+      const positive = hasPositive ? {
+        reason:consensusBackedText(positiveOpinions, data.query, "positive", templatePositive.reason),
+        next:nextCheckFromOpinions([...positiveOpinions, ...cautionOpinions], templatePositive.next),
+      } : {
+        reason:"뚜렷한 긍정 의견은 아직 없어요.",
+        next:nextCheckFromOpinions(cautionOpinions, "부담 요인이 줄고 새로운 긍정 근거가 반복적으로 언급되는지 먼저 확인하세요."),
+      };
+      const templateCaution = plainCautionTextForData(data, caution) || plainCautionFallback(caution);
+      const cautionText = hasCaution
+        ? consensusBackedText(cautionOpinions, data.query, "caution", templateCaution)
+        : "뚜렷한 신중·주의 의견은 아직 없어요.";
+      const positiveRefs = hasPositive
+        ? refsFromOpinions(positiveOpinions, 2)
+        : [];
+      const cautionRefs = hasCaution ? refsFromOpinions(cautionOpinions, 2) : [];
+      const fallbackNextRefs = refsFromOpinions([...positiveOpinions, ...cautionOpinions], 2);
+      return [
+        { label:"좋게 보는 이유", text:positive.reason, refs:positiveRefs, tone:hasPositive ? "" : "muted" },
+        { label:"신중하게 볼 이유", text:cautionText, refs:cautionRefs, tone:hasCaution ? "" : "muted" },
+        { label:"확인해야 할 것", text:positive.next, refs:fallbackNextRefs },
+      ];
+    }
+    const moodSummaryUpsideText = label => ({
+      "HBM·DRAM":"HBM·AI",
+      "메모리·파운드리":"메모리·AI",
+      "GPU·AI 서버":"GPU·AI 서버",
+      "CPU·파운드리":"CPU·파운드리",
+      "FSD·로봇":"FSD·로봇",
+      "로봇·미래차":"로봇·미래차",
+      "전기차·배터리":"배터리 수요",
+      "플랫폼·AI":"플랫폼 AI",
+      "클라우드·AI":"클라우드 AI",
+      "주주환원·NAV":"주주환원·NAV",
+      "판매·하이브리드":"판매·하이브리드",
+      "실적 개선":"실적 개선",
+      "AI 수요":"AI 수요",
+    }[label] || label);
+    const moodSummaryCautionText = label => ({
+      "수급 확인":"차익실현과 수급 확인",
+      "가격 부담":"주가 선반영 부담",
+      "실적 눈높이 확인":"실적 눈높이 확인",
+      "컨센서스 확인":"실적 눈높이 확인",
+      "공정·마진 확인":"공정·마진 확인",
+      "수요·판가 확인":"수요·판가 확인",
+      "규제·수익화 확인":"규제·수익화 확인",
+      "가입자·마진 확인":"가입자·마진 확인",
+      "중국·마진 확인":"중국 공급망과 마진 확인",
+      "할인율 확인":"할인율 축소 확인",
+      "판매·마진 확인":"판매·마진 확인",
+      "공급 과잉":"공급 부담 확인",
+      "조정 가능성 점검":"단기 변동성",
+      "가동률 확인":"가동률 확인",
+      "주가 회복 확인":"주가 회복 확인",
+    }[label] || label);
+    function moodSummaryBridgeText(upsideLabel, riskLabel) {
+      if (upsideLabel === "로봇·미래차" && riskLabel === "판매·마진 확인") {
+        return "미래차 이야기는 좋지만, 지금 주가를 움직일 숫자는 판매량과 마진이에요.";
+      }
+      if (upsideLabel === "판매·하이브리드" && riskLabel === "판매·마진 확인") {
+        return "판매와 하이브리드 믹스는 좋지만, 이익률이 같이 버텨야 주가 설명력이 커져요.";
+      }
+      if (upsideLabel === "FSD·로봇" && riskLabel === "가격 부담") {
+        return "FSD와 로봇 기대는 크지만, 이미 오른 주가가 그 기대를 얼마나 담았는지가 핵심이에요.";
+      }
+      if (upsideLabel === "HBM·DRAM" && riskLabel === "수급 확인") {
+        return "HBM과 메모리 업황은 좋지만, 단기 방향은 차익실현과 수급에 흔들릴 수 있어요.";
+      }
+      if (upsideLabel === "GPU·AI 서버" && riskLabel === "실적 눈높이 확인") {
+        return "AI 서버 수요는 강하지만, 높아진 실적 눈높이를 계속 넘는지가 중요해요.";
+      }
+      if (riskLabel === "중국·마진 확인") {
+        return "중국 메모리 조달과 가격 정책이 마진을 흔들 수 있어, 실적 방어력이 핵심이에요.";
+      }
+      return "";
+    }
+    function richMoodSummary(data, mood) {
+      const { detail, key, secondaryKey, caution } = briefContext(data, mood);
+      const positives = selectReportOpinions(data, ["긍정"], 2, "positive");
+      const cautions = selectReportOpinions(data, ["신중", "부정"], 2, "caution");
+      const headlineUpside = firstMatchedLabel(data, positives, headlineKeywordRules);
+      const headlineRisk = firstMatchedLabel(data, cautions, headlineRiskRules);
+      const keyParts = [moodSummaryUpsideText(headlineUpside), key, secondaryKey].filter(Boolean).slice(0, 2);
+      const keyText = keyParts.length ? keyParts.join("·") : headlineTopic(detail.positiveDetails[0]) || "상승 재료";
+      const cautionText = moodSummaryCautionText(headlineRisk) || (caution ? cautionHeadlineLabel(caution) : headlineTopic(detail.cautionDetails[0]) || "확인 변수");
+      const counts = data.counts || {};
+      const positive = Number(counts.긍정 || 0);
+      const watch = Number(counts.신중 || 0);
+      const risk = Number(counts.부정 || 0);
+      if (positive > 0 && (watch > 0 || risk > 0)) {
+        if (queryIncludes(data.query, ["마이크로소프트", "Microsoft", "MSFT"])) {
+          return "Azure와 AI 투자는 성장 축이지만, 클라우드 둔화와 투자비 부담을 같이 봐야 해요.";
+        }
+        const bridgeText = moodSummaryBridgeText(headlineUpside, headlineRisk);
+        if (bridgeText) return bridgeText;
+        return `${keyText} 기대는 여전히 크지만, ${cautionText} 의견도 함께 나왔어요.`;
+      }
+      if (positive > 0) {
+        return `${keyText}을 근거로 긍정 의견이 우세하지만, 실제 지표 확인은 필요해요.`;
+      }
+      if (watch > 0 || risk > 0) {
+        const bridgeText = moodSummaryBridgeText("", headlineRisk);
+        if (bridgeText) return bridgeText;
+        return `${cautionText}이 먼저라는 의견이 많아, 새 긍정 근거가 더 쌓이는지 봐야 해요.`;
+      }
+      return "";
+    }
     const stanceReason = opinion => {
       const text = `${opinion.summary || ""} ${opinion.evidence || ""}`;
       if (opinion.stance === "단순언급") return "뉴스 소개 수준";
       if (includesAny(text, ["고평가", "밸류", "valuation", "PER", "멀티플", "선반영", "부담"])) return "밸류 부담 언급";
-      if (includesAny(text, ["실적", "어닝", "매출", "영업이익", "서프라이즈", "호실적"])) return opinion.stance === "부정" ? "실적 둔화 우려" : "실적 개선 기대";
-      if (includesAny(text, ["공급 부족", "수요", "업황", "메모리", "HBM", "반도체"])) return opinion.stance === "부정" ? "업황 악화 우려" : "업황 개선 기대";
+      if (includesAny(text, ["실적", "어닝", "매출", "영업이익", "서프라이즈", "호실적"])) return opinion.stance === "부정" ? "실적 둔화 우려" : "실적 개선";
+      if (includesAny(text, ["공급 부족", "수요", "업황", "메모리", "HBM", "반도체"])) return opinion.stance === "부정" ? "업황 악화 우려" : "업황 개선";
       if (includesAny(text, ["저평가", "싸다", "할인", "재평가"])) return "저평가 언급";
       if (includesAny(text, ["하락", "부진", "악화", "둔화", "리스크", "회피", "매도"])) return "리스크 우려";
       if (includesAny(text, ["관망", "확인", "조건", "보유", "지켜"])) return "추가 확인 필요";
       return {긍정:"상승 요인",신중:"확인 필요",부정:"하락 요인"}[opinion.stance] || "";
     };
     const stanceBadgeLabel = opinion => {
-      const label = stanceShortLabel(opinion.stance);
-      const reason = stanceReason(opinion);
-      return reason ? `${label} · ${reason}` : label;
+      return stanceShortLabel(opinion.stance);
     };
     const serverRequiredMessage = "의견 분석은 종목검색실행.command를 실행한 뒤 http://127.0.0.1:8765 주소에서 사용해 주세요.";
     const isFileMode = location.protocol === "file:";
@@ -442,6 +2274,7 @@
       ["엔비디아","NVDA","NASDAQ",["NVIDIA"],"NVIDIA",["GPU","AI","젠슨황"]], ["테슬라","TSLA","NASDAQ",["TESLA"],"Tesla",["전기차","일론머스크"]],
       ["애플","AAPL","NASDAQ",["APPLE"],"Apple",["아이폰","iPhone"]], ["마이크로소프트","MSFT","NASDAQ",["Microsoft"],"Microsoft",["MS","Azure","오픈AI"]],
       ["알파벳","GOOGL","NASDAQ",["구글","Google"],"Alphabet",["유튜브","YouTube","검색"]], ["마이크론","MU","NASDAQ",["마이크론테크놀로지","Micron"],"Micron",["메모리","반도체","DRAM"]],
+      ["TSMC","TSM","NYSE",["대만반도체","타이완반도체","Taiwan Semiconductor","Taiwan Semiconductor Manufacturing"],"Taiwan Semiconductor Manufacturing",["파운드리","반도체","미세공정"]],
       ["Intel Corporation","INTC","NASDAQ",["인텔","Intel"],"Intel Corporation",["CPU","반도체"]],
       ["Advanced Micro Devices","AMD","NASDAQ",["AMD","에이엠디"],"Advanced Micro Devices",["CPU","GPU","반도체"]],
       ["Palantir Technologies Inc.","PLTR","NASDAQ",["팔란티어","Palantir"],"Palantir Technologies Inc.",["AI","데이터"]],
@@ -494,23 +2327,49 @@
       return `${o.url}${joiner}t=${Math.floor(Number(o.sourceTimeSec))}s`;
     };
     const sourceLabel = o => hasSourceTime(o.sourceTimeSec) ? sourceTimeText(o.sourceTimeSec) : o.channel;
-    const sourceCaption = o => hasSourceTime(o.sourceTimeSec) ? `${sourceCaptionTime(o.sourceTimeSec)} 근거` : "근거 영상";
-    const sourceActionLabel = o => hasSourceTime(o.sourceTimeSec) ? `${sourceCaptionTime(o.sourceTimeSec)}부터 근거 확인` : "근거 영상 확인";
+    const sourceCaption = o => hasSourceTime(o.sourceTimeSec) ? `${sourceCaptionTime(o.sourceTimeSec)} 근거 보기` : "근거 보기";
+    const sourceActionLabel = o => hasSourceTime(o.sourceTimeSec) ? `${sourceCaptionTime(o.sourceTimeSec)} 근거 보기` : "근거 보기";
+    const sourceChipHtml = o => o.channelSourceType === "news"
+      ? `<span class="source-chip" title="뉴스·시황 중심 영상이라 참고 자료로 분류했어요">뉴스 참고</span>`
+      : "";
     const opinionRank = stance => stance === "단순언급" ? 1 : 0;
     const opinionTime = value => {
       const time = new Date(value).getTime();
       return Number.isNaN(time) ? 0 : time;
     };
+    function showUpdatePopup() {
+      if (!updatePopup) return;
+      try {
+        if (localStorage.getItem(UPDATE_POPUP_STORAGE_KEY) === "dismissed") return;
+      } catch {
+        // 저장소가 막혀도 안내 자체는 보여준다.
+      }
+      updatePopup.classList.add("show");
+    }
+    function dismissUpdatePopup() {
+      if (!updatePopup) return;
+      updatePopup.classList.remove("show");
+      try {
+        localStorage.setItem(UPDATE_POPUP_STORAGE_KEY, "dismissed");
+      } catch {
+        // 닫기 동작은 저장 실패와 무관하게 유지한다.
+      }
+    }
     let suggestTimer = null;
     let suggestions = [];
     let activeSuggestion = -1;
     let activeSearchToken = 0;
     let activeSearchQuery = "";
     let activeSearchDone = true;
+    let activeResultTab = "report";
+    let activeDetailStance = "";
+    let activeResultData = null;
     let rankingLoading = false;
     let activeSharePayload = null;
     let activeMarketMoodPayload = null;
     let shareButtonTimer = null;
+    let toastTimer = null;
+    const shareButtonDefaultLabel = "살까 말까 고민하는 친구에게 보내기";
     const trackedSearchResults = new Set();
     const trackedDetailViews = new Set();
     const trackedMarketMoodViews = new Set();
@@ -600,6 +2459,53 @@
         .sort((a, b) => a.score - b.score || a.order - b.order)
         .map(item => item.row);
     }
+    const relatedStockGroups = [
+      { terms:["삼성전자","삼전","sk하이닉스","하이닉스","마이크론","TSMC","대만반도체","타이완반도체","tsm","엔비디아","반도체"], items:["삼성전자","SK하이닉스","마이크론","TSMC","엔비디아","인텔","에이엠디"] },
+      { terms:["lg에너지솔루션","lg엔솔","삼성sdi","2차전지","배터리","에코프로","에코프로비엠"], items:["LG에너지솔루션","삼성SDI","LG화학","에코프로비엠","에코프로"] },
+      { terms:["현대차","기아","현대모비스","현대글로비스","자동차"], items:["현대차","기아","현대모비스","현대글로비스"] },
+      { terms:["테슬라","tesla","tsla","전기차"], items:["테슬라","엔비디아","LG에너지솔루션","삼성SDI","현대차"] },
+      { terms:["애플","마이크로소프트","구글","알파벳","아마존","메타","넷플릭스"], items:["애플","마이크로소프트","구글","아마존","메타"] },
+      { terms:["네이버","카카오","플랫폼","웹툰"], items:["NAVER","카카오","카카오뱅크","카카오페이"] },
+      { terms:["ls","ls electric","ls일렉트릭","전력기기","전선"], items:["LS","LS ELECTRIC","LS에코에너지","LS마린솔루션","LS머트리얼즈"] },
+    ];
+    function relatedStocksFor(query, limit = 5) {
+      const q = compact(query);
+      const group = relatedStockGroups.find(row => row.terms.some(term => {
+        const key = compact(term);
+        return q && key && (q.includes(key) || key.includes(q));
+      }));
+      const fromGroup = group?.items || [];
+      const fallback = localSuggest(query)
+        .map(row => row.name)
+        .filter(Boolean);
+      const items = [...fromGroup, ...fallback];
+      const seen = new Set([q]);
+      return items.filter(item => {
+        const key = compact(item);
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      }).slice(0, limit);
+    }
+    function relatedStocksHtml(data) {
+      const related = relatedStocksFor(data.query);
+      if (!related.length) return "";
+      return `
+        <div class="related-stocks" aria-label="같이 보면 좋을 종목">
+          <p class="related-title">같이 보면 좋을 종목</p>
+          <div class="related-tags">
+            ${related.map(item => `<button class="related-tag" type="button" data-related-query="${esc(item)}">${esc(item)}</button>`).join("")}
+          </div>
+        </div>`;
+    }
+    function sampleNoteHtml(data, opinionCount) {
+      if (opinionCount >= 3) return "";
+      const query = esc(data.query);
+      if (opinionCount < 2) {
+        return `<div class="sample-note">판단 가능한 의견이 아직 부족해요. ${query} 의견이 더 모이면 리포트를 보여드릴게요.</div>`;
+      }
+      return `<div class="sample-note">판단 의견 2명 기준이라 표본이 적어요. 참고용으로 봐주세요.</div>`;
+    }
 
     const rankingStocks = {
       kr: [
@@ -627,8 +2533,8 @@
         { name:"일라이릴리", code:"LLY" }
       ]
     };
-    let rankingData = {
-      basis: "최근 14일 유튜브 언급 기준",
+    let rankingData = window.__INITIAL_POPULAR_STOCKS__ || {
+      basis: "최근 14일 유튜버 의견 후보 기준",
       markets: {
         kr: { rows: rankingStocks.kr, source: "fallback" },
         us: { rows: rankingStocks.us, source: "fallback" }
@@ -636,18 +2542,25 @@
     };
     let activeMarket = "kr";
     let rankVisibleCounts = { kr:RANK_INITIAL_LIMIT, us:RANK_INITIAL_LIMIT };
+    let quoteLoadingMarkets = {};
 
     function rankOpinionText(row) {
-      const checked = Number.isFinite(row.rawChannelCount)
-        ? row.rawChannelCount
-        : (Number.isFinite(row.channelCount) ? row.channelCount : null);
-      return checked ? `<strong>${esc(checked)}명</strong> 언급` : "";
+      const checked = Number.isFinite(row.reportCandidateCount)
+        ? row.reportCandidateCount
+        : (Number.isFinite(row.rawChannelCount)
+          ? row.rawChannelCount
+          : (Number.isFinite(row.channelCount) ? row.channelCount : null));
+      return checked ? `<strong>${esc(checked)}명</strong> 의견 후보` : "";
+    }
+
+    function rankingRows(market = "kr") {
+      const marketData = (rankingData.markets || {})[market] || {};
+      return marketData.rows?.length ? marketData.rows : (rankingStocks[market] || rankingStocks.kr);
     }
 
     function renderRanking(market = "kr") {
       activeMarket = market;
-      const marketData = (rankingData.markets || {})[market] || {};
-      const rows = marketData.rows?.length ? marketData.rows : (rankingStocks[market] || rankingStocks.kr);
+      const rows = rankingRows(market);
       const visibleCount = Math.min(rankVisibleCounts[market] || RANK_INITIAL_LIMIT, RANK_MAX_LIMIT, rows.length);
       const visibleRows = rows.slice(0, visibleCount);
       rankListEl.innerHTML = visibleRows.map((row, idx) => `
@@ -678,11 +2591,190 @@
       return url.href;
     }
 
+    function distributionText(counts = {}) {
+      return `긍정적 ${Number(counts.긍정 || 0)} · 관망 ${Number(counts.신중 || 0)} · 주의 ${Number(counts.부정 || 0)}`;
+    }
+
+    function verdictHeadline(data, mood) {
+      const currentMood = mood || data.marketMood || marketMoodFromCounts(data.counts || {});
+      return explainMarketTerms(evidenceBackedHeadline(data, currentMood) || plainDecisionTitle(currentMood));
+    }
+
+    function verdictSummary(data, mood) {
+      return explainMarketTerms(richMoodSummary(data, mood || data.marketMood || marketMoodFromCounts(data.counts || {})));
+    }
+
+    function explainMarketTerms(text) {
+      let value = String(text || "");
+      const replacements = [
+        [/평균판매단가/g, "평균 판매가격"],
+        [/\bASP\b/g, "평균 판매가격"],
+        [/판가/g, "판매가격"],
+        [/영업마진/g, "영업이익률"],
+        [/자동차 마진/g, "자동차 이익률"],
+        [/프로젝트 마진/g, "프로젝트 이익률"],
+        [/제품 마진/g, "제품 이익률"],
+        [/마진/g, "이익률"],
+        [/NAV 할인율/g, "순자산가치 대비 할인율"],
+        [/\bNAV\b/g, "순자산가치"],
+        [/\bMAU\b/g, "월간 이용자 수"],
+        [/\bEPS\b/g, "주당순이익"],
+        [/\bIRA\b/g, "미국 보조금 정책"],
+        [/가이던스/g, "회사 전망"],
+        [/컨센서스/g, "시장 예상치"],
+        [/밸류에이션/g, "기업가치 평가"],
+        [/밸류/g, "기업가치"],
+        [/수급/g, "매수·매도 흐름"],
+        [/인센티브/g, "판매 장려금"],
+        [/믹스/g, "판매 구성"],
+      ];
+      replacements.forEach(([pattern, replacement]) => {
+        value = value.replace(pattern, replacement);
+      });
+      return value
+        .replace(/판매가격는/g, "판매가격은")
+        .replace(/판매가격가/g, "판매가격이")
+        .replace(/판매가격를/g, "판매가격을")
+        .replace(/이익률는/g, "이익률은")
+        .replace(/이익률가/g, "이익률이")
+        .replace(/순자산가치는/g, "순자산가치는")
+        .replace(/기업가치는/g, "기업가치는");
+    }
+
+    function verdictSummaryHtml(data, mood) {
+      const escaped = esc(verdictSummary(data, mood));
+      return escaped
+        .replace(/긍정 (\d+)명/g, '<span class="mood-count pos">긍정 $1명</span>')
+        .replace(/관망 (\d+)명/g, '<span class="mood-count neu">관망 $1명</span>')
+        .replace(/주의 (\d+)명/g, '<span class="mood-count neg">주의 $1명</span>');
+    }
+
+    function nextCheckText(keySignals, cautionSignals, mood, detail = {}) {
+      const primary = briefSignal(keySignals[0] || "");
+      return clipText(primary.check, 45);
+    }
+
+    function verdictReportRows(data, mood) {
+      return plainBriefRows(data, mood);
+    }
+    function normalizeReportRow(row) {
+      if (Array.isArray(row)) return { label:row[0], text:row[1], refs:[], tone:"" };
+      return {
+        label:row?.label || "",
+        text:explainMarketTerms(row?.text || ""),
+        refs:Array.isArray(row?.refs) ? row.refs : [],
+        tone:row?.tone || "",
+      };
+    }
+    function reportRefsHtml(refs = []) {
+      if (!refs.length) return "";
+      const extraCount = Number(refs.extraCount || 0);
+      const hiddenRefs = Array.isArray(refs.hiddenRefs) ? refs.hiddenRefs : [];
+      return `<div class="report-refs" aria-label="참조 의견">
+        ${refs.map((ref, idx) => `${idx ? '<span class="report-ref-separator" aria-hidden="true">·</span>' : ""}<button class="report-ref" type="button" data-opinion-anchor="${esc(ref.id)}">${esc(ref.label)}</button>`).join("")}
+        ${extraCount ? `<span class="report-ref-more-wrap">
+          <button class="report-ref-more" type="button" data-action="toggle-ref-popover" aria-expanded="false" title="${esc(hiddenRefs.map(ref => ref.label).join(" · "))}">외 ${esc(extraCount)}개</button>
+          <span class="report-ref-popover" hidden>
+            ${hiddenRefs.map(ref => `<button class="report-ref" type="button" data-opinion-anchor="${esc(ref.id)}">${esc(ref.label)}</button>`).join("")}
+          </span>
+        </span>` : ""}
+      </div>`;
+    }
+
+    function verdictReportHtml(data, mood) {
+      return `
+        <div class="verdict-report" aria-label="판정 리포트">
+          ${verdictReportRows(data, mood).map(normalizeReportRow).map(row => `
+            <div class="report-row ${esc(row.tone)}">
+              <span class="report-label">${esc(row.label)}</span>
+              <div class="report-body">
+                <p class="report-text">${esc(row.text)}</p>
+                ${reportRefsHtml(row.refs)}
+              </div>
+            </div>`).join("")}
+        </div>`;
+    }
+
+    function reportConfidenceLabel(opinionCount) {
+      if (opinionCount >= 8) return "표본 충분";
+      if (opinionCount >= 3) return "표본 보통";
+      if (opinionCount >= 2) return "표본 적음";
+      return "표본 부족";
+    }
+
+    function trustFlowHtml(data) {
+      const { mentioned, candidate, opinions } = analysisCounts(data);
+      return `
+        <div class="verdict-flow" aria-label="분석 표본 숫자">
+          <span>현재 기준</span>
+          <span class="flow-arrow" aria-hidden="true">·</span>
+          <span class="flow-step"><span>언급 영상</span> <b>${esc(mentioned)}개</b></span>
+          <span class="flow-arrow" aria-hidden="true">·</span>
+          <span class="flow-step"><span>후보 유튜버</span> <b>${esc(candidate)}명</b></span>
+          <span class="flow-arrow" aria-hidden="true">·</span>
+          <span class="flow-step"><span>의견 확인</span> <b>${esc(opinions)}명</b></span>
+          <span class="flow-arrow" aria-hidden="true">·</span>
+          <span class="flow-step confidence"><span>리포트</span> <b>${esc(reportConfidenceLabel(opinions))}</b></span>
+        </div>`;
+    }
+    function verdictHeadMetaHtml(data) {
+      const { mentioned, opinions } = analysisCounts(data);
+      return `
+        <div class="verdict-head-meta" aria-label="현재 분위기 리포트 표본 정보">
+          <div class="verdict-head-distribution">${esc(distributionText(data.counts || {}))}</div>
+          <div class="verdict-head-flow">유튜브 언급 ${esc(mentioned)}개 중 판단 가능한 투자 의견 ${esc(opinions)}명으로 압축했어요.</div>
+        </div>`;
+    }
+
+    function verdictDistributionHtml(counts = {}) {
+      return `
+        <div class="verdict-distribution" aria-label="의견 분포">
+          <button class="count pos" type="button" data-stance="긍정">${countLabel("긍정")} ${esc(counts.긍정 || 0)}</button>
+          <button class="count neu" type="button" data-stance="신중">${countLabel("신중")} ${esc(counts.신중 || 0)}</button>
+          <button class="count neg" type="button" data-stance="부정">${countLabel("부정")} ${esc(counts.부정 || 0)}</button>
+        </div>`;
+    }
+
+    function reportSkeletonHtml(data = {}) {
+      return `
+        <div class="summary verdict-card report-skeleton" aria-busy="true" aria-label="${esc(data.query || "검색어")} 현재 분위기 리포트 준비 중">
+          <div class="verdict-top">
+            <div class="verdict-title">
+              <span class="skeleton-line skeleton-eyebrow"></span>
+              <span class="skeleton-line skeleton-title"></span>
+            </div>
+            <span class="skeleton-line skeleton-chip"></span>
+          </div>
+          <div class="skeleton-summary">
+            <span class="skeleton-line"></span>
+            <span class="skeleton-line short"></span>
+          </div>
+          <div class="skeleton-report">
+            ${[1, 2, 3].map(() => `
+              <div class="skeleton-report-row">
+                <span class="skeleton-line skeleton-label"></span>
+                <span class="skeleton-body">
+                  <span class="skeleton-line wide"></span>
+                  <span class="skeleton-line medium"></span>
+                </span>
+              </div>`).join("")}
+          </div>
+          <div class="skeleton-footer">
+            <span class="skeleton-line skeleton-flow"></span>
+            <span class="skeleton-line skeleton-button"></span>
+          </div>
+        </div>`;
+    }
+
     function summaryShareText(data) {
       const mentionedVideoCount = data.mentionedVideoCount || data.matchedVideos || 0;
-      const mood = data.marketMood || {};
-      const moodText = mood.summary || `${data.opinions.length}명 의견`;
-      return `${data.query} 요약: ${moodText} 최근 2주 언급 영상 ${mentionedVideoCount}개 · ${data.opinions.length}명 의견`;
+      const mood = data.marketMood || marketMoodFromCounts(data.counts || {});
+      const { opinions } = analysisCounts(data);
+      const rows = verdictReportRows(data, mood)
+        .map(normalizeReportRow)
+        .map(row => `${row.label}: ${row.text}`)
+        .join("\n");
+      return `${data.query} > ${verdictHeadline(data, mood)}\n\n${rows}\n\n오늘 기준 최근 2주 유튜브 언급은 ${mentionedVideoCount}개였고, 실제 투자 의견은 ${opinions}명으로 압축됐어요.\n${distributionText(data.counts || {})}`;
     }
 
     function sharePayloadFor(data) {
@@ -711,7 +2803,10 @@
     }
 
     function analysisCounts(data = {}) {
-      const opinions = Array.isArray(data.opinions) ? data.opinions.length : 0;
+      const allOpinions = Array.isArray(data.opinions) ? data.opinions : [];
+      const opinions = allOpinions.some(opinion => "reportable" in opinion)
+        ? reportableOpinions(allOpinions).length
+        : allOpinions.length;
       return {
         mentioned:Number(data.mentionedVideoCount || data.matchedVideos || 0),
         candidate:Number(data.candidateYoutuberCount || data.shownYoutuberCount || 0),
@@ -737,7 +2832,7 @@
       }
       if (candidate) return `후보 유튜버 ${candidate}명 중 실제 투자 의견을 확인하고 있어요.`;
       if (mentioned) return `언급 영상 ${mentioned}개에서 후보 유튜버를 추리고 있어요.`;
-      return "최근 2주 유튜브 영상에서 종목 언급을 찾고 있어요.";
+      return "오늘 기준 최근 2주 유튜브 영상에서 종목·섹터·테마 언급을 찾고 있어요.";
     }
 
     function resultMetaText(data) {
@@ -745,7 +2840,7 @@
       const mentionedText = `언급 영상 ${mentioned}개`;
       const candidateText = candidate ? `후보 유튜버 ${candidate}명` : "후보 유튜버 확인 중";
       const opinionText = `의견 ${opinions}명`;
-      return `<span class="summary-period">최근 2주</span> ${mentionedText} · ${candidateText} · ${opinionText} · <span class="summary-period">최신순</span>`;
+      return `<span class="summary-period">오늘 기준 최근 2주</span> ${mentionedText} · ${candidateText} · ${opinionText} · <span class="summary-period">최신순</span>`;
     }
 
     function marketMoodAnalytics(data) {
@@ -771,6 +2866,7 @@
       textarea.style.position = "fixed";
       textarea.style.left = "-9999px";
       document.body.appendChild(textarea);
+      textarea.focus();
       textarea.select();
       try {
         if (!document.execCommand("copy")) throw new Error("클립보드 복사에 실패했어요.");
@@ -786,20 +2882,46 @@
       button.textContent = message;
       shareButtonTimer = setTimeout(() => {
         const current = result.querySelector(".share-button");
-        if (current) current.textContent = "공유하기";
+        if (current) current.textContent = shareButtonDefaultLabel;
       }, 1600);
+    }
+
+    function showToast(message) {
+      let toast = document.querySelector(".copy-toast");
+      if (!toast) {
+        toast = document.createElement("div");
+        toast.className = "copy-toast";
+        toast.setAttribute("role", "status");
+        toast.setAttribute("aria-live", "polite");
+        document.body.appendChild(toast);
+      }
+      toast.textContent = message;
+      clearTimeout(toastTimer);
+      requestAnimationFrame(() => toast.classList.add("show"));
+      toastTimer = setTimeout(() => {
+        toast.classList.remove("show");
+      }, 1800);
+    }
+
+    function shouldUseNativeShare() {
+      if (!navigator.share) return false;
+      const coarsePointer = window.matchMedia?.("(pointer: coarse)")?.matches;
+      const narrowViewport = window.matchMedia?.("(max-width: 820px)")?.matches;
+      const mobileAgent = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+      return mobileAgent || (coarsePointer && narrowViewport);
     }
 
     async function shareCurrentResult() {
       if (!activeSharePayload) return;
-      const clickMethod = navigator.share ? "web_share" : "clipboard";
+      const useNativeShare = shouldUseNativeShare();
+      const clickMethod = useNativeShare ? "web_share" : "url_clipboard";
       analytics.send("share_click", {
         query:activeSharePayload.query,
         method:clickMethod,
         url:activeSharePayload.url,
       });
       try {
-        if (navigator.share) {
+        if (useNativeShare) {
           await navigator.share({
             title:activeSharePayload.title,
             text:activeSharePayload.text,
@@ -812,27 +2934,58 @@
           });
           return;
         }
-        await copyToClipboard(activeSharePayload.fallbackText);
+        await copyToClipboard(activeSharePayload.url);
         analytics.send("share_success", {
           query:activeSharePayload.query,
-          method:"clipboard",
+          method:"url_clipboard",
           url:activeSharePayload.url,
         });
-        setShareButtonMessage("복사됨");
+        showToast("URL을 복사했습니다.");
       } catch (error) {
         if (error?.name === "AbortError") return;
         try {
-          await copyToClipboard(activeSharePayload.fallbackText);
+          await copyToClipboard(activeSharePayload.url);
           analytics.send("share_success", {
             query:activeSharePayload.query,
-            method:"clipboard",
+            method:"url_clipboard",
             url:activeSharePayload.url,
           });
-          setShareButtonMessage("복사됨");
+          showToast("URL을 복사했습니다.");
         } catch {
-          setShareButtonMessage("복사 실패");
+          showToast("URL 복사에 실패했어요.");
         }
       }
+    }
+
+    function getJson(url) {
+      if (typeof fetch === "function") {
+        return fetch(url).then(r => {
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          return r.json();
+        });
+      }
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", url, true);
+        xhr.responseType = "json";
+        xhr.onload = () => {
+          if (xhr.status < 200 || xhr.status >= 300) {
+            reject(new Error(`HTTP ${xhr.status}`));
+            return;
+          }
+          if (xhr.response) {
+            resolve(xhr.response);
+            return;
+          }
+          try {
+            resolve(JSON.parse(xhr.responseText));
+          } catch (error) {
+            reject(error);
+          }
+        };
+        xhr.onerror = () => reject(new Error("network error"));
+        xhr.send();
+      });
     }
 
     async function loadRanking() {
@@ -841,24 +2994,65 @@
       rankingLoading = true;
       rankRefreshButton.disabled = true;
       try {
-        const data = await fetch(`/api/popular-stocks?t=${Date.now()}`).then(r => r.json());
+        const data = await getJson(`/api/popular-stocks?t=${Date.now()}`);
         if (data.markets) {
           rankingData = data;
           rankVisibleCounts = { kr:RANK_INITIAL_LIMIT, us:RANK_INITIAL_LIMIT };
           renderRanking(activeMarket);
+          loadRankingQuotes(activeMarket);
         }
       } catch {
         renderRanking(activeMarket);
+        loadRankingQuotes(activeMarket);
       } finally {
         rankingLoading = false;
         rankRefreshButton.disabled = false;
       }
     }
 
+    function mergeRankingQuotes(market, quotes = {}) {
+      const rows = (rankingData.markets || {})[market]?.rows || [];
+      if (!rows.length) return false;
+      let changed = false;
+      rows.forEach(row => {
+        const code = String(row.code || "").trim().toUpperCase();
+        const quote = quotes[code];
+        if (!quote) return;
+        Object.assign(row, quote);
+        changed = true;
+      });
+      return changed;
+    }
+
+    async function loadRankingQuotes(market = activeMarket) {
+      if (isFileMode) return;
+      if (quoteLoadingMarkets[market]) return;
+      const visibleCount = Math.min(rankVisibleCounts[market] || RANK_INITIAL_LIMIT, RANK_MAX_LIMIT);
+      const rows = rankingRows(market).slice(0, visibleCount);
+      const codes = rows.map(row => String(row.code || "").trim()).filter(Boolean);
+      if (!codes.length) return;
+      quoteLoadingMarkets[market] = true;
+      try {
+        const query = new URLSearchParams({
+          market,
+          codes: codes.join(","),
+          t: String(Date.now())
+        });
+        const data = await getJson(`/api/popular-stock-quotes?${query.toString()}`);
+        if (mergeRankingQuotes(market, data.quotes || {}) && market === activeMarket) {
+          renderRanking(activeMarket);
+        }
+      } catch {
+        // 시세 보강 실패는 랭킹 노출을 막지 않는다.
+      } finally {
+        quoteLoadingMarkets[market] = false;
+      }
+    }
+
     async function loadStatus() {
       if (isFileMode) {
         statusEl.classList.add("show");
-        statusEl.textContent = "종목 추천은 바로 가능해요. 의견 분석은 종목검색실행.command로 서버를 켠 뒤 사용해 주세요.";
+        statusEl.textContent = "검색어 추천은 바로 가능해요. 의견 분석은 종목검색실행.command로 서버를 켠 뒤 사용해 주세요.";
         return;
       }
       try {
@@ -871,39 +3065,77 @@
       }
     }
 
+    function setActiveResultTab(tabName = "report") {
+      activeResultTab = tabName;
+      resultTabs.querySelectorAll(".result-tab").forEach(tab => {
+        const active = tab.dataset.resultTab === activeResultTab;
+        tab.classList.toggle("active", active);
+        tab.setAttribute("aria-selected", String(active));
+      });
+    }
+
+    function setResultTabsVisible(visible, hasDetails = true) {
+      resultTabs.hidden = !visible;
+      resultTabs.classList.toggle("show", visible);
+      const detailTab = resultTabs.querySelector('[data-result-tab="details"]');
+      if (detailTab) detailTab.disabled = !hasDetails;
+      if (!visible) activeResultTab = "report";
+      setActiveResultTab(activeResultTab);
+    }
+
+    function scrollToResultSection(tabName) {
+      const target = tabName === "details"
+        ? result.querySelector("#detailOpinionsTitle")
+        : result.querySelector(".verdict-card");
+      if (target) target.scrollIntoView({ behavior:"smooth", block:"start" });
+    }
+
+    function detailOpinionFilterHtml(opinions, activeStance = "") {
+      const counts = opinions.reduce((acc, opinion) => {
+        acc[opinion.stance] = (acc[opinion.stance] || 0) + 1;
+        return acc;
+      }, {});
+      const total = opinions.length;
+      const button = (stance, label, count) => {
+        const active = stance === activeStance;
+        const className = stance ? stanceClass(stance) : "all";
+        return `<button class="detail-filter ${esc(className)}${active ? " active" : ""}" type="button" data-detail-filter-stance="${esc(stance)}" aria-pressed="${active ? "true" : "false"}">${esc(label)} ${esc(count)}</button>`;
+      };
+      return `<div class="detail-filters" aria-label="상세 의견 필터">
+        ${button("", "전체", total)}
+        ${detailFilterStances.map(stance => button(stance, stance, counts[stance] || 0)).join("")}
+      </div>`;
+    }
+
     function render(data) {
+      activeResultData = data;
       const done = data.done !== false;
+      if (!done) {
+        activeSharePayload = null;
+        activeMarketMoodPayload = null;
+        setResultTabsVisible(false);
+        result.innerHTML = reportSkeletonHtml(data);
+        return;
+      }
       if (!data.opinions.length) {
         activeSharePayload = null;
         activeMarketMoodPayload = null;
-        if (!done) {
-          result.innerHTML = `
-            <div class="summary">
-              <h2>${esc(data.query)}</h2>
-              <div class="summary-meta">
-                ${esc(loadingStepText(data))}
-              </div>
-            </div>`;
-          return;
-        }
+        setResultTabsVisible(false);
         if (data.errors?.length) {
-          result.innerHTML = `<div class="empty"><b>${esc(data.query)}</b> 관련 영상 ${esc(data.matchedVideos || 0)}개를 찾았지만 분석에 실패했어요.<br>${esc(data.errors[0])}</div>`;
+          result.innerHTML = `<div class="empty"><b>${esc(data.query)}</b> 언급 영상 ${esc(data.matchedVideos || 0)}개를 찾았지만 분석에 실패했어요.<br>${esc(data.errors[0])}</div>`;
           return;
         }
         if (data.matchedVideos > 0) {
           result.innerHTML = `<div class="empty"><b>${esc(data.query)}</b> 언급 후보 영상 ${esc(data.matchedVideos)}개를 확인했지만, 긍정적·관망·주의로 정리할 만한 명확한 의견은 없었어요.<br>제목이나 자막의 정보성 언급은 의견 카드로 노출하지 않습니다.</div>`;
           return;
         }
-        result.innerHTML = `<div class="empty"><b>${esc(data.query)}</b>을(를) 명확히 평가한 최근 유튜버 의견을 찾지 못했어요.<br>다른 표기, 티커, 회사명으로도 검색해 보세요.</div>`;
+        result.innerHTML = `<div class="empty"><b>${esc(data.query)}</b>을(를) 명확히 평가한 최근 유튜버 의견을 찾지 못했어요.<br>다른 표기, 티커, 회사명, 섹터·테마명으로도 검색해 보세요.</div>`;
         return;
       }
-      activeSharePayload = sharePayloadFor(data);
       const c = data.counts || {};
       const mood = data.marketMood || marketMoodFromCounts(c);
-      activeMarketMoodPayload = marketMoodAnalytics(data);
-      const sampleNote = done && data.opinions.length < 5
-        ? `<div class="sample-note">아직 표본이 적어요. 최근 2주 공개 영상 기준으로 ${esc(data.query)} 의견이 더 모이면 판단 신뢰도가 올라갑니다.</div>`
-        : "";
+      const currentOpinions = reportableOpinions(data.opinions);
+      const sampleNote = sampleNoteHtml(data, currentOpinions.length);
       const opinions = data.opinions
         .map((opinion, order) => ({ ...opinion, order }))
         .sort((a, b) =>
@@ -912,47 +3144,92 @@
           (b.views || 0) - (a.views || 0) ||
           a.order - b.order
         );
-      const cards = opinions.map(o => `
-        <article class="card" data-stance="${esc(o.stance)}">
+      const cardHtml = o => `
+        <article class="card" id="${esc(opinionAnchorId(o))}" data-stance="${esc(o.stance)}">
           <div class="card-head">
-            <div class="video-meta" title="${esc(dateText(o.publishedAt))}">${esc(relativeDateText(o.publishedAt))} 업로드 · 조회 ${esc(viewsText(o.views))}</div>
-            <span class="badge ${stanceClass(o.stance)}">${esc(stanceBadgeLabel(o))}</span>
+            <div class="card-meta">
+              <a class="channel" href="${esc(o.url)}" target="_blank" rel="noopener" data-click-target="channel_name">${esc(o.channel)}</a>
+              ${sourceChipHtml(o)}
+              <span class="meta-dot">·</span>
+              <span class="video-meta" title="${esc(dateText(o.publishedAt))}">${esc(relativeDateText(o.publishedAt))} 업로드</span>
+              <span class="meta-dot">·</span>
+              <span class="video-meta">조회 ${esc(viewsText(o.views))}</span>
+            </div>
+            <span class="badge ${opinionBadgeClass(o)}">${esc(opinionBadgeLabel(o))}</span>
           </div>
           <div class="opinion-block">
-            <a class="channel" href="${esc(o.url)}" target="_blank" rel="noopener" data-click-target="channel_name">${esc(o.channel)}</a>
             <p class="opinion">${esc(o.summary)}</p>
           </div>
           <div class="field-label evidence-label">근거</div>
-          <p class="evidence">${esc(o.evidence)} <a class="evidence-source" href="${esc(sourceUrl(o))}" target="_blank" rel="noopener" title="${esc(o.channel)} · ${esc(dateText(o.publishedAt))} · 조회 ${esc(viewsText(o.views))}" data-click-target="evidence_timestamp">${esc(sourceCaption(o))}</a></p>
-          <div class="source-actions">
-            <a class="source-link" href="${esc(sourceUrl(o))}" target="_blank" rel="noopener" title="${esc(o.channel)} · ${esc(dateText(o.publishedAt))} · 조회 ${esc(viewsText(o.views))}" data-click-target="source_cta">${esc(sourceActionLabel(o))}</a>
-          </div>
-        </article>`).join("");
-      result.innerHTML = `
-        <div class="summary">
-          <div class="summary-head">
-            <div class="summary-title-row">
-              <h2>${esc(data.query)}</h2>
-              <span class="summary-arrow" aria-hidden="true">›</span>
-              <div class="mood-label">${esc(moodHeadline(mood.label))}</div>
-            </div>
-            <button class="share-button" type="button" data-action="share-result" aria-label="${esc(data.query)} 공유하기">공유하기</button>
-          </div>
-          <div class="market-mood ${esc(moodClass(mood.label))}">
-            <p class="mood-summary">${esc(mood.summary)}</p>
-          </div>
+          <p class="evidence"><span class="evidence-prefix">근거:</span> ${esc(o.evidence)} <a class="evidence-source" href="${esc(sourceUrl(o))}" target="_blank" rel="noopener" title="${esc(o.channel)} · ${esc(dateText(o.publishedAt))} · 조회 ${esc(viewsText(o.views))}" data-click-target="evidence_timestamp">${esc(sourceCaption(o))}</a></p>
+          ${o.factCheckWarning ? `<p class="quality-warning">${esc(o.factCheckWarning)}</p>` : ""}
+        </article>`;
+      const judgedCards = opinions
+        .filter(isReportableOpinion)
+        .map(cardHtml)
+        .join("");
+      const judgedOpinions = opinions.filter(isReportableOpinion);
+      if (activeDetailStance && !detailFilterStances.includes(activeDetailStance)) activeDetailStance = "";
+      const visibleJudgedOpinions = activeDetailStance
+        ? judgedOpinions.filter(opinion => opinion.stance === activeDetailStance)
+        : judgedOpinions;
+      const visibleJudgedCards = visibleJudgedOpinions.map(cardHtml).join("");
+      const detailFilterEmpty = activeDetailStance
+        ? `<div class="detail-filter-empty">${esc(activeDetailStance)} 의견은 아직 없어요.</div>`
+        : "";
+      const detailSection = judgedOpinions.length
+        ? `<h3 class="detail-section-title" id="detailOpinionsTitle">유튜버 상세 의견</h3>${detailOpinionFilterHtml(judgedOpinions, activeDetailStance)}${visibleJudgedCards ? `<div class="cards">${visibleJudgedCards}</div>` : detailFilterEmpty}`
+        : "";
+      const referenceCards = opinions
+        .filter(o => !isReportableOpinion(o))
+        .map(cardHtml)
+        .join("");
+      const referenceSection = referenceCards
+        ? `<section class="mention-section" aria-label="정보성·참고 의견">
+            <h3 class="mention-section-title"${judgedCards ? "" : ' id="detailOpinionsTitle"'}>정보성·참고 의견</h3>
+            <div class="cards">${referenceCards}</div>
+          </section>`
+        : "";
+      if (currentOpinions.length < 2) {
+        activeSharePayload = null;
+        activeMarketMoodPayload = null;
+        setResultTabsVisible(false);
+        result.innerHTML = `
           ${sampleNote}
-          <div class="counts">
-            ${c.긍정 ? `<button class="count pos" type="button" data-stance="긍정">${countLabel("긍정")} ${c.긍정}</button>` : ""}
-            ${c.신중 ? `<button class="count neu" type="button" data-stance="신중">${countLabel("신중")} ${c.신중}</button>` : ""}
-            ${c.부정 ? `<button class="count neg" type="button" data-stance="부정">${countLabel("부정")} ${c.부정}</button>` : ""}
-            ${c.단순언급 ? `<button class="count mention" type="button" data-stance="단순언급">${countLabel("단순언급")} ${c.단순언급}</button>` : ""}
+          ${detailSection}
+          ${referenceSection}`;
+        return;
+      }
+      setResultTabsVisible(true, Boolean(judgedCards || referenceCards));
+      activeSharePayload = sharePayloadFor(data);
+      activeMarketMoodPayload = marketMoodAnalytics(data);
+      const headline = verdictHeadline(data, mood);
+      const summaryHtml = verdictSummaryHtml(data, mood);
+      result.innerHTML = `
+        <div class="summary verdict-card">
+          ${sampleNote}
+          <div class="verdict-top">
+            <div class="verdict-title">
+              <div class="verdict-eyebrow"><span class="verdict-eyebrow-stock">${esc(data.query)}</span> 유튜버 현재 분위기 리포트</div>
+              <h2 class="verdict-headline">
+                <span>${esc(headline)}</span>
+              </h2>
+              ${verdictHeadMetaHtml(data)}
+            </div>
+            <span class="verdict-chip ${esc(moodClass(mood.label))}">${esc(displayMoodLabel(mood.label))}</span>
           </div>
-          <div class="summary-meta">
-            ${resultMetaText(data)}
+          ${summaryHtml ? `
+            <div class="market-mood ${esc(moodClass(mood.label))} verdict-core">
+              <p class="mood-summary">${summaryHtml}</p>
+            </div>` : ""}
+          ${verdictReportHtml(data, mood)}
+          ${relatedStocksHtml(data)}
+          <div class="verdict-footer">
+            <button class="share-button" type="button" data-action="share-result" aria-label="${esc(data.query)} 의견을 살까 말까 고민하는 친구에게 보내기">${esc(shareButtonDefaultLabel)}</button>
           </div>
         </div>
-        <div class="cards">${cards}</div>`;
+        ${detailSection}
+        ${referenceSection}`;
     }
 
     function trackSearchSnapshot(data) {
@@ -1075,10 +3352,14 @@
       activeSearchQuery = "";
       activeSearchDone = true;
       activeSharePayload = null;
+      activeResultTab = "report";
+      activeDetailStance = "";
+      activeResultData = null;
       document.body.classList.remove("result-mode");
       input.value = "";
       submit.disabled = false;
       loading.classList.remove("show");
+      setResultTabsVisible(false);
       result.innerHTML = "";
       hideSuggestions();
       heroCopy.classList.remove("hide");
@@ -1100,8 +3381,12 @@
       const token = ++activeSearchToken;
       activeSearchQuery = query;
       activeSearchDone = false;
+      activeResultTab = "report";
+      activeDetailStance = "";
+      activeResultData = null;
       document.body.classList.add("result-mode");
       input.value = query; submit.disabled = true; loading.classList.add("show"); result.innerHTML = "";
+      setResultTabsVisible(false);
       heroCopy.classList.add("hide");
       marketPanel.classList.add("hide");
       loadingTitle.textContent = loadingStepTitle();
@@ -1120,6 +3405,7 @@
       } catch (error) {
         const message = error.message === "Failed to fetch" ? serverRequiredMessage : error.message;
         analytics.send("search_result", { query, success:false, error:message });
+        setResultTabsVisible(false);
         result.innerHTML = `<div class="error">${esc(message)}</div>`;
       } finally {
         if (token === activeSearchToken) {
@@ -1176,11 +3462,13 @@
     document.addEventListener("click", e => {
       if (!form.contains(e.target)) hideSuggestions();
     });
+    updatePopupClose?.addEventListener("click", dismissUpdatePopup);
     homeButton.addEventListener("click", showHome);
     rankRefreshButton.addEventListener("click", () => loadRanking());
     rankMoreButton.addEventListener("click", () => {
       rankVisibleCounts[activeMarket] = Math.min((rankVisibleCounts[activeMarket] || RANK_INITIAL_LIMIT) + RANK_STEP, RANK_MAX_LIMIT);
       renderRanking(activeMarket);
+      loadRankingQuotes(activeMarket);
     });
     marketPanel.addEventListener("click", e => {
       const tab = e.target.closest(".market-tab");
@@ -1191,16 +3479,92 @@
           item.setAttribute("aria-selected", String(active));
         });
         renderRanking(tab.dataset.market);
+        loadRankingQuotes(tab.dataset.market);
         return;
       }
       const item = e.target.closest(".rank-item");
       if (item) search(item.dataset.query);
     });
+    resultTabs.addEventListener("click", e => {
+      const tab = e.target.closest(".result-tab[data-result-tab]");
+      if (!tab || tab.disabled) return;
+      setActiveResultTab(tab.dataset.resultTab);
+      analytics.send("result_tab_click", {
+        query:activeSearchQuery,
+        tab:activeResultTab,
+      });
+      scrollToResultSection(activeResultTab);
+    });
+    function closeReportRefPopovers(exceptWrap = null) {
+      result.querySelectorAll(".report-ref-more-wrap").forEach(wrap => {
+        if (exceptWrap && wrap === exceptWrap) return;
+        const popover = wrap.querySelector(".report-ref-popover");
+        const button = wrap.querySelector(".report-ref-more");
+        if (popover) popover.hidden = true;
+        if (button) button.setAttribute("aria-expanded", "false");
+      });
+    }
     result.addEventListener("click", e => {
       const link = e.target.closest("a.source-link,a.evidence-source,a.channel");
       const shareButton = e.target.closest(".share-button[data-action='share-result']");
+      const relatedTag = e.target.closest(".related-tag[data-related-query]");
+      const detailFilter = e.target.closest(".detail-filter[data-detail-filter-stance]");
+      const reportRefMoreWrap = e.target.closest(".report-ref-more-wrap");
+      const reportRefMore = e.target.closest(".report-ref-more[data-action='toggle-ref-popover']");
+      const reportRef = e.target.closest(".report-ref[data-opinion-anchor]");
+      if (!reportRefMoreWrap) closeReportRefPopovers();
+      if (detailFilter) {
+        activeDetailStance = detailFilter.dataset.detailFilterStance || "";
+        analytics.send("detail_stance_filter_click", {
+          query:activeSearchQuery,
+          stance:activeDetailStance || "전체",
+          label:detailFilter.textContent.trim(),
+        });
+        if (activeResultData) render(activeResultData);
+        const title = result.querySelector("#detailOpinionsTitle");
+        if (title) title.scrollIntoView({ behavior:"smooth", block:"start" });
+        return;
+      }
+      if (relatedTag) {
+        const query = relatedTag.dataset.relatedQuery || "";
+        analytics.send("related_stock_click", {
+          query:activeSearchQuery,
+          relatedQuery:query,
+        });
+        search(query);
+        return;
+      }
       if (shareButton) {
         shareCurrentResult();
+        return;
+      }
+      if (reportRefMore) {
+        const wrap = reportRefMore.closest(".report-ref-more-wrap");
+        const popover = wrap?.querySelector(".report-ref-popover");
+        const willOpen = Boolean(popover?.hidden);
+        closeReportRefPopovers(wrap);
+        if (popover) popover.hidden = !willOpen;
+        reportRefMore.setAttribute("aria-expanded", String(willOpen));
+        analytics.send("report_source_ref_more_click", {
+          query:activeSearchQuery,
+          label:reportRefMore.textContent.trim(),
+        });
+        return;
+      }
+      if (reportRef) {
+        const anchorId = reportRef.dataset.opinionAnchor || "";
+        const card = anchorId ? document.getElementById(anchorId) : null;
+        closeReportRefPopovers();
+        analytics.send("report_source_ref_click", {
+          query:activeSearchQuery,
+          anchorId,
+          label:reportRef.textContent.trim(),
+        });
+        if (card) {
+          card.scrollIntoView({ behavior:"smooth", block:"start" });
+          card.classList.add("anchor-highlight");
+          setTimeout(() => card.classList.remove("anchor-highlight"), 1400);
+        }
         return;
       }
       if (link) {
@@ -1225,6 +3589,7 @@
         .find(item => item.dataset.stance === count.dataset.stance);
       if (card) card.scrollIntoView({ behavior:"smooth", block:"start" });
     });
+    showUpdatePopup();
     analytics.send("page_view");
     analytics.send("session_start");
     const initialQuery = fillQueryFromUrl();

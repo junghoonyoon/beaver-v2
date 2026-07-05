@@ -269,7 +269,7 @@ def _run_search_job(job_id, query, videos, finalize=True):
                     with JOBS_LOCK:
                         JOBS[job_id]["result"]["processedVideos"] += 1
                     continue
-            opinion = stock_search.opinion_from_result(video, opinion_result, cached)
+            opinion = stock_search.opinion_from_analysis(query, video, opinion_result, cached)
             with JOBS_LOCK:
                 result = JOBS[job_id]["result"]
                 if generate:
@@ -406,6 +406,26 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _html(self):
+        if not APP_HTML.exists() or not APP_HTML.is_file():
+            self.send_error(404)
+            return
+        html = APP_HTML.read_text(encoding="utf-8")
+        try:
+            payload = stock_search.popular_stocks(refresh_quotes=False)
+            payload_json = json.dumps(payload, ensure_ascii=False).replace("</", "<\\/")
+            snippet = f"<script>window.__INITIAL_POPULAR_STOCKS__={payload_json};</script>"
+            html = html.replace("</head>", f"{snippet}\n</head>", 1)
+        except Exception as exc:
+            print(f"[검색 서버] 초기 인기주식 주입 실패: {exc}")
+        body = html.encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(body)
+
     def _file_head(self, path):
         if not path.exists() or not path.is_file():
             self.send_error(404)
@@ -520,7 +540,37 @@ class Handler(BaseHTTPRequestHandler):
             return
         if parsed.path == "/api/popular-stocks":
             try:
-                self._json(stock_search.popular_stocks())
+                self._json(stock_search.popular_stocks(refresh_quotes=False))
+            except Exception as exc:
+                self._json({"error": str(exc)}, 500)
+            return
+        if parsed.path == "/api/popular-stock-quotes":
+            params = parse_qs(parsed.query)
+            market = params.get("market", [""])[0]
+            codes = []
+            for value in params.get("codes", []):
+                codes.extend(part for part in value.split(",") if part.strip())
+            try:
+                self._json(stock_search.popular_stock_quotes(market, codes))
+            except Exception as exc:
+                self._json({"error": str(exc)}, 500)
+            return
+        if parsed.path == "/api/youtuber-history":
+            params = parse_qs(parsed.query)
+            query = params.get("stock", [""])[0].strip()
+            channel_id = params.get("channelId", [""])[0].strip()
+            channel_name = params.get("channelName", [""])[0].strip()
+            period_days = params.get("periodDays", [""])[0].strip()
+            if not query or not (channel_id or channel_name):
+                self._json({"error": "stock과 channelId 또는 channelName이 필요해요."}, 400)
+                return
+            try:
+                self._json(stock_search.youtuber_history_detail(
+                    query,
+                    channel_id=channel_id,
+                    channel_name=channel_name,
+                    period_days=int(period_days) if period_days else None,
+                ))
             except Exception as exc:
                 self._json({"error": str(exc)}, 500)
             return
@@ -569,7 +619,7 @@ class Handler(BaseHTTPRequestHandler):
             self._json({"suggestions": stock_search.suggest_stocks(query)})
             return
         if parsed.path in ("/", "/stock-search.html"):
-            self._file(APP_HTML)
+            self._html()
             return
         if parsed.path == "/robots.txt":
             self._file(ROBOTS_TXT)

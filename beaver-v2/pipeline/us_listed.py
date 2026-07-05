@@ -40,7 +40,7 @@ US_KOREAN_ALIASES = {
     "XPEV": ["샤오펑"],
     "LI": ["리오토"],
     "PDD": ["핀둬둬", "테무"],
-    "TSM": ["TSMC", "대만반도체"],
+    "TSM": ["TSMC", "대만반도체", "타이완반도체", "Taiwan Semiconductor"],
     "ASML": ["ASML", "에이에스엠엘"],
     "SNOW": ["스노우플레이크"],
     "SHOP": ["쇼피파이"],
@@ -56,6 +56,13 @@ US_KOREAN_ALIASES = {
     "BRK.B": ["버크셔", "버크셔해서웨이"],
     "LLY": ["일라이릴리"],
     "NVO": ["노보노디스크"],
+}
+
+US_DISPLAY_NAMES = {
+    "AMD": "AMD",
+    "ARM": "ARM",
+    "ASML": "ASML",
+    "TSM": "TSMC",
 }
 
 EXCHANGE_NAMES = {

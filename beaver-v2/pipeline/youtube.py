@@ -77,6 +77,7 @@ def recent_uploads(channel, lookback_days=None, max_results=15):
         if dt.date() < since:
             continue
         vids.append({"channel": channel["name"],
+                     "channelId": channel.get("channelId", ""),
                      "videoId": it["contentDetails"]["videoId"],
                      "title": it["snippet"]["title"],
                      "publishedAt": dt})

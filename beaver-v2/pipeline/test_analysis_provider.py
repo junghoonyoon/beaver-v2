@@ -68,6 +68,26 @@ class AnalysisProviderTest(unittest.TestCase):
             result = analyze.analyze_stock_opinion("삼성전자", ["삼성전자"], "자막")
         self.assertEqual(result["stance"], "신중")
 
+    def test_stock_opinion_keeps_speech_classification(self):
+        payload = json.dumps({
+            "mentioned": True,
+            "stance": "긍정",
+            "summary": "실적이 확인되면 상승 여력이 있다는 의견이에요.",
+            "evidence": "HBM 수요와 실적 개선을 조건으로 언급했어요.",
+            "speechType": "조건부 전망",
+            "timeOrientation": "미래 전망",
+            "confidence": "약함",
+            "rationaleType": "실적",
+            "evaluable": True,
+        }, ensure_ascii=False)
+        with mock.patch.object(analyze, "_generate", return_value=payload):
+            result = analyze.analyze_stock_opinion("삼성전자", ["삼성전자"], "자막")
+        self.assertEqual(result["speechType"], "조건부 전망")
+        self.assertEqual(result["timeOrientation"], "미래 전망")
+        self.assertEqual(result["confidence"], "약함")
+        self.assertEqual(result["rationaleType"], "실적")
+        self.assertTrue(result["evaluable"])
+
 
 if __name__ == "__main__":
     unittest.main()
