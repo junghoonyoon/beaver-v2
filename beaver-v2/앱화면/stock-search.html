@@ -4,9 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="naver-site-verification" content="ddef5be53c5a428e2046ea2215b0eeb2c0ec7e67">
+  <meta name="robots" content="index,follow,max-image-preview:large">
   <meta name="description" content="차트 보기 전, 유튜브 분위기도 보세요. 최근 2주 주식 유튜버들의 긍정·관망·주의 의견과 근거 영상을 종목별 요약리포트로 정리해드립니다.">
+  <meta name="application-name" content="지금사도될까요?">
+  <meta name="theme-color" content="#ffffff">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="지금사도될까요?">
+  <meta property="og:site_name" content="지금사도될까요?">
+  <meta property="og:title" content="지금사도될까요? | 주식 유튜브 의견 요약 리포트">
   <meta property="og:description" content="최근 2주 주식 유튜버들의 긍정·관망·주의 의견과 근거 영상을 종목별 요약리포트로 정리해드립니다.">
   <meta property="og:url" content="https://stockzip.kr/">
   <link rel="canonical" href="https://stockzip.kr/">
@@ -17,10 +21,54 @@
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="지금사도될까요? - 유튜브 분위기 요약리포트">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="지금사도될까요?">
+  <meta name="twitter:title" content="지금사도될까요? | 주식 유튜브 의견 요약 리포트">
   <meta name="twitter:description" content="최근 2주 주식 유튜버들의 긍정·관망·주의 의견과 근거 영상을 종목별 요약리포트로 정리해드립니다.">
   <meta name="twitter:image" content="https://stockzip.kr/assets/og-image.png">
-  <title>지금사도될까요?</title>
+  <meta name="twitter:image:alt" content="지금사도될까요? - 유튜브 분위기 요약리포트">
+  <title>지금사도될까요? | 주식 유튜브 의견 요약 리포트</title>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://stockzip.kr/#organization",
+        "name": "지금사도될까요?",
+        "url": "https://stockzip.kr/",
+        "logo": "https://stockzip.kr/assets/og-image.png"
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://stockzip.kr/#website",
+        "name": "지금사도될까요?",
+        "url": "https://stockzip.kr/",
+        "description": "최근 2주 주식 유튜버들의 긍정·관망·주의 의견과 근거 영상을 종목별 요약리포트로 정리해드립니다.",
+        "inLanguage": "ko-KR",
+        "publisher": {
+          "@id": "https://stockzip.kr/#organization"
+        },
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://stockzip.kr/?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      },
+      {
+        "@type": "WebApplication",
+        "@id": "https://stockzip.kr/#app",
+        "name": "지금사도될까요?",
+        "url": "https://stockzip.kr/",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Web",
+        "inLanguage": "ko-KR",
+        "description": "주식 종목별 유튜브 의견과 근거 영상을 요약해 보여주는 웹앱입니다.",
+        "publisher": {
+          "@id": "https://stockzip.kr/#organization"
+        }
+      }
+    ]
+  }
+  </script>
   <style>
     @font-face {
       font-family:"GmarketSansBold";
@@ -542,13 +590,13 @@
       .summary-head { align-items:flex-start; gap:10px }
       .summary h2 { font-size:24px }
       .share-button { min-height:44px; padding:0 13px; font-size:13px }
-      .verdict-card { padding:20px 15px 18px; border-radius:8px }
-      .verdict-card > .sample-note:first-child { margin:-20px -15px 18px; padding:10px 15px }
+      .verdict-card { padding:26px 20px 22px; border-radius:8px }
+      .verdict-card > .sample-note:first-child { margin:-26px -20px 20px; padding:10px 20px }
       .verdict-top { display:grid; gap:8px }
-      .verdict-eyebrow { margin-bottom:10px; color:#7b828e; font-size:14px; font-weight:560 }
-      .verdict-eyebrow-stock { font-weight:670 }
-      .verdict-card h2 { font-size:22px; font-weight:650; line-height:1.3 }
-      .verdict-head-meta { gap:5px; margin-top:12px; font-size:13px; font-weight:500; line-height:1.55 }
+      .verdict-eyebrow { margin-bottom:12px; color:var(--blue); font-size:15px; font-weight:620 }
+      .verdict-eyebrow-stock { font-weight:760 }
+      .verdict-card h2 { font-size:25px; font-weight:780; line-height:1.24 }
+      .verdict-head-meta { gap:5px; margin-top:14px; color:#8a8f98; font-size:14px; font-weight:500; line-height:1.5 }
       .verdict-head-distribution { color:#5e6673; font-weight:610 }
       .verdict-head-flow { color:#8d95a2; font-weight:500 }
       .skeleton-eyebrow { width:68%; height:15px; margin-bottom:17px }
@@ -564,11 +612,14 @@
       .verdict-chip { width:max-content; font-size:12px; font-weight:650 }
       .verdict-core { margin-top:20px }
       .mood-summary { color:#3f4650; font-weight:400; line-height:1.76 }
-      .verdict-report { gap:24px; margin-top:24px; padding:0; border-top:0 }
-      .report-row { grid-template-columns:1fr; gap:10px; padding:0; border-bottom:0 }
-      .report-label { font-size:13px; line-height:1.5 }
-      .report-text { font-size:15px; line-height:1.66 }
-      .report-refs { margin-top:9px; gap:7px }
+      .verdict-report { gap:32px; margin-top:32px; padding:0; border-top:0 }
+      .report-row { grid-template-columns:1fr; gap:11px; padding:0; border-bottom:0 }
+      .report-label { color:#111318; font-size:17px; font-weight:780; line-height:1.35 }
+      .report-text {
+        color:#4f5662; font-size:17px; font-weight:400;
+        line-height:1.66; letter-spacing:0; word-break:keep-all;
+      }
+      .report-refs { margin-top:10px; gap:7px }
       .report-refs::before,
       .report-ref-separator,
       .report-ref,
@@ -582,20 +633,28 @@
       .related-tags { gap:7px }
       .related-tag { min-height:30px; padding:0 11px; font-size:12px }
       .verdict-distribution .count { flex:0 0 auto }
-      .detail-section-title { margin:30px 0 14px; font-size:18px; font-weight:760 }
-      .detail-filters { gap:8px; margin:0 0 18px }
+      .detail-section-title { margin:36px 0 16px; font-size:23px; font-weight:780; line-height:1.24 }
+      .detail-filters { gap:8px; margin:0 0 20px }
       .detail-filter { min-height:34px; padding:0 13px; font-size:13px; font-weight:650 }
-      .cards { gap:16px }
-      .card { padding:22px 18px 24px; border-radius:8px }
+      .cards { gap:18px }
+      .card { padding:24px 20px 25px; border-radius:8px }
       .card-head { gap:12px }
-      .card-meta { gap:6px 7px; font-size:13px; font-weight:500; line-height:1.5 }
-      .channel { font-size:14px; font-weight:650 }
-      .video-meta { font-size:13px; font-weight:500 }
+      .card-meta { gap:6px 7px; color:#8a8f98; font-size:14px; font-weight:500; line-height:1.5 }
+      .channel { color:#5f6773; font-size:14px; font-weight:620 }
+      .video-meta { color:#8a8f98; font-size:14px; font-weight:500 }
       .source-chip { min-height:23px; padding:2px 8px; font-size:12px; font-weight:650 }
       .badge { padding:6px 10px; font-size:12px; font-weight:650 }
-      .opinion-block { margin-top:20px }
-      .opinion { font-size:16px; font-weight:500; line-height:1.72 }
-      .evidence { margin-top:18px; padding-top:0; font-size:13px; line-height:1.78 }
+      .opinion-block { margin-top:22px }
+      .opinion {
+        color:#111318; font-size:18px; font-weight:740;
+        line-height:1.48; letter-spacing:0;
+      }
+      .evidence {
+        margin-top:14px; padding-top:0; color:#4f5662;
+        font-size:16px; font-weight:400; line-height:1.68;
+      }
+      .evidence-prefix { color:#8a8f98; font-weight:650 }
+      .evidence-source { margin-left:4px; font-size:13px; font-weight:650 }
       .suggestion { grid-template-columns:72px minmax(0,1fr) 64px; gap:10px; padding:12px 14px }
       .suggestion-code,.suggestion-name,.suggestion-market { font-size:14px }
     }
@@ -1235,6 +1294,16 @@
       if (/[.!?。]$/.test(value)) return value;
       return `${value}.`;
     }
+    function hasFinalConsonant(text) {
+      const last = [...String(text || "").trim()].pop() || "";
+      const code = last.charCodeAt(0);
+      return code >= 0xac00 && code <= 0xd7a3 && (code - 0xac00) % 28 !== 0;
+    }
+    function withKoreanParticle(text, consonantParticle, vowelParticle) {
+      const value = String(text || "").trim();
+      if (!value) return "";
+      return `${value}${hasFinalConsonant(value) ? consonantParticle : vowelParticle}`;
+    }
     function thesisToResearchSentence(text) {
       const value = String(text || "").trim();
       if (!value) return "";
@@ -1727,13 +1796,48 @@
         .map(([stance, label]) => `${label} ${counts[stance]}명`)
         .join(" · ");
     }
+    function reportDistributionSubject(opinions) {
+      const counts = opinions.reduce((acc, opinion) => {
+        acc[opinion.stance] = (acc[opinion.stance] || 0) + 1;
+        return acc;
+      }, {});
+      const rows = [
+        ["긍정", "긍정"],
+        ["신중", "관망"],
+        ["부정", "주의"],
+      ]
+        .filter(([stance]) => counts[stance])
+        .map(([stance, label]) => `${label} 의견 ${counts[stance]}명`);
+      if (rows.length <= 1) return rows[0] || "";
+      if (rows.length === 2) return `${rows[0]}과 ${rows[1]}`;
+      return `${rows[0]}, ${rows[1]} 등`;
+    }
+    const readableReportTheme = label => ({
+      "AI·신사업 방향":"AI 신사업이 실제 성장으로 이어지는지",
+      "데이터센터 투자 여력":"데이터센터 투자를 감당할 여력이 있는지",
+      "주가 저점·반등 시점":"주가가 바닥을 지나 반등할지",
+      "클라우드·AI 매출":"클라우드와 AI 매출이 늘어나는지",
+      "광고·커머스 수익화":"광고와 커머스 매출이 살아나는지",
+      "실적·마진 개선":"실적과 이익률이 좋아지는지",
+      "수요·가격 흐름":"수요와 가격이 버티는지",
+      "수급·차익 매물":"차익 매물과 매수·매도 흐름이 안정되는지",
+      "밸류에이션 부담":"현재 가격 부담이 줄어드는지",
+      "주주환원·할인율":"주주환원과 할인율 축소가 이어지는지",
+      "판매량·마진":"판매량과 이익률이 함께 좋아지는지",
+    }[label] || label);
+    function readableReportThemeText(themes) {
+      const phrases = (themes || []).map(readableReportTheme).filter(Boolean).slice(0, 2);
+      if (!phrases.length) return "";
+      return withKoreanParticle(phrases.join(", "), "을", "를");
+    }
     function consensusBackedText(opinions, query, mode = "positive", fallback = "") {
       const detailText = detailBackedText(opinions, query, mode, fallback);
       if (opinions.length < 3) return detailText;
       const themes = reportThemeLabels(opinions, 3);
-      const distribution = stanceDistributionLead(opinions);
-      if (!themes.length || !distribution) return detailText;
-      const consensus = `${distribution} 의견은 ${themes.join(", ")} 등을 핵심 변수로 보고 있어요.`;
+      const subject = reportDistributionSubject(opinions);
+      const themeText = readableReportThemeText(themes);
+      if (!themeText || !subject) return detailText;
+      const consensus = `${withKoreanParticle(subject, "은", "는")} ${themeText} 주로 봤어요.`;
       return detailText ? `${consensus} ${detailText}` : consensus;
     }
     const headlineKeywordRules = [
@@ -1872,6 +1976,47 @@
       visibleRefs.extraCount = visibleRefs.hiddenRefs.length;
       return visibleRefs;
     }
+    function polishReportSentence(sentence) {
+      let value = String(sentence || "")
+        .replace(/[.。]+$/g, "")
+        .trim();
+      if (!value) return "";
+      value = value
+        .replace(/추가적으로/g, "추가로")
+        .replace(/마진과 매출, 이익 증가/g, "매출과 이익 증가")
+        .replace(/이익률과 매출, 이익 증가/g, "매출과 이익 증가")
+        .replace(/(.+?)로 인해 주가 상승 여력이 충분하다고 봅니다?$/g, (_, reason) => (
+          `${withKoreanParticle(reason.trim(), "이", "가")} 주가를 다시 밀어 올릴 재료로 언급됐어요`
+        ))
+        .replace(/(.+?)로 인해 (.+?)로 이어질 것입니다$/g, (_, reason, outcome) => (
+          `${withKoreanParticle(reason.trim(), "이", "가")} ${outcome.trim()}로 이어지는지가 핵심이에요`
+        ))
+        .replace(/(.+?)라는 점을 근거로 들었습니다?$/g, (_, reason) => (
+          `${withKoreanParticle(reason.trim(), "을", "를")} 근거로 봤어요`
+        ))
+        .replace(/(.+?)라는 점을 근거로 보았습니다?$/g, (_, reason) => (
+          `${withKoreanParticle(reason.trim(), "을", "를")} 근거로 봤어요`
+        ))
+        .replace(/(.+?)것이라는 뉴스가 시장 심리를 강하게 돌려놓았으며,?\s*이는 (.+?)로 이어질 것입니다$/g, (_, news, outcome) => (
+          `${news.trim()} 기대도 시장 심리에 보탬이 됐어요. 이 흐름이 ${outcome.trim().replace(/이익률과 매출, 이익 증가/g, "매출과 이익 증가")}로 이어지는지가 핵심이에요`
+        ))
+        .replace(/(.+?) 가능성이 있어 주가에 부정적인 영향을 줄 수 있으므로 신중한 접근이 필요합니다$/g, (_, reason) => (
+          `${reason.trim()} 가능성이 있어 주가에 부담이 될 수 있어요`
+        ))
+        .replace(/(.+?)이라는 전망이 있지만, 이는 과도한 우려일 수 있으므로 신중하게 접근해야 합니다$/g, (_, reason) => (
+          `${reason.trim()}이라는 전망은 아직 확인이 필요해요`
+        ))
+        .replace(/\s*신중한 접근이 필요합니다$/g, "신중하게 볼 필요가 있어요")
+        .replace(/\s*신중하게 접근해야 합니다$/g, "신중하게 볼 필요가 있어요")
+        .replace(/\s*이어질 것입니다$/g, "이어지는지가 중요해요")
+        .replace(/\s*이어질 것으로 보입니다$/g, "이어질 가능성이 있어요")
+        .replace(/\s*긍정적으로 언급됐습니다$/g, "긍정적으로 언급됐어요")
+        .replace(/\s*부정적으로 언급됐습니다$/g, "주의할 점으로 언급됐어요")
+        .replace(/\s*필요가 있습니다$/g, "필요해요")
+        .replace(/\s*봐야 합니다$/g, "확인해야 해요")
+        .replace(/\s*보세요$/g, "확인하세요");
+      return ensureSentence(value);
+    }
     function reportSentenceFromOpinion(opinion, query, mode = "positive") {
       const sources = mode === "caution"
         ? [[opinion?.summary, 10], [opinion?.evidence, 0]]
@@ -1914,7 +2059,7 @@
         .replace(/[.。]+$/g, "")
         .trim();
       if (!sentence) return "";
-      return ensureSentence(sentence);
+      return polishReportSentence(sentence);
     }
     function detailBackedText(opinions, query, mode = "positive", fallback = "") {
       const sentences = [];
@@ -1953,18 +2098,18 @@
       if (values.includes("실적 컨센서스")) {
         const others = values.filter(item => item !== "실적 컨센서스");
         if (others.length) {
-          return `실적 컨센서스가 낮아지거나 ${subjectWithParticle(others)} 리스크로 커지는지도 봐야 합니다.`;
+          return `실적 컨센서스가 낮아지거나 ${subjectWithParticle(others)} 부담으로 커지는지도 확인해야 해요.`;
         }
-        return "실적 컨센서스가 낮아지는지도 봐야 합니다.";
+        return "실적 컨센서스가 낮아지는지도 확인해야 해요.";
       }
       if (values.includes("북미 공장 가동률")) {
         const others = values.filter(item => item !== "북미 공장 가동률");
         if (others.length) {
-          return `북미 공장 가동률과 생산 효율이 실적 부담으로 이어지거나 ${subjectWithParticle(others)} 리스크로 커지는지도 봐야 합니다.`;
+          return `북미 공장 가동률과 생산 효율이 실적 부담으로 이어지거나 ${subjectWithParticle(others)} 부담으로 커지는지도 확인해야 해요.`;
         }
-        return "북미 공장 가동률과 생산 효율이 실적 부담으로 이어지지 않는지도 봐야 합니다.";
+        return "북미 공장 가동률과 생산 효율이 실적 부담으로 이어지지 않는지도 확인해야 해요.";
       }
-      return `${subjectWithParticle(values)} 리스크로 커지는지도 봐야 합니다.`;
+      return `${subjectWithParticle(values)} 부담으로 커지는지도 확인해야 해요.`;
     }
     const checkVariableRules = [
       { item:"DRAM 가격", words:["DRAM", "디램", "D램"] },
@@ -2024,7 +2169,7 @@
       const positiveItems = selected.filter(item => !cautionItems.includes(item)).slice(0, 3);
       const upsideItems = selected.filter(item => !riskItems.includes(item)).slice(0, 3);
       if (upsideItems.length && riskItems.length) {
-        return `${subjectWithParticle(upsideItems)} 실적 개선으로 이어지는지 확인하세요. 동시에 ${riskCheckSentence(riskItems)}`;
+        return `${subjectWithParticle(upsideItems)} 실적 개선으로 이어지는지 보세요. 동시에 ${riskCheckSentence(riskItems)}`;
       }
       if (positiveItems.length && cautionItems.length) {
         const caution = cautionItems.slice(0, 1).join(", ");
@@ -2034,7 +2179,7 @@
       const lastChar = [...last].pop() || "";
       const code = lastChar.charCodeAt(0);
       const particle = code >= 0xac00 && code <= 0xd7a3 && (code - 0xac00) % 28 === 0 ? "를" : "을";
-      return `${selected.join(", ")}${particle} 확인하세요. 이 변수들이 다음 분기 실적과 주가 눈높이를 바꾸는 핵심 조건입니다.`;
+      return `${selected.join(", ")}${particle} 먼저 확인하세요. 이 흐름이 다음 분기 실적과 주가 눈높이를 바꿀 수 있어요.`;
     }
     function opinionAnchorId(opinion) {
       const raw = opinion?.videoId || `${opinion?.channel || ""}-${opinion?.publishedAt || ""}-${opinion?.summary || ""}`;
@@ -2585,8 +2730,12 @@
         : "";
     }
 
-    function shareUrlFor(query) {
+    function shareUrlFor(query, code) {
       const url = new URL("/", location.href);
+      if (code) {
+        url.pathname = `/stocks/${encodeURIComponent(String(code).trim().toUpperCase())}`;
+        return url.href;
+      }
       url.searchParams.set("q", query);
       return url.href;
     }
@@ -2779,7 +2928,7 @@
 
     function sharePayloadFor(data) {
       const text = summaryShareText(data);
-      const url = shareUrlFor(data.query);
+      const url = shareUrlFor(data.query, data.stockCode);
       return {
         query:data.query,
         title:`지금사도될까요? ${data.query}`,

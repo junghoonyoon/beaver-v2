@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """종목 검색 화면과 로컬 검색 API를 제공한다."""
 import datetime
+import html
 import json
 import mimetypes
 import os
@@ -10,7 +11,7 @@ import time
 import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, quote, unquote, urlparse
 
 from runtime_settings import load_settings
 
@@ -33,6 +34,7 @@ GOOGLE_VERIFICATION_HTML = ROOT / "앱화면" / "google661da6d73ff97f8e.html"
 HOST = os.environ.get("SEARCH_HOST", "0.0.0.0" if os.environ.get("PORT") else "127.0.0.1")
 PORT = int(os.environ.get("SEARCH_PORT") or os.environ.get("PORT") or "8765")
 PUBLIC_HOST = os.environ.get("SEARCH_PUBLIC_HOST", HOST)
+PUBLIC_BASE_URL = os.environ.get("SEARCH_PUBLIC_BASE_URL", "https://stockzip.kr").rstrip("/")
 JOBS = {}
 JOBS_LOCK = threading.Lock()
 MAX_JOBS = 20
@@ -112,6 +114,269 @@ def popular_prewarm_status():
         "marketLimit": config.POPULAR_PREWARM_MARKET_LIMIT,
     })
     return state
+
+
+def _public_url(path):
+    return f"{PUBLIC_BASE_URL}/{str(path or '').lstrip('/')}"
+
+
+def _escape(value):
+    return html.escape(str(value or ""), quote=True)
+
+
+def _format_date(value):
+    if not value:
+        return ""
+    try:
+        parsed = datetime.datetime.fromisoformat(value)
+    except (TypeError, ValueError):
+        return str(value)[:10]
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=stock_search.KST)
+    return parsed.astimezone(stock_search.KST).strftime("%Y-%m-%d")
+
+
+def _stock_url(stock):
+    slug = stock_search.stock_slug(stock)
+    return _public_url(f"/stocks/{quote(slug, safe='')}")
+
+
+def _stock_page_payload(stock):
+    query = stock_search.stock_display_name(stock)
+    videos, stats = stock_search.find_videos_with_stats(
+        query,
+        max_youtubers=config.SEARCH_MAX_YOUTUBERS,
+        include_fallback=False,
+    )
+    latest = max((video.get("publishedAt", "") for video in videos), default="")
+    return {
+        "stock": stock,
+        "name": query,
+        "code": str(stock.get("code") or "").strip().upper(),
+        "market": str(stock.get("market") or "").strip(),
+        "videos": videos,
+        "stats": stats,
+        "latestPublishedAt": latest,
+        "indexUpdatedAt": stock_search.load_index().get("updatedAt"),
+    }
+
+
+def _stock_page_html(stock):
+    payload = _stock_page_payload(stock)
+    name = payload["name"]
+    code = payload["code"]
+    market = payload["market"]
+    code_label = f"{market} {code}".strip()
+    title = f"{name} 유튜브 의견 리포트 | 지금사도될까요?"
+    description = (
+        f"{name}({code}) 최근 {config.SEARCH_LOOKBACK_DAYS}일 주식 유튜버 언급 영상과 "
+        "종목 분위기를 확인하세요."
+        if code else
+        f"{name} 최근 {config.SEARCH_LOOKBACK_DAYS}일 주식 유튜버 언급 영상과 종목 분위기를 확인하세요."
+    )
+    canonical = _stock_url(stock)
+    app_url = _public_url(f"/?q={quote(name)}")
+    latest = _format_date(payload["latestPublishedAt"]) or _format_date(payload["indexUpdatedAt"])
+    videos = payload["videos"][:8]
+    stats = payload["stats"]
+    image_url = _public_url("/assets/og-image.png")
+    video_items = "\n".join(
+        f"""          <li>
+            <a href="{_escape(video.get('url'))}" rel="nofollow noopener" target="_blank">{_escape(video.get('title'))}</a>
+            <span>{_escape(video.get('channel'))} · {_escape(_format_date(video.get('publishedAt')))} · 조회 {_escape(video.get('views') or 0)}</span>
+          </li>"""
+        for video in videos
+    )
+    if not video_items:
+        video_items = """          <li>
+            <span>현재 검색 인덱스에서 확인된 최근 언급 영상이 아직 없습니다.</span>
+          </li>"""
+    web_page_schema = {
+        "@type": "WebPage",
+        "@id": f"{canonical}#webpage",
+        "name": title,
+        "url": canonical,
+        "description": description,
+        "inLanguage": "ko-KR",
+        "isPartOf": {
+            "@id": _public_url("/#website"),
+        },
+        "breadcrumb": {
+            "@id": f"{canonical}#breadcrumb",
+        },
+        "primaryImageOfPage": {
+            "@type": "ImageObject",
+            "url": image_url,
+            "width": 1200,
+            "height": 630,
+        },
+        "mainEntity": {
+            "@type": "Thing",
+            "name": name,
+            "identifier": code,
+        },
+    }
+    if latest:
+        web_page_schema["dateModified"] = latest
+    json_ld = json.dumps({
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "Organization",
+                "@id": _public_url("/#organization"),
+                "name": "지금사도될까요?",
+                "url": _public_url("/"),
+                "logo": image_url,
+            },
+            {
+                "@type": "WebSite",
+                "@id": _public_url("/#website"),
+                "name": "지금사도될까요?",
+                "url": _public_url("/"),
+                "inLanguage": "ko-KR",
+                "publisher": {
+                    "@id": _public_url("/#organization"),
+                },
+            },
+            {
+                "@type": "BreadcrumbList",
+                "@id": f"{canonical}#breadcrumb",
+                "itemListElement": [
+                    {
+                        "@type": "ListItem",
+                        "position": 1,
+                        "name": "홈",
+                        "item": _public_url("/"),
+                    },
+                    {
+                        "@type": "ListItem",
+                        "position": 2,
+                        "name": name,
+                        "item": canonical,
+                    },
+                ],
+            },
+            web_page_schema,
+        ],
+    }, ensure_ascii=False).replace("</", "<\\/")
+    return f"""<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <meta name="theme-color" content="#ffffff">
+  <title>{_escape(title)}</title>
+  <meta name="description" content="{_escape(description)}">
+  <link rel="canonical" href="{_escape(canonical)}">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="지금사도될까요?">
+  <meta property="og:title" content="{_escape(title)}">
+  <meta property="og:description" content="{_escape(description)}">
+  <meta property="og:url" content="{_escape(canonical)}">
+  <meta property="og:image" content="{_escape(image_url)}">
+  <meta property="og:image:secure_url" content="{_escape(image_url)}">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="{_escape(name)} 유튜브 의견 리포트">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{_escape(title)}">
+  <meta name="twitter:description" content="{_escape(description)}">
+  <meta name="twitter:image" content="{_escape(image_url)}">
+  <meta name="twitter:image:alt" content="{_escape(name)} 유튜브 의견 리포트">
+  <script type="application/ld+json">{json_ld}</script>
+  <style>
+    :root {{ color-scheme:light; --ink:#1d1d1f; --body:#555b64; --line:#e5e7eb; --blue:#0071e3; --canvas:#f7f8fa; }}
+    * {{ box-sizing:border-box }}
+    body {{ margin:0; color:var(--ink); background:#fff; font-family:Inter,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",sans-serif; }}
+    main {{ width:min(760px,calc(100% - 32px)); margin:0 auto; padding:44px 0 72px; }}
+    .brand {{ display:inline-flex; align-items:center; gap:10px; color:var(--ink); text-decoration:none; font-weight:850; }}
+    .mark {{ display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:50%; background:var(--ink); color:#fff; }}
+    .breadcrumb {{ display:flex; flex-wrap:wrap; gap:7px; margin-top:34px; color:#7a8088; font-size:13px; font-weight:650; }}
+    .breadcrumb a {{ color:inherit; text-decoration:none; }}
+    .breadcrumb a:hover {{ color:var(--blue); }}
+    .eyebrow {{ margin:46px 0 12px; color:var(--blue); font-size:14px; font-weight:800; }}
+    h1 {{ margin:0; font-size:clamp(34px,7vw,58px); line-height:1.05; letter-spacing:0; }}
+    .lead {{ margin:18px 0 0; color:var(--body); font-size:18px; line-height:1.7; word-break:keep-all; }}
+    .actions {{ display:flex; flex-wrap:wrap; gap:10px; margin-top:28px; }}
+    .button {{ display:inline-flex; align-items:center; justify-content:center; min-height:44px; border-radius:999px; padding:0 18px; background:var(--blue); color:#fff; text-decoration:none; font-weight:780; }}
+    .button.secondary {{ background:#eef2f7; color:#222831; }}
+    .stats {{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-top:34px; }}
+    .stat {{ padding:16px; border:1px solid var(--line); border-radius:8px; background:#fff; }}
+    .stat b {{ display:block; font-size:26px; line-height:1; }}
+    .stat span {{ display:block; margin-top:8px; color:var(--body); font-size:13px; font-weight:650; }}
+    section {{ margin-top:42px; }}
+    h2 {{ margin:0 0 14px; font-size:22px; line-height:1.3; }}
+    .summary {{ padding:18px; border-radius:8px; background:var(--canvas); color:#353b44; line-height:1.75; word-break:keep-all; }}
+    ul {{ margin:0; padding:0; list-style:none; border-top:1px solid var(--line); }}
+    li {{ padding:16px 0; border-bottom:1px solid var(--line); }}
+    li a {{ display:block; color:var(--ink); text-decoration:none; font-weight:760; line-height:1.45; }}
+    li a:hover {{ color:var(--blue); }}
+    li span {{ display:block; margin-top:7px; color:var(--body); font-size:13px; line-height:1.5; }}
+    .notice {{ margin-top:36px; color:#7a8088; font-size:13px; line-height:1.7; }}
+    @media (max-width:640px) {{ main {{ padding-top:28px; }} .stats {{ grid-template-columns:1fr; }} .lead {{ font-size:16px; }} }}
+  </style>
+</head>
+<body>
+  <main>
+    <a class="brand" href="{_escape(_public_url('/'))}"><span class="mark">?</span><span>지금사도될까요?</span></a>
+    <nav class="breadcrumb" aria-label="breadcrumb">
+      <a href="{_escape(_public_url('/'))}">홈</a>
+      <span aria-hidden="true">/</span>
+      <span>{_escape(name)}</span>
+    </nav>
+    <p class="eyebrow">{_escape(code_label or '종목')} 유튜브 의견 리포트</p>
+    <h1>{_escape(name)}<br>지금 사도 될까요?</h1>
+    <p class="lead">{_escape(description)} 차트와 가격만 보기 전에, 최근 영상에서 어떤 기대와 우려가 반복됐는지 먼저 훑어볼 수 있습니다.</p>
+    <div class="actions">
+      <a class="button" href="{_escape(app_url)}">앱에서 실시간 리포트 보기</a>
+      <a class="button secondary" href="{_escape(_public_url('/'))}">다른 종목 검색</a>
+    </div>
+    <div class="stats" aria-label="최근 유튜브 언급 통계">
+      <div class="stat"><b>{_escape(stats.get('mentionedVideoCount', 0))}</b><span>최근 언급 영상</span></div>
+      <div class="stat"><b>{_escape(stats.get('candidateYoutuberCount', 0))}</b><span>언급 유튜버</span></div>
+      <div class="stat"><b>{_escape(latest or '-')}</b><span>최근 확인일</span></div>
+    </div>
+    <section>
+      <h2>{_escape(name)} 요약</h2>
+      <p class="summary">최근 {config.SEARCH_LOOKBACK_DAYS}일 검색 인덱스 기준으로 {_escape(name)} 관련 유튜브 언급을 모았습니다. 자세한 긍정·관망·주의 판단과 근거 문장은 앱 리포트에서 최신 상태로 확인할 수 있습니다.</p>
+    </section>
+    <section>
+      <h2>최근 관련 영상</h2>
+      <ul>
+{video_items}
+      </ul>
+    </section>
+    <p class="notice">이 페이지는 검색엔진이 종목별 리포트를 발견할 수 있도록 만든 색인용 문서입니다. 유튜버의 공개 영상 의견을 요약한 참고 자료이며 투자 권유가 아닙니다.</p>
+  </main>
+</body>
+</html>"""
+
+
+def _sitemap_lastmod():
+    updated_at = stock_search.load_index().get("updatedAt")
+    return _format_date(updated_at) or datetime.datetime.now(stock_search.KST).strftime("%Y-%m-%d")
+
+
+def _sitemap_xml():
+    lastmod = _sitemap_lastmod()
+    urls = [("/", "1.0")]
+    urls.extend((f"/stocks/{quote(row['slug'], safe='')}", "0.8") for row in stock_search.indexable_stock_rows())
+    items = "\n".join(
+        f"""  <url>
+    <loc>{_escape(_public_url(path))}</loc>
+    <lastmod>{lastmod}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>{priority}</priority>
+  </url>"""
+        for path, priority in urls
+    )
+    return f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+{items}
+</urlset>
+"""
 
 
 def prewarm_popular_async(reason=""):
@@ -393,6 +658,16 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _text(self, text, content_type="text/plain; charset=utf-8", status=200, head_only=False):
+        body = text.encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        if not head_only:
+            self.wfile.write(body)
+
     def _file(self, path):
         if not path.exists() or not path.is_file():
             self.send_error(404)
@@ -442,11 +717,18 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path in ("/", "/stock-search.html"):
             self._file_head(APP_HTML)
             return
+        if parsed.path.startswith("/stocks/"):
+            stock = stock_search.stock_by_slug(unquote(parsed.path.removeprefix("/stocks/")))
+            if not stock:
+                self.send_error(404)
+                return
+            self._text(_stock_page_html(stock), "text/html; charset=utf-8", head_only=True)
+            return
         if parsed.path == "/robots.txt":
             self._file_head(ROBOTS_TXT)
             return
         if parsed.path == "/sitemap.xml":
-            self._file_head(SITEMAP_XML)
+            self._text(_sitemap_xml(), "application/xml; charset=utf-8", head_only=True)
             return
         if parsed.path == "/google661da6d73ff97f8e.html":
             self._file_head(GOOGLE_VERIFICATION_HTML)
@@ -621,11 +903,18 @@ class Handler(BaseHTTPRequestHandler):
         if parsed.path in ("/", "/stock-search.html"):
             self._html()
             return
+        if parsed.path.startswith("/stocks/"):
+            stock = stock_search.stock_by_slug(unquote(parsed.path.removeprefix("/stocks/")))
+            if not stock:
+                self.send_error(404)
+                return
+            self._text(_stock_page_html(stock), "text/html; charset=utf-8")
+            return
         if parsed.path == "/robots.txt":
             self._file(ROBOTS_TXT)
             return
         if parsed.path == "/sitemap.xml":
-            self._file(SITEMAP_XML)
+            self._text(_sitemap_xml(), "application/xml; charset=utf-8")
             return
         if parsed.path == "/google661da6d73ff97f8e.html":
             self._file(GOOGLE_VERIFICATION_HTML)

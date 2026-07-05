@@ -374,6 +374,58 @@ def stock_identity(query):
     return {"name": query, "code": "", "market": ""}
 
 
+def stock_display_name(stock):
+    return _display_name(stock)
+
+
+def stock_slug(stock):
+    code = str(stock.get("code") or "").strip().upper()
+    return code or compact(stock_display_name(stock))
+
+
+def stock_by_slug(slug):
+    slug_key = compact(slug)
+    if not slug_key:
+        return None
+    for stock in stock_master():
+        names = [
+            stock_slug(stock),
+            stock_display_name(stock),
+            stock.get("name", ""),
+            stock.get("code", ""),
+            stock.get("isin", ""),
+            stock.get("corpName", ""),
+            stock.get("english", ""),
+            *(stock.get("aliases") or []),
+            *KNOWN_ALIASES.get(stock.get("name", ""), []),
+        ]
+        if slug_key in {compact(name) for name in names if name}:
+            return stock
+    return None
+
+
+def indexable_stock_rows(limit=None):
+    rows = []
+    seen = set()
+    for stock in stock_master():
+        slug = stock_slug(stock)
+        if not slug:
+            continue
+        key = compact(slug)
+        if key in seen:
+            continue
+        seen.add(key)
+        rows.append({
+            "name": stock_display_name(stock),
+            "code": str(stock.get("code") or "").strip().upper(),
+            "market": str(stock.get("market") or "").strip(),
+            "slug": slug,
+        })
+        if limit and len(rows) >= limit:
+            break
+    return rows
+
+
 def query_aliases(query):
     query = query.strip()
     if not query:
@@ -1363,6 +1415,8 @@ def base_search_result(query, videos, stats=None):
     return {
         "query": display_query,
         "rawQuery": query.strip(),
+        "stockCode": identity.get("code", ""),
+        "stockMarket": identity.get("market", ""),
         "aliases": query_aliases(query),
         "matchedVideos": stats["mentionedVideoCount"],
         "mentionedVideoCount": stats["mentionedVideoCount"],
