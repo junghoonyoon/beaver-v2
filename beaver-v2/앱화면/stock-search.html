@@ -201,10 +201,18 @@
     .result-tab.active { background:#fff; color:var(--ink); box-shadow:0 1px 3px rgba(20,28,45,.08) }
     .result-tab:disabled { color:#b8bec8; cursor:default }
     .tab-badge-new {
-      display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px;
-      margin-left:6px; padding:0; border-radius:50%; background:#ff3b30; color:#fff;
+      display:none; align-items:center; justify-content:center; min-width:28px; height:16px;
+      margin-left:6px; padding:0 5px; border-radius:999px; background:#ff3b30; color:#fff;
       font-size:10px; font-weight:800; line-height:1; letter-spacing:0; vertical-align:middle;
     }
+    .tab-badge-new.show { display:inline-flex }
+    .tab-spinner {
+      display:none; width:12px; height:12px; margin-left:6px; border-radius:50%;
+      border:2px solid #c9d7eb; border-top-color:var(--blue); vertical-align:-2px;
+      animation:tab-spin .78s linear infinite;
+    }
+    .tab-spinner.show { display:inline-block }
+    @keyframes tab-spin { to { transform:rotate(360deg) } }
     .suggestions {
       display:none; position:absolute; z-index:20; left:0; right:0; top:calc(100% + 8px);
       overflow:auto; max-height:430px; border:1px solid #dfe3ea; border-radius:14px;
@@ -317,6 +325,8 @@
     .result { margin-top:38px }
     body.result-mode .result { margin-top:18px }
     .result:empty { display:none }
+    .result-panel { scroll-margin-top:156px }
+    .result-panel[hidden] { display:none }
     .summary { padding:4px 0 0; scroll-margin-top:146px }
     .summary-head { display:flex; align-items:flex-start; justify-content:space-between; gap:14px }
     .summary-title-row {
@@ -356,6 +366,18 @@
       margin-top:10px; color:#7a5a09; background:#fff8e5; border:1px solid #f2dfaa;
       border-radius:10px; padding:10px 12px; font-size:13px; line-height:1.55;
     }
+    .detail-loading {
+      display:block; margin-bottom:18px; padding:28px; text-align:center;
+      border:1px solid var(--line); border-radius:18px; background:var(--card); color:#596270;
+    }
+    .detail-loading-visual {
+      display:block; width:min(210px,58vw); height:auto; margin:0 auto 10px;
+    }
+    .detail-loading-title {
+      display:inline-block; max-width:100%; margin:0; color:var(--ink); font-size:15px; font-weight:760;
+      line-height:1.45; word-break:keep-all; animation:loading-title-pulse 1.7s ease-in-out infinite;
+    }
+    .detail-loading-text { margin:6px 0 0; color:#697281; font-size:13px; font-weight:500; line-height:1.5; word-break:keep-all }
     .verdict-card > .sample-note:first-child {
       margin:-34px -36px 24px; border-width:0 0 1px;
       border-radius:8px 8px 0 0; padding:11px 36px;
@@ -532,6 +554,7 @@
     .detail-filter.pos.active { border-color:#b7dfc4; color:var(--pos); background:var(--pos-bg) }
     .detail-filter.neu.active { border-color:#ead18c; color:var(--neu); background:var(--neu-bg) }
     .detail-filter.neg.active { border-color:#f1b7b2; color:var(--neg); background:var(--neg-bg) }
+    .detail-filter.mention.active { color:var(--mention); background:var(--mention-bg) }
     .detail-filter-empty {
       padding:20px 18px; border:1px solid #e7e9ee; border-radius:8px;
       background:#fff; color:#7a818d; font-size:14px; font-weight:620; line-height:1.55;
@@ -637,6 +660,7 @@
       .share-button { min-height:44px; padding:0 13px; font-size:13px }
       .verdict-card { padding:26px 20px 22px; border-radius:8px }
       .verdict-card > .sample-note:first-child { margin:-26px -20px 20px; padding:10px 20px }
+      .detail-loading { padding:13px 14px }
       .verdict-top { display:grid; gap:8px }
       .verdict-eyebrow { margin-bottom:12px; color:#6b7280; font-size:15px; font-weight:620 }
       .verdict-eyebrow-stock { color:var(--blue); font-weight:760 }
@@ -741,8 +765,8 @@
         <div class="suggestions" id="suggestions" role="listbox" aria-label="종목, 섹터, 테마 추천"></div>
       </form>
       <nav class="result-tabs" id="resultTabs" aria-label="검색 결과 보기" role="tablist" hidden>
-        <button class="result-tab active" type="button" role="tab" aria-selected="true" data-result-tab="report">유튜버 현재 분위기 리포트<span class="tab-badge-new">N</span></button>
-        <button class="result-tab" type="button" role="tab" aria-selected="false" data-result-tab="details">유튜버 상세 의견</button>
+        <button class="result-tab active" type="button" role="tab" aria-selected="true" data-result-tab="details">유튜버 상세 의견</button>
+        <button class="result-tab" type="button" role="tab" aria-selected="false" data-result-tab="report">유튜버 현재 분위기 리포트<span class="tab-spinner" aria-hidden="true"></span><span class="tab-badge-new">NEW</span></button>
       </nav>
     </div>
     <section class="market-panel" id="marketPanel" aria-label="인기주식">
@@ -789,6 +813,7 @@
     const isReportableOpinion = opinion => opinion?.stance !== "단순언급" && opinion?.reportable !== false;
     const reportableOpinions = opinions => (opinions || []).filter(isReportableOpinion);
     const detailFilterStances = ["긍정", "신중", "부정"];
+    const referenceDetailFilter = "__reference";
     const opinionBadgeClass = opinion => isReportableOpinion(opinion) ? stanceClass(opinion.stance) : "mention";
     const opinionBadgeLabel = opinion => isReportableOpinion(opinion)
       ? stanceShortLabel(opinion.stance)
@@ -2590,7 +2615,7 @@
     let activeSearchToken = 0;
     let activeSearchQuery = "";
     let activeSearchDone = true;
-    let activeResultTab = "report";
+    let activeResultTab = "details";
     let activeDetailStance = "";
     let activeResultData = null;
     let rankingLoading = false;
@@ -2936,6 +2961,10 @@
       return "표본 부족";
     }
 
+    function reportQueryLabel(data = {}) {
+      return String(data.rawQuery || activeSearchQuery || data.query || "검색어").trim() || "검색어";
+    }
+
     function trustFlowHtml(data) {
       const { mentioned, candidate, opinions } = analysisCounts(data);
       return `
@@ -2970,12 +2999,9 @@
     }
 
     function reportSkeletonHtml(data = {}) {
-      const queryLabel = String(data.query || "검색어").trim() || "검색어";
+      const queryLabel = reportQueryLabel(data);
       return `
         <div class="summary verdict-card report-skeleton" aria-busy="true" aria-label="${esc(queryLabel)} 현재 분위기 리포트 준비 중">
-          <div class="skeleton-status" role="status">
-            <span class="skeleton-status-stock">${esc(queryLabel)}</span> 유튜버 현재 분위기 리포트를 만드는 중이에요
-          </div>
           <div class="verdict-top">
             <div class="verdict-title">
               <span class="skeleton-line skeleton-eyebrow"></span>
@@ -3005,6 +3031,7 @@
     }
 
     function summaryShareText(data) {
+      const queryLabel = reportQueryLabel(data);
       const mentionedVideoCount = data.mentionedVideoCount || data.matchedVideos || 0;
       const mood = data.marketMood || marketMoodFromCounts(data.counts || {});
       const { opinions } = analysisCounts(data);
@@ -3012,15 +3039,16 @@
         .map(normalizeReportRow)
         .map(row => `${row.label}: ${row.text}`)
         .join("\n");
-      return `${data.query} > ${verdictHeadline(data, mood)}\n\n${rows}\n\n오늘 기준 최근 2주 유튜브 언급은 ${mentionedVideoCount}개였고, 실제 투자 의견은 ${opinions}명으로 압축됐어요.\n${distributionText(data.counts || {})}`;
+      return `${queryLabel} > ${verdictHeadline(data, mood)}\n\n${rows}\n\n오늘 기준 최근 2주 유튜브 언급은 ${mentionedVideoCount}개였고, 실제 투자 의견은 ${opinions}명으로 압축됐어요.\n${distributionText(data.counts || {})}`;
     }
 
     function sharePayloadFor(data) {
+      const queryLabel = reportQueryLabel(data);
       const text = summaryShareText(data);
       const url = shareUrlFor(data.query, data.stockCode);
       return {
-        query:data.query,
-        title:`지금사도될까요? ${data.query}`,
+        query:queryLabel,
+        title:`지금사도될까요? ${queryLabel}`,
         text,
         url,
         fallbackText:`${text}\n${url}`,
@@ -3294,37 +3322,66 @@
       }
     }
 
-    function setActiveResultTab(tabName = "report") {
+    function reportTabIsReady(data = activeResultData) {
+      return data && data.done !== false && reportableOpinions(data.opinions || []).length >= 2;
+    }
+
+    function setReportTabState(data = activeResultData) {
+      const reportTab = resultTabs.querySelector('[data-result-tab="report"]');
+      if (!reportTab) return;
+      const spinner = reportTab.querySelector(".tab-spinner");
+      const badge = reportTab.querySelector(".tab-badge-new");
+      const ready = reportTabIsReady(data);
+      const running = data && data.done === false;
+      spinner?.classList.toggle("show", Boolean(running && !ready));
+      badge?.classList.toggle("show", Boolean(ready && activeResultTab !== "report"));
+    }
+
+    function syncResultPanels() {
+      result.querySelectorAll("[data-result-panel]").forEach(panel => {
+        panel.hidden = panel.dataset.resultPanel !== activeResultTab;
+      });
+    }
+
+    function setActiveResultTab(tabName = "details") {
       activeResultTab = tabName;
       resultTabs.querySelectorAll(".result-tab").forEach(tab => {
         const active = tab.dataset.resultTab === activeResultTab;
         tab.classList.toggle("active", active);
         tab.setAttribute("aria-selected", String(active));
       });
+      syncResultPanels();
+      setReportTabState();
     }
 
-    function setResultTabsVisible(visible, hasDetails = true) {
+    function setResultTabsVisible(visible) {
       resultTabs.hidden = !visible;
       resultTabs.classList.toggle("show", visible);
-      const detailTab = resultTabs.querySelector('[data-result-tab="details"]');
-      if (detailTab) detailTab.disabled = !hasDetails;
-      if (!visible) activeResultTab = "report";
+      if (!visible) activeResultTab = "details";
       setActiveResultTab(activeResultTab);
     }
 
-    function scrollToResultSection(tabName) {
-      const target = tabName === "details"
-        ? result.querySelector("#detailOpinionsTitle")
-        : result.querySelector(".verdict-card");
-      if (target) target.scrollIntoView({ behavior:"smooth", block:"start" });
+    function scrollElementBelowSticky(target, behavior = "smooth") {
+      if (!target) return;
+      const sticky = document.querySelector(".result-sticky-bar");
+      const stickyRect = sticky?.getBoundingClientRect();
+      const stickyBottom = stickyRect ? stickyRect.bottom : 0;
+      const desiredTop = 16;
+      const offset = Math.max(0, stickyBottom - desiredTop + 14);
+      const top = target.getBoundingClientRect().top + window.scrollY - offset;
+      window.scrollTo({ top:Math.max(0, top), behavior });
     }
 
-    function detailOpinionFilterHtml(opinions, activeStance = "") {
+    function scrollToResultSection(tabName) {
+      scrollElementBelowSticky(result.querySelector(`[data-result-panel="${tabName}"]`));
+    }
+
+    function detailOpinionFilterHtml(opinions, activeStance = "", referenceCount = 0) {
       const counts = opinions.reduce((acc, opinion) => {
         acc[opinion.stance] = (acc[opinion.stance] || 0) + 1;
         return acc;
       }, {});
-      const total = opinions.length;
+      const total = opinions.length + referenceCount;
       const button = (stance, label, count) => {
         const active = stance === activeStance;
         const className = stance ? stanceClass(stance) : "all";
@@ -3333,20 +3390,57 @@
       return `<div class="detail-filters" aria-label="상세 의견 필터">
         ${button("", "전체", total)}
         ${detailFilterStances.map(stance => button(stance, stance, counts[stance] || 0)).join("")}
+        <button class="detail-filter mention${activeStance === referenceDetailFilter ? " active" : ""}" type="button" data-detail-filter-stance="${esc(referenceDetailFilter)}" aria-pressed="${activeStance === referenceDetailFilter ? "true" : "false"}">정보성·참고 의견 ${esc(referenceCount)}</button>
       </div>`;
+    }
+
+    function detailLoadingHtml(data = {}) {
+      const { mentioned, candidate, opinions } = analysisCounts(data);
+      const title = opinions
+        ? `먼저 분석된 의견 ${opinions}명을 보여드리고 있어요`
+        : "유튜버 상세 의견을 확인하고 있어요";
+      const text = candidate
+        ? `후보 유튜버 ${candidate}명 중 실제 투자 의견을 하나씩 분석해 아래 리스트에 붙이고 있어요.`
+        : (mentioned
+          ? `언급 영상 ${mentioned}개에서 의견이 될 만한 내용을 고르고 있어요.`
+          : "최근 영상에서 종목 언급을 찾고 있어요.");
+      return `<div class="detail-loading" role="status" aria-live="polite">
+        <img class="detail-loading-visual" src="assets/youtube-search-loading.svg" alt="" aria-hidden="true">
+        <p class="detail-loading-title">${esc(title)}</p>
+        <p class="detail-loading-text">${esc(text)}</p>
+      </div>`;
+    }
+
+    function detailsWaitingHtml(data = {}) {
+      return `
+        ${detailLoadingHtml(data)}
+        <div class="empty"><b>${esc(data.query || activeSearchQuery || "검색어")}</b> 관련 유튜버 의견을 분석하는 중이에요.<br>확인되는 의견부터 이곳에 카드로 표시됩니다.</div>`;
+    }
+
+    function resultPanelsHtml(detailContent, reportContent) {
+      return `
+        <section class="result-panel" data-result-panel="details"${activeResultTab === "details" ? "" : " hidden"}>
+          ${detailContent}
+        </section>
+        <section class="result-panel" data-result-panel="report"${activeResultTab === "report" ? "" : " hidden"}>
+          ${reportContent}
+        </section>`;
     }
 
     function render(data) {
       activeResultData = data;
+      setReportTabState(data);
       const done = data.done !== false;
-      if (!done) {
+      const opinionRows = Array.isArray(data.opinions) ? data.opinions : [];
+      if (!done && !opinionRows.length) {
         activeSharePayload = null;
         activeMarketMoodPayload = null;
-        setResultTabsVisible(false);
-        result.innerHTML = reportSkeletonHtml(data);
+        setResultTabsVisible(true);
+        result.innerHTML = resultPanelsHtml(detailsWaitingHtml(data), reportSkeletonHtml(data));
+        syncResultPanels();
         return;
       }
-      if (!data.opinions.length) {
+      if (!opinionRows.length) {
         activeSharePayload = null;
         activeMarketMoodPayload = null;
         setResultTabsVisible(false);
@@ -3363,9 +3457,9 @@
       }
       const c = data.counts || {};
       const mood = data.marketMood || marketMoodFromCounts(c);
-      const currentOpinions = reportableOpinions(data.opinions);
+      const currentOpinions = reportableOpinions(opinionRows);
       const sampleNote = sampleNoteHtml(data, currentOpinions.length);
-      const opinions = data.opinions
+      const opinions = opinionRows
         .map((opinion, order) => ({ ...opinion, order }))
         .sort((a, b) =>
           opinionTime(b.publishedAt) - opinionTime(a.publishedAt) ||
@@ -3398,48 +3492,56 @@
         .map(cardHtml)
         .join("");
       const judgedOpinions = opinions.filter(isReportableOpinion);
-      if (activeDetailStance && !detailFilterStances.includes(activeDetailStance)) activeDetailStance = "";
-      const visibleJudgedOpinions = activeDetailStance
+      if (activeDetailStance && activeDetailStance !== referenceDetailFilter && !detailFilterStances.includes(activeDetailStance)) activeDetailStance = "";
+      const showingReferenceOnly = activeDetailStance === referenceDetailFilter;
+      const visibleJudgedOpinions = activeDetailStance && !showingReferenceOnly
         ? judgedOpinions.filter(opinion => opinion.stance === activeDetailStance)
-        : judgedOpinions;
+        : (showingReferenceOnly ? [] : judgedOpinions);
       const visibleJudgedCards = visibleJudgedOpinions.map(cardHtml).join("");
-      const detailFilterEmpty = activeDetailStance
+      const detailFilterEmpty = activeDetailStance && !showingReferenceOnly
         ? `<div class="detail-filter-empty">${esc(activeDetailStance)} 의견은 아직 없어요.</div>`
-        : "";
-      const detailSection = judgedOpinions.length
-        ? `<h3 class="detail-section-title" id="detailOpinionsTitle">유튜버 상세 의견</h3>${detailOpinionFilterHtml(judgedOpinions, activeDetailStance)}${visibleJudgedCards ? `<div class="cards">${visibleJudgedCards}</div>` : detailFilterEmpty}`
         : "";
       const referenceCards = opinions
         .filter(o => !isReportableOpinion(o))
         .map(cardHtml)
         .join("");
-      const referenceSection = referenceCards
+      const referenceOpinions = opinions.filter(o => !isReportableOpinion(o));
+      const detailSection = judgedOpinions.length
+        ? `<div id="detailOpinionsTitle">${detailOpinionFilterHtml(judgedOpinions, activeDetailStance, referenceOpinions.length)}</div>${visibleJudgedCards ? `<div class="cards">${visibleJudgedCards}</div>` : detailFilterEmpty}`
+        : "";
+      const referenceSection = (!activeDetailStance || showingReferenceOnly) && (judgedOpinions.length || referenceCards)
         ? `<section class="mention-section" aria-label="정보성·참고 의견">
-            <h3 class="mention-section-title"${judgedCards ? "" : ' id="detailOpinionsTitle"'}>정보성·참고 의견</h3>
-            <div class="cards">${referenceCards}</div>
+            <h3 class="mention-section-title">정보성·참고 의견</h3>
+            ${referenceCards ? `<div class="cards">${referenceCards}</div>` : `<div class="detail-filter-empty">정보성·참고 의견은 아직 없어요.</div>`}
           </section>`
         : "";
       if (currentOpinions.length < 2) {
         activeSharePayload = null;
         activeMarketMoodPayload = null;
-        setResultTabsVisible(false);
+        setResultTabsVisible(true);
+        const reportContent = !done
+          ? reportSkeletonHtml(data)
+          : `<div class="empty"><b>${esc(data.query)}</b> 리포트를 만들기엔 판단 가능한 의견이 아직 부족해요.<br>유튜버 상세 의견에서 먼저 확인된 의견을 볼 수 있어요.</div>`;
         result.innerHTML = `
-          ${sampleNote}
-          ${detailSection}
-          ${referenceSection}`;
+          ${resultPanelsHtml(
+            `${!done ? detailLoadingHtml(data) : ""}${detailSection}${referenceSection}`,
+            reportContent
+          )}`;
+        syncResultPanels();
         return;
       }
-      setResultTabsVisible(true, Boolean(judgedCards || referenceCards));
-      activeSharePayload = sharePayloadFor(data);
-      activeMarketMoodPayload = marketMoodAnalytics(data);
+      setResultTabsVisible(true);
+      activeSharePayload = done ? sharePayloadFor(data) : null;
+      activeMarketMoodPayload = done ? marketMoodAnalytics(data) : null;
       const headline = verdictHeadline(data, mood);
       const summaryHtml = verdictSummaryHtml(data, mood);
-      result.innerHTML = `
+      const reportLabel = reportQueryLabel(data);
+      const reportContent = done ? `
         <div class="summary verdict-card">
           ${sampleNote}
           <div class="verdict-top">
             <div class="verdict-title">
-              <div class="verdict-eyebrow"><span class="verdict-eyebrow-stock">${esc(data.query)}</span> 유튜버 현재 분위기 리포트</div>
+              <div class="verdict-eyebrow"><span class="verdict-eyebrow-stock">${esc(reportLabel)}</span> 유튜버 현재 분위기 리포트</div>
               <span class="verdict-chip verdict-chip-inline ${esc(moodClass(mood.label))}">${esc(displayMoodLabel(mood.label))}</span>
               <h2 class="verdict-headline">
                 <span>${esc(headline)}</span>
@@ -3454,12 +3556,16 @@
             </div>` : ""}
           ${verdictReportHtml(data, mood)}
           ${relatedStocksHtml(data)}
-          <div class="verdict-footer">
-            <button class="share-button" type="button" data-action="share-result" aria-label="${esc(data.query)} 의견을 살까 말까 고민하는 친구에게 보내기">${esc(shareButtonDefaultLabel)}</button>
-          </div>
-        </div>
-        ${detailSection}
-        ${referenceSection}`;
+          ${done ? `<div class="verdict-footer">
+            <button class="share-button" type="button" data-action="share-result" aria-label="${esc(reportLabel)} 의견을 살까 말까 고민하는 친구에게 보내기">${esc(shareButtonDefaultLabel)}</button>
+          </div>` : ""}
+        </div>` : reportSkeletonHtml(data);
+      result.innerHTML = resultPanelsHtml(
+        `${!done ? detailLoadingHtml(data) : ""}${detailSection}${referenceSection}`,
+        reportContent
+      );
+      syncResultPanels();
+      setReportTabState(data);
     }
 
     function trackSearchSnapshot(data) {
@@ -3582,7 +3688,7 @@
       activeSearchQuery = "";
       activeSearchDone = true;
       activeSharePayload = null;
-      activeResultTab = "report";
+      activeResultTab = "details";
       activeDetailStance = "";
       activeResultData = null;
       document.body.classList.remove("result-mode");
@@ -3605,20 +3711,26 @@
         loading.classList.add("show");
         loadingTitle.textContent = "언급 영상에서 후보 유튜버와 실제 투자 의견을 확인하고 있어요.";
         loadingText.textContent = "";
-        result.innerHTML = reportSkeletonHtml({ query, done:false });
+        result.innerHTML = resultPanelsHtml(detailsWaitingHtml({ query, done:false }), reportSkeletonHtml({ query, done:false }));
+        setResultTabsVisible(true);
+        setReportTabState({ query, done:false });
+        syncResultPanels();
+        loading.classList.remove("show");
         return;
       }
       hideSuggestions();
       const token = ++activeSearchToken;
       activeSearchQuery = query;
       activeSearchDone = false;
-      activeResultTab = "report";
+      activeResultTab = "details";
       activeDetailStance = "";
       activeResultData = null;
       document.body.classList.add("result-mode");
       input.value = query; submit.disabled = true; loading.classList.add("show");
-      result.innerHTML = reportSkeletonHtml({ query, done:false });
-      setResultTabsVisible(false);
+      result.innerHTML = resultPanelsHtml(detailsWaitingHtml({ query, done:false }), reportSkeletonHtml({ query, done:false }));
+      setResultTabsVisible(true);
+      setReportTabState({ query, done:false });
+      loading.classList.remove("show");
       heroCopy.classList.add("hide");
       marketPanel.classList.add("hide");
       loadingTitle.textContent = loadingStepText();
@@ -3632,6 +3744,10 @@
         if (!data.jobId) throw new Error("검색 작업을 시작하지 못했어요.");
         updateUrlQuery(query);
         render(data);
+        if ((data.opinions || []).length) {
+          loading.classList.remove("show");
+          submit.disabled = false;
+        }
         trackSearchSnapshot(data);
         await pollSearch(data.jobId, token);
       } catch (error) {
@@ -3657,6 +3773,10 @@
         loadingTitle.textContent = loadingStepText(data);
         loadingText.textContent = "";
         render(data);
+        if ((data.opinions || []).length) {
+          loading.classList.remove("show");
+          submit.disabled = false;
+        }
         trackSearchSnapshot(data);
         if (data.done) return;
       }
@@ -3749,12 +3869,12 @@
         activeDetailStance = detailFilter.dataset.detailFilterStance || "";
         analytics.send("detail_stance_filter_click", {
           query:activeSearchQuery,
-          stance:activeDetailStance || "전체",
+          stance:activeDetailStance === referenceDetailFilter ? "정보성·참고 의견" : (activeDetailStance || "전체"),
           label:detailFilter.textContent.trim(),
         });
         if (activeResultData) render(activeResultData);
         const title = result.querySelector("#detailOpinionsTitle");
-        if (title) title.scrollIntoView({ behavior:"smooth", block:"start" });
+        scrollElementBelowSticky(title);
         return;
       }
       if (relatedTag) {
