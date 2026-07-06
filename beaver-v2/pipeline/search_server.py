@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """종목 검색 화면과 로컬 검색 API를 제공한다."""
+import base64
 import datetime
+import hashlib
 import html
 import json
 import mimetypes
 import os
+import struct
 import sys
 import threading
 import time
@@ -35,6 +38,7 @@ HOST = os.environ.get("SEARCH_HOST", "0.0.0.0" if os.environ.get("PORT") else "1
 PORT = int(os.environ.get("SEARCH_PORT") or os.environ.get("PORT") or "8765")
 PUBLIC_HOST = os.environ.get("SEARCH_PUBLIC_HOST", HOST)
 PUBLIC_BASE_URL = os.environ.get("SEARCH_PUBLIC_BASE_URL", "https://stockzip.kr").rstrip("/")
+QUOTE_WS_INTERVAL_SECONDS = max(3, int(os.environ.get("QUOTE_WS_INTERVAL_SECONDS", "10")))
 JOBS = {}
 JOBS_LOCK = threading.Lock()
 MAX_JOBS = 20
@@ -641,7 +645,45 @@ def start_search_job(query):
     return _snapshot(job_id)
 
 
+def _websocket_accept_key(key):
+    raw = (key.strip() + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11").encode("ascii")
+    return base64.b64encode(hashlib.sha1(raw).digest()).decode("ascii")
+
+
+def _websocket_frame(payload):
+    body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    length = len(body)
+    header = bytearray([0x81])
+    if length < 126:
+        header.append(length)
+    elif length < 65536:
+        header.append(126)
+        header.extend(struct.pack("!H", length))
+    else:
+        header.append(127)
+        header.extend(struct.pack("!Q", length))
+    return bytes(header) + body
+
+
+def _quote_signature(quote):
+    if not quote:
+        return None
+    return (
+        quote.get("price"),
+        quote.get("priceText"),
+        quote.get("change"),
+        quote.get("changeRate"),
+        quote.get("changeRateText"),
+        quote.get("changeDirection"),
+        quote.get("priceBaseDate"),
+        quote.get("quoteSource"),
+        quote.get("quoteDelayText"),
+    )
+
+
 class Handler(BaseHTTPRequestHandler):
+    protocol_version = "HTTP/1.1"
+
     def log_message(self, fmt, *args):
         print(f"[검색 서버] {fmt % args}")
 
@@ -769,8 +811,51 @@ class Handler(BaseHTTPRequestHandler):
             return
         self.send_error(404)
 
+    def _popular_stock_quotes_ws(self, parsed):
+        if self.headers.get("Upgrade", "").lower() != "websocket":
+            self.send_error(400, "WebSocket upgrade required")
+            return
+        key = self.headers.get("Sec-WebSocket-Key", "")
+        if not key:
+            self.send_error(400, "Missing Sec-WebSocket-Key")
+            return
+        params = parse_qs(parsed.query)
+        market = params.get("market", [""])[0]
+        codes = []
+        for value in params.get("codes", []):
+            codes.extend(part for part in value.split(",") if part.strip())
+        self.send_response(101, "Switching Protocols")
+        self.send_header("Upgrade", "websocket")
+        self.send_header("Connection", "Upgrade")
+        self.send_header("Sec-WebSocket-Accept", _websocket_accept_key(key))
+        self.end_headers()
+
+        previous = {}
+        while True:
+            payload = stock_search.popular_stock_quotes(market, codes)
+            quotes = payload.get("quotes") or {}
+            changed_quotes = {
+                code: quote
+                for code, quote in quotes.items()
+                if _quote_signature(quote) != previous.get(code)
+            }
+            previous.update({code: _quote_signature(quote) for code, quote in changed_quotes.items()})
+            payload["type"] = "quotes" if changed_quotes else "heartbeat"
+            payload["quotes"] = changed_quotes
+            self.wfile.write(_websocket_frame(payload))
+            self.wfile.flush()
+            time.sleep(QUOTE_WS_INTERVAL_SECONDS)
+
     def do_GET(self):
         parsed = urlparse(self.path)
+        if parsed.path == "/ws/popular-stock-quotes":
+            try:
+                self._popular_stock_quotes_ws(parsed)
+            except (BrokenPipeError, ConnectionResetError, TimeoutError, OSError):
+                pass
+            except Exception as exc:
+                print(f"[검색 서버] 실시간 시세 스트림 오류: {exc}")
+            return
         if parsed.path == "/api/dashboard/metrics":
             try:
                 days = parse_qs(parsed.query).get("days", ["7"])[0]

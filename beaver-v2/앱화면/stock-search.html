@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="naver-site-verification" content="ddef5be53c5a428e2046ea2215b0eeb2c0ec7e67">
   <meta name="robots" content="index,follow,max-image-preview:large">
-  <meta name="description" content="최근 2주 유튜버들의 의견을 모아 긍정·관망·주의로 나누고, 현재 분위기 리포트까지 30초 만에 훑어볼 수 있게 정리해드려요.">
+  <meta name="description" content="최근 2주 유튜버들의 의견을 모아 긍정·관망·주의로 나누고, 현재 분위기 리포트까지 30초 만에 볼 수 있어요.">
   <meta name="application-name" content="지금사도될까요?">
   <meta name="theme-color" content="#ffffff">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="지금사도될까요?">
   <meta property="og:title" content="지금사도될까요? | 주식 유튜브 의견 요약 리포트">
-  <meta property="og:description" content="최근 2주 유튜버들의 의견을 모아 긍정·관망·주의로 나누고, 현재 분위기 리포트까지 30초 만에 훑어볼 수 있게 정리해드려요.">
+  <meta property="og:description" content="최근 2주 유튜버들의 의견을 모아 긍정·관망·주의로 나누고, 현재 분위기 리포트까지 30초 만에 볼 수 있어요.">
   <meta property="og:url" content="https://stockzip.kr/">
   <link rel="canonical" href="https://stockzip.kr/">
   <meta property="og:image" content="https://stockzip.kr/assets/og-image.png">
@@ -22,7 +22,7 @@
   <meta property="og:image:alt" content="지금사도될까요? - 유튜브 분위기 요약리포트">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="지금사도될까요? | 주식 유튜브 의견 요약 리포트">
-  <meta name="twitter:description" content="최근 2주 유튜버들의 의견을 모아 긍정·관망·주의로 나누고, 현재 분위기 리포트까지 30초 만에 훑어볼 수 있게 정리해드려요.">
+  <meta name="twitter:description" content="최근 2주 유튜버들의 의견을 모아 긍정·관망·주의로 나누고, 현재 분위기 리포트까지 30초 만에 볼 수 있어요.">
   <meta name="twitter:image" content="https://stockzip.kr/assets/og-image.png">
   <meta name="twitter:image:alt" content="지금사도될까요? - 유튜브 분위기 요약리포트">
   <title>지금사도될까요? | 주식 유튜브 의견 요약 리포트</title>
@@ -44,7 +44,7 @@
         "name": "지금사도될까요?",
         "alternateName": ["지금사도될까요", "지금 사도 될까요", "stockzip", "stockzip.kr"],
         "url": "https://stockzip.kr/",
-        "description": "최근 2주 유튜버들의 의견을 모아 긍정·관망·주의로 나누고, 현재 분위기 리포트까지 30초 만에 훑어볼 수 있게 정리해드려요.",
+        "description": "최근 2주 유튜버들의 의견을 모아 긍정·관망·주의로 나누고, 현재 분위기 리포트까지 30초 만에 볼 수 있어요.",
         "inLanguage": "ko-KR",
         "publisher": {
           "@id": "https://stockzip.kr/#organization"
@@ -97,28 +97,6 @@
     }
     body.result-mode { background:#fff }
     button,input { font:inherit }
-    .update-popup {
-      display:none; width:100%; background:#3f3f3f; color:#fff;
-    }
-    .update-popup.show { display:block }
-    .update-popup-inner {
-      display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center;
-      gap:10px; width:min(760px,calc(100% - 28px)); min-height:44px; margin:0 auto; padding:0;
-    }
-    .update-badge {
-      display:inline-flex; align-items:center; justify-content:center; min-height:18px;
-      border-radius:999px; padding:0 6px; background:rgba(255,255,255,.14); color:#fff;
-      font-size:10px; font-weight:820; line-height:1; letter-spacing:0;
-    }
-    .update-copy { min-width:0 }
-    .update-title { display:inline; color:#fff; font-size:14px; font-weight:760; line-height:1.35 }
-    .update-text { display:inline; margin-left:4px; color:rgba(255,255,255,.74); font-size:14px; font-weight:520; line-height:1.35 }
-    .update-close {
-      appearance:none; border:0; border-radius:999px; padding:0 8px;
-      min-height:28px; background:transparent; color:rgba(255,255,255,.72); font-size:16px; font-weight:720;
-      cursor:pointer; white-space:nowrap;
-    }
-    .update-close:hover { background:rgba(255,255,255,.1); color:#fff }
     .copy-toast {
       position:fixed; left:50%; bottom:28px; z-index:120; transform:translate(-50%,12px);
       display:flex; align-items:center; justify-content:center; max-width:calc(100% - 32px);
@@ -128,6 +106,8 @@
       opacity:0; pointer-events:none; transition:opacity .18s ease, transform .18s ease;
     }
     .copy-toast.show { opacity:1; transform:translate(-50%,0) }
+    .copy-toast.top { top:18px; bottom:auto; transform:translate(-50%,-12px) }
+    .copy-toast.top.show { transform:translate(-50%,0) }
     .page { width:min(760px,calc(100% - 28px)); margin:0 auto; padding:40px 0 88px }
     .brand {
       display:inline-flex; align-items:center; gap:8px; border:0; padding:0;
@@ -174,21 +154,28 @@
       width:100%; min-width:0; border:0; outline:0; padding:13px 16px;
       color:var(--ink); background:transparent; font-size:17px; letter-spacing:0;
     }
-    .search button {
+    .search-submit {
       flex:0 0 auto; min-height:48px; border:0; border-radius:15px; padding:0 22px;
+      margin-left:auto;
       background:var(--blue); color:#fff; font-weight:750; cursor:pointer;
       box-shadow:0 8px 18px rgba(0,113,227,.18);
     }
     body.result-mode .search {
-      margin-top:28px; padding:5px; border-radius:18px;
+      gap:0; margin-top:28px; padding:5px; border-radius:18px;
       box-shadow:0 8px 24px rgba(0,0,0,.055);
     }
-    body.result-mode .search input { padding:11px 15px; font-size:16px }
-    body.result-mode .search button {
+    body.result-mode .search input {
+      flex:0 1 auto; width:var(--query-input-width, 68px);
+      padding:11px 0 11px 15px; font-size:16px;
+    }
+    body.result-mode .search-submit {
       min-height:42px; border-radius:13px; padding:0 19px;
       box-shadow:0 5px 14px rgba(0,113,227,.14);
     }
-    .search button:disabled { opacity:.55; cursor:wait }
+    .search-submit:disabled { opacity:.55; cursor:wait }
+    .search-watch-slot { display:flex; flex:0 0 auto; align-self:center; min-width:0 }
+    body.result-mode .search-watch-slot { margin-left:16px }
+    .search-watch-slot:empty { display:none }
     .result-tabs {
       display:none; align-items:center; gap:3px; margin-top:18px; padding:3px;
       border:1px solid #eceff3; border-radius:999px; background:#f5f6f8;
@@ -265,6 +252,10 @@
     }
     .rank-item:last-child { border-bottom:0 }
     .rank-item:hover { background:#f7f9fc }
+    .rank-item.quote-flash { animation:quoteFlash .9s ease-out }
+    .rank-item.quote-flash-up { --quote-flash-bg:rgba(22,138,70,.13) }
+    .rank-item.quote-flash-down { --quote-flash-bg:rgba(199,53,45,.13) }
+    .rank-item.quote-flash-flat { --quote-flash-bg:rgba(102,112,133,.12) }
     .rank-no { color:#7aa7f2; font-size:14px; font-weight:750; text-align:right; font-variant-numeric:tabular-nums }
     .rank-body { display:grid; gap:3px; min-width:0 }
     .rank-title { display:flex; align-items:baseline; gap:6px; min-width:0; flex-wrap:wrap }
@@ -290,6 +281,67 @@
     .rank-more:hover { border-color:#c9d7eb; color:#30343b; background:#f8fafc }
     .rank-market { display:none }
     .market-panel.hide { display:none }
+    .watch-panel {
+      display:none; margin-top:30px; padding:0;
+    }
+    .watch-panel.show { display:block }
+    body.result-mode .watch-panel { display:none }
+    .watch-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px }
+    .watch-title { color:var(--ink); font-size:16px; font-weight:850; line-height:1.25 }
+    .watch-list { display:grid; gap:0 }
+    .watch-item {
+      display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:8px;
+      border-bottom:1px solid #eef0f4; padding:13px 0; background:#fff; color:var(--ink);
+    }
+    .watch-item:hover { background:#f7f9fc }
+    .watch-item.dragging { opacity:.62; background:#f7f9fc }
+    .watch-item.drag-over-before { box-shadow:inset 0 2px 0 var(--blue) }
+    .watch-item.drag-over-after { box-shadow:inset 0 -2px 0 var(--blue) }
+    .watch-drag-handle {
+      appearance:none; width:28px; height:28px; border:0; border-radius:999px; padding:0;
+      background:transparent; color:#c0c6cf; cursor:grab; touch-action:none;
+    }
+    .watch-drag-handle::before {
+      content:""; display:block; width:18px; height:18px; margin:0 auto; background:currentColor;
+      -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='9' cy='5' r='1.6'/%3E%3Ccircle cx='15' cy='5' r='1.6'/%3E%3Ccircle cx='9' cy='12' r='1.6'/%3E%3Ccircle cx='15' cy='12' r='1.6'/%3E%3Ccircle cx='9' cy='19' r='1.6'/%3E%3Ccircle cx='15' cy='19' r='1.6'/%3E%3C/svg%3E") center/contain no-repeat;
+      mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='9' cy='5' r='1.6'/%3E%3Ccircle cx='15' cy='5' r='1.6'/%3E%3Ccircle cx='9' cy='12' r='1.6'/%3E%3Ccircle cx='15' cy='12' r='1.6'/%3E%3Ccircle cx='9' cy='19' r='1.6'/%3E%3Ccircle cx='15' cy='19' r='1.6'/%3E%3C/svg%3E") center/contain no-repeat;
+    }
+    .watch-drag-handle:hover { background:#f5f7fa; color:#8d95a2 }
+    .watch-drag-handle:active { cursor:grabbing }
+    .watch-open {
+      appearance:none; min-width:0; border:0; padding:0; background:transparent;
+      color:var(--ink); text-align:left; cursor:pointer;
+    }
+    .watch-name-row { display:flex; align-items:center; gap:7px; min-width:0; flex-wrap:wrap }
+    .watch-name { color:#30343b; font-size:15px; font-weight:720; line-height:1.35 }
+    .watch-actions { display:flex; align-items:center; justify-self:end; gap:16px; min-width:0 }
+    .watch-home-badge { margin-left:0 }
+    .watch-loading-badge {
+      display:inline-flex; align-items:center; gap:6px; color:#6e7480; background:#f3f4f6;
+    }
+    .watch-loading-badge::before {
+      content:""; width:8px; height:8px; border-radius:999px; background:#9aa0a9;
+      animation:watchPulse 1s ease-in-out infinite;
+    }
+    .watch-meta { margin-top:3px; color:#858d99; font-size:13px; font-weight:400; line-height:1.45 }
+    .watch-home-remove {
+      appearance:none; justify-self:end; width:28px; height:28px; border:0; border-radius:999px;
+      padding:0; background:transparent; color:#b8bec8; cursor:pointer;
+    }
+    .watch-home-remove::before {
+      content:""; display:block; width:18px; height:18px; margin:0 auto; background:currentColor;
+      -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 6h18'/%3E%3Cpath d='M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2'/%3E%3Cpath d='M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6'/%3E%3Cpath d='M10 11v6'/%3E%3Cpath d='M14 11v6'/%3E%3C/svg%3E") center/contain no-repeat;
+      mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 6h18'/%3E%3Cpath d='M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2'/%3E%3Cpath d='M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6'/%3E%3Cpath d='M10 11v6'/%3E%3Cpath d='M14 11v6'/%3E%3C/svg%3E") center/contain no-repeat;
+    }
+    .watch-home-remove:hover { background:#f5f7fa; color:#8d95a2 }
+    @keyframes watchPulse {
+      0%, 100% { opacity:.35; transform:scale(.82) }
+      50% { opacity:1; transform:scale(1) }
+    }
+    @keyframes quoteFlash {
+      0% { background:var(--quote-flash-bg,rgba(0,113,227,.1)); transform:translateY(-1px) }
+      100% { background:#fff; transform:translateY(0) }
+    }
     .status { display:none; margin-top:10px; color:var(--muted); font-size:13px }
     .status.show { display:block }
     .loading {
@@ -450,6 +502,7 @@
       line-height:1; white-space:nowrap;
     }
     .verdict-chip.pos { color:var(--pos); background:var(--pos-bg) }
+    .verdict-chip.cond { color:#3f7f35; background:#eef8df }
     .verdict-chip.neu,
     .verdict-chip.mixed { color:var(--neu); background:var(--neu-bg) }
     .verdict-chip.neg { color:var(--neg); background:var(--neg-bg) }
@@ -464,6 +517,7 @@
       display:grid; grid-template-columns:120px minmax(0,1fr); gap:26px; align-items:start;
       padding:10px 0; border-bottom:0;
     }
+    .report-row.checkpoint-row { row-gap:18px }
     .report-label { color:#747b87; font-size:13px; font-weight:620; line-height:1.5; white-space:normal; word-break:keep-all }
     .report-text { margin:0; color:#242832; font-size:15px; font-weight:430; line-height:1.7; word-break:keep-all }
     .report-row.muted .report-label,
@@ -495,6 +549,44 @@
     }
     .report-ref:hover,
     .report-ref-more:hover { color:var(--blue); text-decoration:underline; text-underline-offset:3px }
+    .watch-result-wrap {
+      position:relative; display:inline-flex; align-items:center; justify-content:center;
+    }
+    .watch-result-button {
+      appearance:none; display:inline-flex; align-items:center; justify-content:center;
+      border:1px solid #dfe6f2; border-radius:999px; min-height:34px;
+      padding:0 13px; background:#fff; color:#4e5968; font-size:12px; font-weight:760;
+      cursor:pointer; white-space:nowrap;
+    }
+    .watch-result-button:hover { border-color:#c9d7eb; color:#30343b; background:#f8fafc }
+    .watch-result-button.active { border-color:#cfe2ff; color:var(--blue); background:var(--blue-wash) }
+    .watch-result-button.active::before {
+      content:"✓"; margin-right:4px; font-size:11px; font-weight:800; line-height:1;
+    }
+    .search-watch-button {
+      align-self:center; min-height:32px; border-radius:11px; padding:0 11px;
+      box-shadow:none; font-size:12px;
+    }
+    .watch-tooltip {
+      position:absolute; left:50%; bottom:calc(100% + 10px); z-index:60;
+      transform:translateX(-50%);
+      display:flex; align-items:center; gap:8px; width:min(292px,calc(100vw - 32px));
+      border-radius:8px; padding:10px 10px 10px 12px; background:#111318; color:#fff;
+      box-shadow:0 12px 28px rgba(17,19,24,.2); font-size:13px; font-weight:650; line-height:1.35;
+      white-space:normal; word-break:keep-all;
+    }
+    .watch-tooltip::after {
+      content:""; position:absolute; left:50%; bottom:-6px; width:12px; height:12px;
+      background:#111318; transform:rotate(45deg);
+    }
+    .watch-tooltip-text { position:relative; z-index:1 }
+    .watch-tooltip-close {
+      appearance:none; position:relative; z-index:1; flex:0 0 auto;
+      display:grid; place-items:center; width:22px; height:22px; border:0; border-radius:999px;
+      padding:0; background:rgba(255,255,255,.08); color:rgba(255,255,255,.82);
+      font-size:16px; font-weight:650; line-height:1; cursor:pointer;
+    }
+    .watch-tooltip-close:hover { background:rgba(255,255,255,.15); color:#fff }
     .verdict-flow {
       display:flex; align-items:center; flex-wrap:wrap; gap:4px 6px;
       margin-top:18px; color:#8a93a1; font-size:12px; font-weight:500; line-height:1.5;
@@ -532,8 +624,11 @@
     .count:hover { color:#111318; text-decoration:underline; text-underline-offset:3px }
     .count.pos,.count.neu,.count.neg { color:#6b7280; background:transparent }
     .badge.pos { color:var(--pos); background:var(--pos-bg) }
+    .badge.cond { color:#3f7f35; background:#eef8df }
     .badge.neu { color:var(--neu); background:var(--neu-bg) }
     .badge.neg { color:var(--neg); background:var(--neg-bg) }
+    .badge.mixed,
+    .badge.hold { color:#6e7480; background:#f3f4f6 }
     .card .badge.pos { color:var(--pos); background:var(--pos-bg) !important }
     .card .badge.neu { color:var(--neu); background:var(--neu-bg) !important }
     .card .badge.neg { color:var(--neg); background:var(--neg-bg) !important }
@@ -545,17 +640,21 @@
     .detail-filters {
       display:flex; flex-wrap:wrap; gap:8px; margin:-2px 0 16px;
     }
+    .detail-filter-spacer { flex:1 1 auto; min-width:16px }
+    .detail-watch-button { min-height:30px; padding:0 11px; font-size:12px; font-weight:650 }
     .detail-filter {
       appearance:none; min-height:30px; border:1px solid #dbe3ef; border-radius:999px;
       padding:0 11px; background:#fff; color:#4b5563; font-size:12px; font-weight:650;
       cursor:pointer; line-height:1; white-space:nowrap;
     }
     .detail-filter:hover { border-color:#bcd3f5; color:var(--blue); background:#f7fbff }
-    .detail-filter.active { border-color:#9fc5ff; color:var(--blue); background:var(--blue-wash) }
-    .detail-filter.pos.active { border-color:#b7dfc4; color:var(--pos); background:var(--pos-bg) }
-    .detail-filter.neu.active { border-color:#ead18c; color:var(--neu); background:var(--neu-bg) }
-    .detail-filter.neg.active { border-color:#f1b7b2; color:var(--neg); background:var(--neg-bg) }
-    .detail-filter.mention.active { color:var(--mention); background:var(--mention-bg) }
+    .detail-filter.active,
+    .detail-filter.pos.active,
+    .detail-filter.neu.active,
+    .detail-filter.neg.active,
+    .detail-filter.mention.active {
+      border-color:#111318; color:#fff; background:#111318;
+    }
     .detail-filter-empty {
       padding:20px 18px; border:1px solid #e7e9ee; border-radius:8px;
       background:#fff; color:#7a818d; font-size:14px; font-weight:620; line-height:1.55;
@@ -573,9 +672,14 @@
     .card.anchor-highlight { border-color:#9fc5ff; box-shadow:0 0 0 3px rgba(14,120,233,.10) }
     .card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:14px }
     .card-meta {
-      display:flex; flex-wrap:wrap; align-items:center; gap:7px; min-width:0;
+      flex:1 1 auto; display:grid; align-content:start; gap:5px; min-width:0;
       color:#6f7783; font-size:14px; font-weight:500; line-height:1.5;
     }
+    .card-meta-channel,
+    .card-meta-detail {
+      display:flex; align-items:center; min-width:0;
+    }
+    .card-meta-detail { flex-wrap:wrap; gap:0 7px }
     .meta-dot { color:#aeb5bf }
     .opinion-block { margin-top:18px; min-width:0 }
     .channel {
@@ -592,6 +696,14 @@
     .badge {
       margin-left:auto; border-radius:999px; padding:6px 10px;
       font-size:12px; font-weight:650; line-height:1;
+    }
+    .card-head .badge {
+      flex:0 0 auto; margin-left:0; text-align:center; white-space:nowrap;
+    }
+    .card-head .badge.pos,
+    .card-head .badge.neu,
+    .card-head .badge.neg {
+      flex-basis:72px; width:72px; box-sizing:border-box; padding-left:0; padding-right:0;
     }
     .field-label { margin-top:18px; color:var(--muted); font-size:11px; font-weight:750 }
     .opinion {
@@ -630,21 +742,17 @@
     .error { color:var(--neg); border-color:#f2c8c5 }
     .foot { margin-top:28px; color:var(--muted); font-size:12px; line-height:1.6 }
     @media (max-width:560px) {
-      .update-popup-inner { width:calc(100% - 28px); min-height:42px; gap:7px }
-      .update-badge { min-height:17px; padding:0 5px; font-size:9px }
-      .update-title,.update-text { font-size:14px }
-      .update-title { display:block }
-      .update-text { display:block; margin-left:0; margin-top:1px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
-      .update-close { min-height:26px; padding:0 6px; font-size:15px }
       .page { padding-top:28px }
       .result-sticky-bar { top:10px }
       .result-sticky-bar::before { inset:-8px -10px -10px; border-radius:23px }
       .search { gap:6px; padding:6px }
       .search input { padding:10px 10px; font-size:16px }
-      .search button { min-height:46px; padding:0 14px; font-size:15px; white-space:nowrap }
+      .search-submit { min-height:46px; padding:0 14px; font-size:15px; white-space:nowrap }
       body.result-mode .search { padding:5px }
-      body.result-mode .search input { padding:9px 10px; font-size:15px }
-      body.result-mode .search button { min-height:40px; padding:0 13px; font-size:14px }
+      body.result-mode .search input { padding:9px 0 9px 10px; font-size:15px }
+      body.result-mode .search-submit { min-height:40px; padding:0 13px; font-size:14px }
+      .search-watch-button { min-height:32px; padding:0 10px; font-size:12px }
+      .watch-tooltip { width:min(284px,calc(100vw - 28px)); font-size:12px }
       .result-tabs { margin-top:14px }
       .result-tab { padding:8px 8px; font-size:12px }
       body.result-mode .result { margin-top:16px }
@@ -689,6 +797,7 @@
       .mood-summary { color:#3f4650; font-weight:400; line-height:1.76 }
       .verdict-report { gap:32px; margin-top:32px; padding:0; border-top:0 }
       .report-row { grid-template-columns:1fr; gap:11px; padding:0; border-bottom:0 }
+      .report-row.checkpoint-row { gap:18px }
       .report-label { color:#111318; font-size:17px; font-weight:780; line-height:1.35 }
       .report-text {
         color:#4f5662; font-size:17px; font-weight:400;
@@ -735,20 +844,11 @@
       .evidence-source { margin-left:4px; font-size:13px; font-weight:650 }
       .suggestion { grid-template-columns:72px minmax(0,1fr) 64px; gap:10px; padding:12px 14px }
       .suggestion-code,.suggestion-name,.suggestion-market { font-size:14px }
+      .detail-filter-spacer { display:none }
     }
   </style>
 </head>
 <body>
-  <aside class="update-popup" id="updatePopup" role="status" aria-live="polite" aria-label="업데이트 안내">
-    <div class="update-popup-inner">
-      <span class="update-badge">NEW</span>
-      <span class="update-copy">
-        <strong class="update-title">현재 분위기 리포트 추가</strong>
-        <span class="update-text">최근 14일 유튜버 의견과 근거를 한 번에 확인하세요.</span>
-      </span>
-      <button class="update-close" id="updatePopupClose" type="button" aria-label="업데이트 안내 닫기">×</button>
-    </div>
-  </aside>
   <main class="page">
     <button class="brand" type="button" id="homeButton" aria-label="첫 화면으로 이동">
       <span class="brand-mark" aria-hidden="true"><span>?</span></span>
@@ -756,20 +856,27 @@
     </button>
     <div class="hero-copy" id="heroCopy">
       <h1>이 주식 살까 말까 고민될 때,<br>유튜버들은 어떻게 생각할까?</h1>
-      <p class="lead">최근 2주 유튜버들의 의견을 모아 긍정·관망·주의로 나누고,<br>현재 분위기 리포트까지 <span class="lead-emphasis">30초 만에</span> 훑어볼 수 있게 정리해드려요.</p>
+      <p class="lead">최근 2주 유튜버들의 의견을 모아 긍정·관망·주의로 나누고,<br>현재 분위기 리포트까지 <span class="lead-emphasis">30초 만에</span> 볼 수 있어요.</p>
     </div>
 
     <div class="result-sticky-bar">
       <form class="search" id="form">
         <input id="query" autocomplete="off" placeholder="예: 삼성전자, 엔비디아, 반도체, AI, 2차전지" aria-label="종목명, 섹터, 테마">
-        <button id="submit" type="submit">의견 보기</button>
+        <span class="search-watch-slot" id="searchWatchSlot"></span>
+        <button class="search-submit" id="submit" type="submit">의견 보기</button>
         <div class="suggestions" id="suggestions" role="listbox" aria-label="종목, 섹터, 테마 추천"></div>
       </form>
       <nav class="result-tabs" id="resultTabs" aria-label="검색 결과 보기" role="tablist" hidden>
         <button class="result-tab active" type="button" role="tab" aria-selected="true" data-result-tab="details">유튜버 상세 의견</button>
-        <button class="result-tab" type="button" role="tab" aria-selected="false" data-result-tab="report">유튜버 현재 분위기 리포트<span class="tab-spinner" aria-hidden="true"></span><span class="tab-badge-new">NEW</span></button>
+        <button class="result-tab" type="button" role="tab" aria-selected="false" data-result-tab="report">최근 2주 요약 리포트<span class="tab-spinner" aria-hidden="true"></span><span class="tab-badge-new">NEW</span></button>
       </nav>
     </div>
+    <section class="watch-panel" id="watchPanel" aria-label="내 관심종목">
+      <div class="watch-head">
+        <div class="watch-title">내 관심종목</div>
+      </div>
+      <div class="watch-list" id="watchList"></div>
+    </section>
     <section class="market-panel" id="marketPanel" aria-label="인기주식">
       <div class="market-tabs" role="tablist" aria-label="시장 선택">
         <button class="market-tab active" type="button" data-market="kr" role="tab" aria-selected="true">국내주식</button>
@@ -800,13 +907,13 @@
   </main>
   <script>
     const $ = id => document.getElementById(id);
-    const form = $("form"), input = $("query"), submit = $("submit"), homeButton = $("homeButton"), heroCopy = $("heroCopy");
+    const form = $("form"), input = $("query"), submit = $("submit"), searchWatchSlot = $("searchWatchSlot"), homeButton = $("homeButton"), heroCopy = $("heroCopy");
     const loading = $("loading"), loadingTitle = $("loadingTitle"), loadingText = $("loadingText");
     const result = $("result"), statusEl = $("status"), suggestionsEl = $("suggestions"), resultTabs = $("resultTabs");
     const marketPanel = $("marketPanel"), rankListEl = $("rankList"), rankRefreshButton = $("rankRefreshButton"), rankMoreButton = $("rankMoreButton");
-    const updatePopup = $("updatePopup"), updatePopupClose = $("updatePopupClose");
+    const watchPanel = $("watchPanel"), watchListEl = $("watchList");
     const RANK_INITIAL_LIMIT = 10, RANK_STEP = 10, RANK_MAX_LIMIT = 30;
-    const UPDATE_POPUP_STORAGE_KEY = "beaver.update.report.v1";
+    const WATCH_STORAGE_KEY = "beaver.watchlist.signals.v1";
     const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const stanceClass = stance => ({긍정:"pos",신중:"neu",부정:"neg",단순언급:"mention"}[stance] || "mention");
     const stanceShortLabel = stance => ({긍정:"긍정적",신중:"관망",부정:"주의",단순언급:"정보성"}[stance] || stance);
@@ -821,7 +928,7 @@
       : (opinion.opinionType || "참고");
     const moodClass = label => ({
       "긍정적 분위기":"pos",
-      "조건부 긍정":"neu",
+      "조건부 긍정":"cond",
       "관망 우세":"neu",
       "주의 필요":"neg",
       "방향성 확인 필요":"mixed",
@@ -2282,6 +2389,22 @@
       const particle = code >= 0xac00 && code <= 0xd7a3 && (code - 0xac00) % 28 === 0 ? "를" : "을";
       return `${selected.join(", ")}${particle} 먼저 확인하세요. 이 흐름이 다음 분기 실적과 주가 기대를 바꿀 수 있어요.`;
     }
+    function checkpointTextForData(data = {}) {
+      const context = headlineContextText(data);
+      if (includesAny(context, ["삼성전기", "삼성 전기"])) {
+        return "MLCC 수요 회복 / 패키지기판 수주 / 카메라모듈 매출 증가는 좋게 볼 뉴스예요. AI·전장 기대감 / 목표가 상향 / 증설 뉴스는 실적 연결을 확인하세요.";
+      }
+      if (includesAny(context, ["삼성전자", "삼성전자우", "sk하이닉스", "하이닉스", "반도체", "hbm", "dram", "d램", "메모리"])) {
+        return "HBM 수주 / 공급 계약 / DRAM 가격 상승 / 재고 감소는 좋게 볼 뉴스예요. AI 기대감 / 증설 / 목표가 상향 / 테마 부각은 실적 연결을 확인하세요.";
+      }
+      if (includesAny(context, ["현대차", "현대자동차", "기아", "자동차", "하이브리드", "전기차"])) {
+        return "미국 판매 증가 / 하이브리드 호조 / 판매가격 상승 / 주주환원은 좋게 볼 뉴스예요. 로봇 / 미래차 / 전기차 반등 / 신공장 가동률은 실적 연결을 확인하세요.";
+      }
+      if (includesAny(context, ["테슬라", "tesla", "tsla"])) {
+        return "인도량 증가 / 자동차 이익률 회복 / 에너지 저장장치 매출 증가는 좋게 볼 뉴스예요. 로보택시 / 목표가 상향 / 먼 미래 로봇 사업은 실적 연결을 확인하세요.";
+      }
+      return "실제 주문 / 판매 증가 / 가격 상승 / 이익 개선은 좋게 볼 뉴스예요. 기대감 / 목표가 상향 / 먼 미래 사업은 실적 연결을 확인하세요.";
+    }
     function opinionAnchorId(opinion) {
       const raw = opinion?.videoId || `${opinion?.channel || ""}-${opinion?.publishedAt || ""}-${opinion?.summary || ""}`;
       const key = compact(raw).slice(0, 64);
@@ -2393,7 +2516,7 @@
       return [
         { label:reportRowLabel("좋게 보는 이유", positiveOpinions.length), text:positive.reason, refs:positiveRefs, tone:hasPositive ? "" : "muted" },
         { label:reportRowLabel("관망·부정적으로 보는 이유", cautionOpinions.length), text:cautionText, refs:cautionRefs, tone:hasCaution ? "" : "muted" },
-        { label:"확인해야 할 것", text:positive.next, refs:fallbackNextRefs },
+        { label:"사기 전 체크포인트", text:checkpointTextForData(data), refs:fallbackNextRefs },
       ];
     }
     const moodSummaryUpsideText = label => ({
@@ -2592,24 +2715,6 @@
       const time = new Date(value).getTime();
       return Number.isNaN(time) ? 0 : time;
     };
-    function showUpdatePopup() {
-      if (!updatePopup) return;
-      try {
-        if (localStorage.getItem(UPDATE_POPUP_STORAGE_KEY) === "dismissed") return;
-      } catch {
-        // 저장소가 막혀도 안내 자체는 보여준다.
-      }
-      updatePopup.classList.add("show");
-    }
-    function dismissUpdatePopup() {
-      if (!updatePopup) return;
-      updatePopup.classList.remove("show");
-      try {
-        localStorage.setItem(UPDATE_POPUP_STORAGE_KEY, "dismissed");
-      } catch {
-        // 닫기 동작은 저장 실패와 무관하게 유지한다.
-      }
-    }
     let suggestTimer = null;
     let suggestions = [];
     let activeSuggestion = -1;
@@ -2619,12 +2724,18 @@
     let activeResultTab = "details";
     let activeDetailStance = "";
     let activeResultData = null;
+    let watchDragKey = "";
+    let watchDragTargetKey = "";
+    let watchDragPlaceAfter = false;
+    let watchPointerDrag = null;
+    let watchSuppressClick = false;
     let rankingLoading = false;
     let activeSharePayload = null;
     let activeMarketMoodPayload = null;
     let shareButtonTimer = null;
     let toastTimer = null;
     const shareButtonDefaultLabel = "살까 말까 고민하는 친구에게 보내기";
+    const watchBackgroundJobs = new Map();
     const trackedSearchResults = new Set();
     const trackedDetailViews = new Set();
     const trackedMarketMoodViews = new Set();
@@ -2798,6 +2909,9 @@
     let activeMarket = "kr";
     let rankVisibleCounts = { kr:RANK_INITIAL_LIMIT, us:RANK_INITIAL_LIMIT };
     let quoteLoadingMarkets = {};
+    let quoteSocket = null;
+    let quoteSocketKey = "";
+    let quoteSocketReconnectTimer = null;
 
     function rankOpinionText(row) {
       const checked = Number.isFinite(row.reportCandidateCount)
@@ -2813,13 +2927,27 @@
       return marketData.rows?.length ? marketData.rows : (rankingStocks[market] || rankingStocks.kr);
     }
 
+    function quoteSignature(row = {}) {
+      return [
+        row.price,
+        row.priceText,
+        row.change,
+        row.changeRate,
+        row.changeRateText,
+        row.changeDirection,
+        row.priceBaseDate,
+        row.quoteSource,
+        row.quoteDelayText,
+      ].map(value => value ?? "").join("|");
+    }
+
     function renderRanking(market = "kr") {
       activeMarket = market;
       const rows = rankingRows(market);
       const visibleCount = Math.min(rankVisibleCounts[market] || RANK_INITIAL_LIMIT, RANK_MAX_LIMIT, rows.length);
       const visibleRows = rows.slice(0, visibleCount);
       rankListEl.innerHTML = visibleRows.map((row, idx) => `
-        <button class="rank-item" type="button" data-query="${esc(row.query || row.name)}">
+        <button class="rank-item ${row._quoteFlashDirection ? `quote-flash quote-flash-${esc(row._quoteFlashDirection)}` : ""}" type="button" data-query="${esc(row.query || row.name)}" data-code="${esc(row.code || "")}">
           <span class="rank-no">${idx + 1}</span>
           <span class="rank-body">
             <span class="rank-title">
@@ -2838,6 +2966,7 @@
       rankMoreButton.textContent = canShowMore
         ? `${moreCount}개 더보기`
         : "";
+      syncRankingQuoteSocket();
     }
 
     function shareUrlFor(query, code) {
@@ -2945,7 +3074,7 @@
       return `
         <div class="verdict-report" aria-label="판정 리포트">
           ${verdictReportRows(data, mood).map(normalizeReportRow).map(row => `
-            <div class="report-row ${esc(row.tone)}">
+            <div class="report-row ${esc(row.tone)} ${row.label.includes("체크포인트") ? "checkpoint-row" : ""}">
               <span class="report-label">${esc(row.label)}</span>
               <div class="report-body">
                 <p class="report-text">${esc(row.text)}</p>
@@ -2984,7 +3113,7 @@
     function verdictHeadMetaHtml(data) {
       const { mentioned, opinions } = analysisCounts(data);
       return `
-        <div class="verdict-head-meta" aria-label="현재 분위기 리포트 표본 정보">
+        <div class="verdict-head-meta" aria-label="최근 2주 요약 리포트 표본 정보">
           <div class="verdict-head-distribution">${esc(distributionText(data.counts || {}))}</div>
           <div class="verdict-head-flow">유튜브 언급 ${esc(mentioned)}개 중 판단 가능한 투자 의견 ${esc(opinions)}명으로 압축했어요.</div>
         </div>`;
@@ -3002,7 +3131,7 @@
     function reportSkeletonHtml(data = {}) {
       const queryLabel = reportQueryLabel(data);
       return `
-        <div class="summary verdict-card report-skeleton" aria-busy="true" aria-label="${esc(queryLabel)} 현재 분위기 리포트 준비 중">
+        <div class="summary verdict-card report-skeleton" aria-busy="true" aria-label="${esc(queryLabel)} 최근 2주 유튜버 의견 요약 리포트 준비 중">
           <div class="verdict-top">
             <div class="verdict-title">
               <span class="skeleton-line skeleton-eyebrow"></span>
@@ -3054,6 +3183,594 @@
         url,
         fallbackText:`${text}\n${url}`,
       };
+    }
+
+    function readWatchState() {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(WATCH_STORAGE_KEY) || "{}");
+        return {
+          items:Array.isArray(parsed.items) ? parsed.items : [],
+          signals:Array.isArray(parsed.signals) ? parsed.signals : [],
+          watchInteracted:Boolean(parsed.watchInteracted),
+          watchTooltipDismissed:Boolean(parsed.watchTooltipDismissed),
+        };
+      } catch {
+        return { items:[], signals:[], watchInteracted:false, watchTooltipDismissed:false };
+      }
+    }
+
+    function writeWatchState(state) {
+      try {
+        localStorage.setItem(WATCH_STORAGE_KEY, JSON.stringify({
+          items:(state.items || []).slice(0, 20),
+          signals:(state.signals || []).slice(0, 40),
+          watchInteracted:Boolean(state.watchInteracted),
+          watchTooltipDismissed:Boolean(state.watchTooltipDismissed),
+        }));
+      } catch {
+        showToast("관심종목 저장에 실패했어요.");
+      }
+    }
+
+    function updateWatchGuideState(patch = {}) {
+      const state = readWatchState();
+      writeWatchState({ ...state, ...patch });
+    }
+
+    function shouldShowWatchTooltip(data, active = false) {
+      if (!data || active) return false;
+      const state = readWatchState();
+      return !state.watchTooltipDismissed && !state.watchInteracted && !(state.items || []).length;
+    }
+
+    function dismissWatchTooltip() {
+      updateWatchGuideState({ watchTooltipDismissed:true });
+      refreshWatchButtons(activeResultData);
+    }
+
+    function watchKeyForData(data = {}) {
+      return compact(data.stockCode || data.query || data.rawQuery || activeSearchQuery);
+    }
+
+    function watchQueryLabel(data = {}) {
+      return reportQueryLabel(data);
+    }
+
+    function watchSnapshotFor(data = {}) {
+      const mood = data.marketMood || marketMoodFromCounts(data.counts || {});
+      const counts = data.counts || {};
+      const rows = verdictReportRows(data, mood).map(normalizeReportRow);
+      const checkpoint = rows.find(row => row.label.includes("체크포인트")) || rows[2] || {};
+      const checkpointText = checkpoint.text || "";
+      const headline = verdictHeadline(data, mood);
+      const distribution = distributionText(data.counts || {});
+      const signature = compact([
+        mood.label,
+        headline,
+        checkpointText,
+        distribution,
+      ].join("|"));
+      return {
+        key:watchKeyForData(data),
+        query:data.query || activeSearchQuery || watchQueryLabel(data),
+        label:watchQueryLabel(data),
+        code:data.stockCode || "",
+        mood:mood.label,
+        counts:{
+          positive:Number(counts.긍정 || 0),
+          watch:Number(counts.신중 || 0),
+          risk:Number(counts.부정 || 0),
+        },
+        headline,
+        checkpoint:checkpointText,
+        distribution,
+        signature,
+        updatedAt:new Date().toISOString(),
+      };
+    }
+
+    function watchItemForKey(state, key) {
+      return (state.items || []).find(item => item.key === key);
+    }
+
+    function watchComparableValues(data = {}) {
+      return [
+        data.key,
+        data.code,
+        data.stockCode,
+        data.query,
+        data.rawQuery,
+        data.label,
+      ].map(compact).filter(Boolean);
+    }
+
+    function watchItemForData(state, data = {}) {
+      const values = watchComparableValues(data);
+      if (!values.length) return null;
+      return (state.items || []).find(item => {
+        const itemValues = watchComparableValues(item);
+        return itemValues.some(value => values.includes(value));
+      }) || null;
+    }
+
+    function putWatchItem(state, item, existing) {
+      const items = state.items || [];
+      const existingKey = existing?.key || item.key;
+      if (!existing) {
+        state.items = [item, ...items.filter(row => row.key !== item.key)].slice(0, 20);
+        return;
+      }
+      let replaced = false;
+      state.items = items.reduce((rows, row) => {
+        if (row.key === existingKey) {
+          if (!replaced) rows.push(item);
+          replaced = true;
+          return rows;
+        }
+        if (row.key !== item.key) rows.push(row);
+        return rows;
+      }, []).slice(0, 20);
+      if (!replaced) state.items = [item, ...state.items].slice(0, 20);
+    }
+
+    function isWatchingData(data = activeResultData) {
+      return Boolean(watchItemForData(readWatchState(), data || {}));
+    }
+
+    function watchSignalText(before, after) {
+      if (before?.mood && after?.mood && before.mood !== after.mood) {
+        return `분위기가 ${displayMoodLabel(before.mood)}에서 ${displayMoodLabel(after.mood)}로 바뀌었어요.`;
+      }
+      if (before?.checkpoint && after?.checkpoint && compact(before.checkpoint) !== compact(after.checkpoint)) {
+        return "사기 전 체크포인트가 바뀌었어요.";
+      }
+      return "현재 분위기 리포트의 핵심 문장이 바뀌었어요.";
+    }
+
+    function upsertWatchSnapshot(data, options = {}) {
+      if (!data || data.done === false || reportableOpinions(data.opinions || []).length < 2) return false;
+      const snapshot = watchSnapshotFor(data);
+      if (!snapshot.key) return false;
+      const state = readWatchState();
+      const existing = watchItemForData(state, data) || watchItemForKey(state, snapshot.key);
+      const shouldNotify = Boolean(existing && existing.lastSignature && existing.lastSignature !== snapshot.signature && !options.silent);
+      const item = {
+        ...(existing || {}),
+        key:snapshot.key,
+        query:snapshot.query,
+        label:snapshot.label,
+        code:snapshot.code,
+        mood:snapshot.mood,
+        counts:snapshot.counts,
+        headline:snapshot.headline,
+        checkpoint:snapshot.checkpoint,
+        distribution:snapshot.distribution,
+        lastSignature:snapshot.signature,
+        pending:false,
+        updatedAt:snapshot.updatedAt,
+      };
+      if (!existing) item.createdAt = snapshot.updatedAt;
+      putWatchItem(state, item, existing);
+      if (existing?.key && existing.key !== snapshot.key) {
+        state.signals = state.signals.map(signal => signal.key === existing.key ? { ...signal, key:snapshot.key } : signal);
+      }
+      if (shouldNotify) {
+        state.signals = [{
+          id:`sig_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
+          key:snapshot.key,
+          label:snapshot.label,
+          title:`${snapshot.label} 새 신호`,
+          text:watchSignalText(existing, snapshot),
+          unread:true,
+          createdAt:snapshot.updatedAt,
+        }, ...state.signals].slice(0, 40);
+      }
+      writeWatchState(state);
+      renderWatchPanel();
+      return true;
+    }
+
+    function upsertPendingWatchItem(data = {}) {
+      const key = watchKeyForData(data);
+      if (!key) return false;
+      const label = watchQueryLabel(data);
+      const now = new Date().toISOString();
+      const state = readWatchState();
+      const existing = watchItemForData(state, data) || watchItemForKey(state, key);
+      const item = {
+        ...(existing || {}),
+        key,
+        query:data.query || activeSearchQuery || label,
+        label,
+        code:data.stockCode || "",
+        jobId:data.jobId || existing?.jobId || "",
+        pending:true,
+        updatedAt:existing?.updatedAt || now,
+      };
+      if (!existing) item.createdAt = now;
+      putWatchItem(state, item, existing);
+      if (existing?.key && existing.key !== key) {
+        state.signals = state.signals.map(signal => signal.key === existing.key ? { ...signal, key } : signal);
+      }
+      writeWatchState(state);
+      renderWatchPanel();
+      return true;
+    }
+
+    function upsertCompletedWatchItem(data = {}) {
+      const key = watchKeyForData(data);
+      if (!key) return false;
+      const label = watchQueryLabel(data);
+      const now = new Date().toISOString();
+      const counts = data.counts || {};
+      const state = readWatchState();
+      const existing = watchItemForData(state, data) || watchItemForKey(state, key);
+      const item = {
+        ...(existing || {}),
+        key,
+        query:data.query || activeSearchQuery || label,
+        label,
+        code:data.stockCode || "",
+        mood:"",
+        counts:{
+          positive:Number(counts.긍정 || 0),
+          watch:Number(counts.신중 || 0),
+          risk:Number(counts.부정 || 0),
+        },
+        distribution:distributionText(counts),
+        status:"insufficient",
+        pending:false,
+        jobId:"",
+        updatedAt:now,
+      };
+      if (!existing) item.createdAt = now;
+      putWatchItem(state, item, existing);
+      if (existing?.key && existing.key !== key) {
+        state.signals = state.signals.map(signal => signal.key === existing.key ? { ...signal, key } : signal);
+      }
+      writeWatchState(state);
+      renderWatchPanel();
+      return true;
+    }
+
+    function syncWatchItemFromSearchData(data = {}) {
+      if (!watchItemForData(readWatchState(), data)) return false;
+      const ready = data.done !== false && reportableOpinions(data.opinions || []).length >= 2;
+      if (ready) return upsertWatchSnapshot(data, { silent:true });
+      if (data.done !== false) return upsertCompletedWatchItem(data);
+      return upsertPendingWatchItem(data);
+    }
+
+    async function pollWatchInBackground(jobId, key) {
+      while (watchBackgroundJobs.get(key) === jobId) {
+        await new Promise(resolve => setTimeout(resolve, 900));
+        const item = watchItemForKey(readWatchState(), key);
+        if (!item || item.jobId !== jobId) break;
+        try {
+          const response = await fetch(`/api/search/progress?id=${encodeURIComponent(jobId)}`);
+          const data = await response.json();
+          if (!response.ok) throw new Error(data.error || "검색 진행상황을 읽지 못했어요.");
+          syncWatchItemFromSearchData(data);
+          startWatchBackgroundPolling(data);
+          if (data.done) break;
+        } catch {
+          break;
+        }
+      }
+      if (watchBackgroundJobs.get(key) === jobId) watchBackgroundJobs.delete(key);
+    }
+
+    function startWatchBackgroundPolling(data = {}) {
+      if (isFileMode || data.done || !data.jobId) return;
+      const item = watchItemForData(readWatchState(), data);
+      if (!item) return;
+      const key = item.key;
+      if (watchBackgroundJobs.get(key) === data.jobId) return;
+      watchBackgroundJobs.set(key, data.jobId);
+      pollWatchInBackground(data.jobId, key);
+    }
+
+    function toggleWatchCurrentResult() {
+      if (!activeResultData) return;
+      const key = watchKeyForData(activeResultData);
+      if (!key) return;
+      updateWatchGuideState({ watchInteracted:true });
+      const state = readWatchState();
+      const existing = watchItemForData(state, activeResultData) || watchItemForKey(state, key);
+      if (existing) {
+        state.items = state.items.filter(item => item.key !== existing.key);
+        state.signals = state.signals.filter(signal => signal.key !== existing.key);
+        state.watchInteracted = true;
+        watchBackgroundJobs.delete(existing.key);
+        writeWatchState(state);
+        renderWatchPanel();
+        refreshWatchButtons(activeResultData);
+        showToast("관심종목에서 뺐어요.", { position:"top" });
+        analytics.send("watch_remove", { query:existing.label || activeSearchQuery });
+        return;
+      }
+      const canSaveSnapshot = activeResultData.done !== false && reportableOpinions(activeResultData.opinions || []).length >= 2;
+      const saved = canSaveSnapshot
+        ? upsertWatchSnapshot(activeResultData, { silent:true })
+        : (activeResultData.done !== false
+          ? upsertCompletedWatchItem(activeResultData)
+          : upsertPendingWatchItem(activeResultData));
+      if (saved) {
+        showToast("관심종목에 추가했어요. 홈에서 볼 수 있어요", { position:"top" });
+        analytics.send("watch_add", { query:watchQueryLabel(activeResultData) });
+        refreshWatchButtons(activeResultData);
+        startWatchBackgroundPolling(activeResultData);
+      }
+    }
+
+    function markWatchSignalsRead() {
+      const state = readWatchState();
+      state.signals = state.signals.map(signal => ({ ...signal, unread:false }));
+      writeWatchState(state);
+      renderWatchPanel();
+    }
+
+    function removeWatchItem(key) {
+      const state = readWatchState();
+      const item = watchItemForKey(state, key);
+      state.items = state.items.filter(row => row.key !== key);
+      state.signals = state.signals.filter(signal => signal.key !== key);
+      watchBackgroundJobs.delete(key);
+      writeWatchState(state);
+      renderWatchPanel();
+      if (activeResultData && watchComparableValues(activeResultData).includes(compact(key))) refreshWatchButtons(activeResultData);
+      if (item) analytics.send("watch_remove", { query:item.label || item.query || "" });
+    }
+
+    function watchRows() {
+      return Array.from(watchListEl?.querySelectorAll(".watch-item[data-watch-key]") || []);
+    }
+
+    function watchRowForKey(key) {
+      return watchRows().find(row => row.dataset.watchKey === key) || null;
+    }
+
+    function clearWatchDragTarget() {
+      watchDragTargetKey = "";
+      watchDragPlaceAfter = false;
+      watchRows().forEach(row => row.classList.remove("drag-over-before", "drag-over-after"));
+    }
+
+    function clearWatchDragClasses() {
+      watchRows().forEach(row => row.classList.remove("dragging", "drag-over-before", "drag-over-after"));
+    }
+
+    function resetWatchDrag() {
+      watchDragKey = "";
+      watchDragTargetKey = "";
+      watchDragPlaceAfter = false;
+      watchPointerDrag = null;
+      clearWatchDragClasses();
+    }
+
+    function setWatchDragTarget(row, clientY) {
+      clearWatchDragTarget();
+      if (!row || !watchListEl?.contains(row) || row.dataset.watchKey === watchDragKey) return;
+      const rect = row.getBoundingClientRect();
+      watchDragTargetKey = row.dataset.watchKey || "";
+      watchDragPlaceAfter = clientY > rect.top + rect.height / 2;
+      row.classList.add(watchDragPlaceAfter ? "drag-over-after" : "drag-over-before");
+    }
+
+    function watchRowFromPoint(clientX, clientY) {
+      const row = document.elementFromPoint(clientX, clientY)?.closest(".watch-item[data-watch-key]");
+      return row && watchListEl?.contains(row) ? row : null;
+    }
+
+    function reorderWatchItem(dragKey, targetKey, placeAfter = false) {
+      if (!dragKey || !targetKey || dragKey === targetKey) return false;
+      const state = readWatchState();
+      const items = [...(state.items || [])];
+      const beforeOrder = items.map(item => item.key).join("|");
+      const from = items.findIndex(item => item.key === dragKey);
+      if (from < 0) return false;
+      const [item] = items.splice(from, 1);
+      let insertIndex = items.findIndex(row => row.key === targetKey);
+      if (insertIndex < 0) return false;
+      if (placeAfter) insertIndex += 1;
+      items.splice(insertIndex, 0, item);
+      if (beforeOrder === items.map(row => row.key).join("|")) return false;
+      state.items = items;
+      writeWatchState(state);
+      renderWatchPanel();
+      analytics.send("watch_reorder", { query:item.label || item.query || "" });
+      return true;
+    }
+
+    function beginWatchPointerDrag(row, event) {
+      const key = row?.dataset.watchKey || "";
+      if (!key) return;
+      watchPointerDrag = {
+        key,
+        pointerId:event.pointerId,
+        startX:event.clientX,
+        startY:event.clientY,
+        row,
+        active:false,
+        targetKey:"",
+        placeAfter:false,
+      };
+      row.setPointerCapture?.(event.pointerId);
+    }
+
+    function updateWatchPointerDrag(event) {
+      if (!watchPointerDrag || watchPointerDrag.pointerId !== event.pointerId) return;
+      const moved = Math.abs(event.clientY - watchPointerDrag.startY) > 6
+        || Math.abs(event.clientX - watchPointerDrag.startX) > 6;
+      if (!watchPointerDrag.active && !moved) return;
+      if (!watchPointerDrag.active) {
+        watchPointerDrag.active = true;
+        watchDragKey = watchPointerDrag.key;
+        watchRowForKey(watchDragKey)?.classList.add("dragging");
+      }
+      event.preventDefault();
+      const dragRow = watchPointerDrag.row;
+      if (dragRow) dragRow.style.pointerEvents = "none";
+      const targetRow = watchRowFromPoint(event.clientX, event.clientY);
+      if (dragRow) dragRow.style.pointerEvents = "";
+      setWatchDragTarget(targetRow, event.clientY);
+      watchPointerDrag.targetKey = watchDragTargetKey;
+      watchPointerDrag.placeAfter = watchDragPlaceAfter;
+    }
+
+    function endWatchPointerDrag(event, shouldDrop = true) {
+      if (!watchPointerDrag || watchPointerDrag.pointerId !== event.pointerId) return;
+      const drag = watchPointerDrag;
+      if (drag.active && shouldDrop) {
+        watchSuppressClick = true;
+        reorderWatchItem(drag.key, drag.targetKey, drag.placeAfter);
+        setTimeout(() => { watchSuppressClick = false; }, 120);
+      }
+      resetWatchDrag();
+    }
+
+    function relativeSignalTime(value) {
+      const time = new Date(value).getTime();
+      if (!Number.isFinite(time)) return "";
+      const diff = Math.max(0, Date.now() - time);
+      const minutes = Math.floor(diff / 60000);
+      if (minutes < 1) return "방금";
+      if (minutes < 60) return `${minutes}분 전`;
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) return `${hours}시간 전`;
+      return `${Math.floor(hours / 24)}일 전`;
+    }
+
+    function watchCountsFromItem(item = {}) {
+      const direct = item.counts || {};
+      const positive = Number(direct.positive);
+      const watch = Number(direct.watch);
+      const risk = Number(direct.risk);
+      if ([positive, watch, risk].every(Number.isFinite)) return { positive, watch, risk };
+      const text = String(item.distribution || "");
+      const matchNumber = label => {
+        const match = text.match(new RegExp(`${label}\\s*(\\d+)`));
+        return match ? Number(match[1]) : 0;
+      };
+      return {
+        positive:matchNumber("긍정적"),
+        watch:matchNumber("관망"),
+        risk:matchNumber("주의"),
+      };
+    }
+
+    function watchMetaText(item = {}) {
+      const counts = watchCountsFromItem(item);
+      const countText = item.pending && !item.mood
+        ? "분석 중"
+        : (item.status === "insufficient"
+          ? "의견 부족"
+          : `긍정 ${counts.positive}, 관망 ${counts.watch}, 주의 ${counts.risk}`);
+      const checkedText = relativeSignalTime(item.updatedAt);
+      return [countText, checkedText ? `${checkedText} 확인` : ""].filter(Boolean).join(" · ");
+    }
+
+    function watchHomeBadgeHtml(item = {}) {
+      if (item.mood) {
+        return `<span class="badge watch-home-badge ${esc(moodClass(item.mood))}">${esc(displayMoodLabel(item.mood))}</span>`;
+      }
+      if (item.pending) {
+        return `<span class="badge watch-home-badge watch-loading-badge" aria-label="분석 결과 로딩 중">로딩 중</span>`;
+      }
+      if (item.status === "insufficient") {
+        return `<span class="badge watch-home-badge hold" aria-label="판단 가능한 의견 부족">의견 부족</span>`;
+      }
+      return "";
+    }
+
+    function renderWatchPanel() {
+      if (!watchPanel || !watchListEl) return;
+      const state = readWatchState();
+      const items = state.items || [];
+      watchPanel.classList.toggle("show", items.length > 0);
+      watchListEl.innerHTML = items.map(item => {
+        const meta = watchMetaText(item);
+        const label = item.label || item.query;
+        return `<div class="watch-item" data-watch-key="${esc(item.key)}">
+          <button class="watch-drag-handle" type="button" data-watch-drag="${esc(item.key)}" aria-label="${esc(label)} 순서 변경"></button>
+          <button class="watch-open" type="button" data-watch-query="${esc(item.query || item.label)}">
+              <span class="watch-name-row">
+                <span class="watch-name">${esc(label)}</span>
+              </span>
+              <span class="watch-meta">${esc(meta || "리포트 기준 저장됨")}</span>
+          </button>
+          <div class="watch-actions">
+            ${watchHomeBadgeHtml(item)}
+            <button class="watch-home-remove" type="button" data-watch-remove="${esc(item.key)}" aria-label="${esc(label)} 관심종목 삭제"></button>
+          </div>
+        </div>`;
+      }).join("");
+    }
+
+    function watchResultButtonHtml(data, options = {}) {
+      const searchMode = options.variant === "search";
+      const canShow = data && (searchMode
+        ? Boolean(watchKeyForData(data))
+        : data.done !== false && reportableOpinions(data.opinions || []).length >= 2);
+      if (!canShow) return "";
+      const active = isWatchingData(data);
+      const className = `watch-result-button${searchMode ? " search-watch-button" : ""}${active ? " active" : ""}`;
+      const label = active ? "관심종목" : "관심종목 추가";
+      const stateLabel = active ? "추가됨" : "해제됨";
+      const ariaLabel = `${watchQueryLabel(data)} ${label}, ${stateLabel}`;
+      const tooltip = searchMode && shouldShowWatchTooltip(data, active)
+        ? `<span class="watch-tooltip" role="status">
+            <span class="watch-tooltip-text">관심종목에 담아두면 홈에서 의견 변화를 바로 볼 수 있어요.</span>
+            <button class="watch-tooltip-close" type="button" data-action="dismiss-watch-tooltip" aria-label="관심종목 안내 닫기">×</button>
+          </span>`
+        : "";
+      return `<span class="watch-result-wrap">${tooltip}<button class="${className}" type="button" data-action="toggle-watch-result" aria-label="${esc(ariaLabel)}">${label}</button></span>`;
+    }
+
+    function refreshWatchButtons(data = activeResultData) {
+      syncSearchWatchButton(data);
+      if (!result || !data) return;
+      const html = watchResultButtonHtml(data);
+      result.querySelectorAll(".watch-result-button[data-action='toggle-watch-result']").forEach(button => {
+        const target = button.closest(".watch-result-wrap") || button;
+        if (!html) {
+          target.remove();
+          return;
+        }
+        const template = document.createElement("template");
+        template.innerHTML = html.trim();
+        const next = template.content.firstElementChild;
+        if (next) target.replaceWith(next);
+      });
+    }
+
+    function syncSearchWatchButton(data = activeResultData) {
+      if (!searchWatchSlot) return;
+      syncSearchQueryWidth();
+      searchWatchSlot.innerHTML = watchResultButtonHtml(data, { variant:"search" });
+    }
+
+    function pendingWatchData(query) {
+      const value = String(query || activeSearchQuery || input.value || "").trim();
+      return value ? { query:value, rawQuery:value, done:false, watchPending:true } : null;
+    }
+
+    function syncSearchQueryWidth() {
+      if (!form || !input) return;
+      const value = input.value.trim() || activeSearchQuery || "";
+      const styles = window.getComputedStyle(input);
+      const font = styles.font || `${styles.fontWeight} ${styles.fontSize} ${styles.fontFamily}`;
+      const text = value || input.placeholder || "";
+      syncSearchQueryWidth.canvas ||= document.createElement("canvas");
+      const context = syncSearchQueryWidth.canvas.getContext("2d");
+      if (!context) return;
+      context.font = font;
+      const paddingLeft = parseFloat(styles.paddingLeft) || 0;
+      const measuredWidth = Math.ceil(context.measureText(text).width + paddingLeft);
+      const minWidth = Math.ceil(paddingLeft + 36);
+      const maxWidth = 170;
+      const width = Math.max(minWidth, Math.min(maxWidth, measuredWidth));
+      form.style.setProperty("--query-input-width", `${width}px`);
     }
 
     function updateUrlQuery(query) {
@@ -3144,7 +3861,7 @@
       }, 1600);
     }
 
-    function showToast(message) {
+    function showToast(message, options = {}) {
       let toast = document.querySelector(".copy-toast");
       if (!toast) {
         toast = document.createElement("div");
@@ -3153,6 +3870,7 @@
         toast.setAttribute("aria-live", "polite");
         document.body.appendChild(toast);
       }
+      toast.classList.toggle("top", options.position === "top");
       toast.textContent = message;
       clearTimeout(toastTimer);
       requestAnimationFrame(() => toast.classList.add("show"));
@@ -3268,18 +3986,111 @@
       }
     }
 
-    function mergeRankingQuotes(market, quotes = {}) {
+    function clearRankingQuoteFlash(market, token) {
+      setTimeout(() => {
+        let changed = false;
+        rankingRows(market).forEach(row => {
+          if (row._quoteFlashToken !== token) return;
+          delete row._quoteFlashDirection;
+          delete row._quoteFlashToken;
+          changed = true;
+        });
+        if (changed && market === activeMarket && !marketPanel.classList.contains("hide")) {
+          renderRanking(market);
+        }
+      }, 950);
+    }
+
+    function quoteFlashDirection(row, quote) {
+      if (quote.changeDirection) return quote.changeDirection;
+      const before = Number(row.price);
+      const after = Number(quote.price);
+      if (Number.isFinite(before) && Number.isFinite(after)) {
+        if (after > before) return "up";
+        if (after < before) return "down";
+      }
+      return "flat";
+    }
+
+    function mergeRankingQuotes(market, quotes = {}, options = {}) {
       const rows = (rankingData.markets || {})[market]?.rows || [];
       if (!rows.length) return false;
       let changed = false;
+      const flashToken = Date.now();
       rows.forEach(row => {
         const code = String(row.code || "").trim().toUpperCase();
         const quote = quotes[code];
         if (!quote) return;
+        const before = quoteSignature(row);
+        const hadQuote = Boolean(row.priceText || row.changeRateText);
+        const direction = quoteFlashDirection(row, quote);
         Object.assign(row, quote);
+        const after = quoteSignature(row);
+        if (before === after) return;
+        if (options.animate && hadQuote) {
+          row._quoteFlashDirection = direction;
+          row._quoteFlashToken = flashToken;
+        }
         changed = true;
       });
+      if (options.animate && changed) clearRankingQuoteFlash(market, flashToken);
       return changed;
+    }
+
+    function visibleRankingQuoteCodes(market = activeMarket) {
+      const visibleCount = Math.min(rankVisibleCounts[market] || RANK_INITIAL_LIMIT, RANK_MAX_LIMIT);
+      return rankingRows(market).slice(0, visibleCount)
+        .map(row => String(row.code || "").trim())
+        .filter(Boolean);
+    }
+
+    function closeRankingQuoteSocket() {
+      clearTimeout(quoteSocketReconnectTimer);
+      quoteSocketReconnectTimer = null;
+      quoteSocketKey = "";
+      if (!quoteSocket) return;
+      quoteSocket.onclose = null;
+      quoteSocket.onerror = null;
+      quoteSocket.close();
+      quoteSocket = null;
+    }
+
+    function syncRankingQuoteSocket() {
+      if (isFileMode || typeof WebSocket !== "function" || marketPanel.classList.contains("hide")) {
+        closeRankingQuoteSocket();
+        return;
+      }
+      const market = activeMarket;
+      const codes = visibleRankingQuoteCodes(market);
+      if (!codes.length) {
+        closeRankingQuoteSocket();
+        return;
+      }
+      const key = `${market}:${codes.join(",")}`;
+      if (quoteSocket && quoteSocketKey === key && quoteSocket.readyState <= WebSocket.OPEN) return;
+      closeRankingQuoteSocket();
+      const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+      const query = new URLSearchParams({ market, codes:codes.join(",") });
+      const socket = new WebSocket(`${protocol}//${location.host}/ws/popular-stock-quotes?${query.toString()}`);
+      quoteSocket = socket;
+      quoteSocketKey = key;
+      socket.onmessage = event => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.market !== activeMarket) return;
+          if (mergeRankingQuotes(data.market, data.quotes || {}, { animate:true })) {
+            renderRanking(activeMarket);
+          }
+        } catch {
+          // 실시간 시세 메시지 하나가 깨져도 화면은 기존 값으로 유지한다.
+        }
+      };
+      socket.onerror = () => socket.close();
+      socket.onclose = () => {
+        if (quoteSocket !== socket || quoteSocketKey !== key || marketPanel.classList.contains("hide")) return;
+        quoteSocket = null;
+        quoteSocketReconnectTimer = setTimeout(syncRankingQuoteSocket, 2500);
+      };
     }
 
     async function loadRankingQuotes(market = activeMarket) {
@@ -3392,6 +4203,7 @@
         ${button("", "전체", total)}
         ${detailFilterStances.map(stance => button(stance, stance, counts[stance] || 0)).join("")}
         <button class="detail-filter mention${activeStance === referenceDetailFilter ? " active" : ""}" type="button" data-detail-filter-stance="${esc(referenceDetailFilter)}" aria-pressed="${activeStance === referenceDetailFilter ? "true" : "false"}">정보성·참고 의견 ${esc(referenceCount)}</button>
+        <span class="detail-filter-spacer" aria-hidden="true"></span>
       </div>`;
     }
 
@@ -3430,6 +4242,7 @@
 
     function render(data) {
       activeResultData = data;
+      syncSearchWatchButton(data);
       setReportTabState(data);
       const done = data.done !== false;
       const opinionRows = Array.isArray(data.opinions) ? data.opinions : [];
@@ -3472,12 +4285,15 @@
         <article class="card" id="${esc(opinionAnchorId(o))}" data-stance="${esc(o.stance)}">
           <div class="card-head">
             <div class="card-meta">
-              <a class="channel" href="${esc(o.url)}" target="_blank" rel="noopener" data-click-target="channel_name">${esc(o.channel)}</a>
-              ${sourceChipHtml(o)}
-              <span class="meta-dot">·</span>
-              <span class="video-meta" title="${esc(dateText(o.publishedAt))}">${esc(relativeDateText(o.publishedAt))} 업로드</span>
-              <span class="meta-dot">·</span>
-              <span class="video-meta">조회 ${esc(viewsText(o.views))}</span>
+              <div class="card-meta-channel">
+                <a class="channel" href="${esc(o.url)}" target="_blank" rel="noopener" data-click-target="channel_name">${esc(o.channel)}</a>
+              </div>
+              <div class="card-meta-detail">
+                ${sourceChipHtml(o)}
+                <span class="video-meta" title="${esc(dateText(o.publishedAt))}">${esc(relativeDateText(o.publishedAt))} 업로드</span>
+                <span class="meta-dot">·</span>
+                <span class="video-meta">조회 ${esc(viewsText(o.views))}</span>
+              </div>
             </div>
             <span class="badge ${opinionBadgeClass(o)}">${esc(opinionBadgeLabel(o))}</span>
           </div>
@@ -3542,7 +4358,7 @@
           ${sampleNote}
           <div class="verdict-top">
             <div class="verdict-title">
-              <div class="verdict-eyebrow"><span class="verdict-eyebrow-stock">${esc(reportLabel)}</span> 유튜버 현재 분위기 리포트</div>
+              <div class="verdict-eyebrow"><span class="verdict-eyebrow-stock">${esc(reportLabel)}</span> 최근 2주 유튜버 의견 요약 리포트</div>
               <span class="verdict-chip verdict-chip-inline ${esc(moodClass(mood.label))}">${esc(displayMoodLabel(mood.label))}</span>
               <h2 class="verdict-headline">
                 <span>${esc(headline)}</span>
@@ -3558,6 +4374,7 @@
           ${verdictReportHtml(data, mood)}
           ${relatedStocksHtml(data)}
           ${done ? `<div class="verdict-footer">
+            ${watchResultButtonHtml(data)}
             <button class="share-button" type="button" data-action="share-result" aria-label="${esc(reportLabel)} 의견을 살까 말까 고민하는 친구에게 보내기">${esc(shareButtonDefaultLabel)}</button>
           </div>` : ""}
         </div>` : reportSkeletonHtml(data);
@@ -3603,6 +4420,7 @@
           ...marketMoodAnalytics(data),
         });
       }
+      if (isWatchingData(data)) upsertWatchSnapshot(data);
       trackedDetailViews.add(key);
       analytics.send("stock_detail_view", {
         query:data.query,
@@ -3695,12 +4513,14 @@
       document.body.classList.remove("result-mode");
       input.value = "";
       submit.disabled = false;
+      syncSearchWatchButton(null);
       loading.classList.remove("show");
       setResultTabsVisible(false);
       result.innerHTML = "";
       hideSuggestions();
       heroCopy.classList.remove("hide");
       marketPanel.classList.remove("hide");
+      renderWatchPanel();
       renderRanking(activeMarket || "kr");
       window.scrollTo({ top:0, behavior:"smooth" });
     }
@@ -3709,6 +4529,8 @@
       query = query.trim();
       if (query.length < 2) return;
       if (!activeSearchDone && compact(query) === compact(activeSearchQuery)) {
+        activeResultData = pendingWatchData(query);
+        syncSearchWatchButton(activeResultData);
         loading.classList.add("show");
         loadingTitle.textContent = "언급 영상에서 후보 유튜버와 실제 투자 의견을 확인하고 있어요.";
         loadingText.textContent = "";
@@ -3725,7 +4547,8 @@
       activeSearchDone = false;
       activeResultTab = "details";
       activeDetailStance = "";
-      activeResultData = null;
+      activeResultData = pendingWatchData(query);
+      syncSearchWatchButton(activeResultData);
       document.body.classList.add("result-mode");
       input.value = query; submit.disabled = true; loading.classList.add("show");
       result.innerHTML = resultPanelsHtml(detailsWaitingHtml({ query, done:false }), reportSkeletonHtml({ query, done:false }));
@@ -3734,6 +4557,7 @@
       loading.classList.remove("show");
       heroCopy.classList.add("hide");
       marketPanel.classList.add("hide");
+      closeRankingQuoteSocket();
       loadingTitle.textContent = loadingStepText();
       loadingText.textContent = "";
       analytics.send("search_submit", { query });
@@ -3743,6 +4567,9 @@
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || "검색에 실패했어요.");
         if (!data.jobId) throw new Error("검색 작업을 시작하지 못했어요.");
+        syncWatchItemFromSearchData(data);
+        startWatchBackgroundPolling(data);
+        if (token !== activeSearchToken) return;
         updateUrlQuery(query);
         render(data);
         if ((data.opinions || []).length) {
@@ -3752,6 +4579,7 @@
         trackSearchSnapshot(data);
         await pollSearch(data.jobId, token);
       } catch (error) {
+        if (token !== activeSearchToken) return;
         const message = error.message === "Failed to fetch" ? serverRequiredMessage : error.message;
         analytics.send("search_result", { query, success:false, error:message });
         setResultTabsVisible(false);
@@ -3770,6 +4598,8 @@
         const response = await fetch(`/api/search/progress?id=${encodeURIComponent(jobId)}`);
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || "검색 진행상황을 읽지 못했어요.");
+        syncWatchItemFromSearchData(data);
+        startWatchBackgroundPolling(data);
         if (token !== activeSearchToken) return;
         loadingTitle.textContent = loadingStepText(data);
         loadingText.textContent = "";
@@ -3790,7 +4620,21 @@
       }
       search(input.value);
     });
+    form.addEventListener("click", e => {
+      const dismissButton = e.target.closest("[data-action='dismiss-watch-tooltip']");
+      if (dismissButton) {
+        e.preventDefault();
+        e.stopPropagation();
+        dismissWatchTooltip();
+        return;
+      }
+      const watchButton = e.target.closest(".watch-result-button[data-action='toggle-watch-result']");
+      if (!watchButton) return;
+      e.preventDefault();
+      toggleWatchCurrentResult();
+    });
     input.addEventListener("input", () => {
+      syncSearchQueryWidth();
       clearTimeout(suggestTimer);
       suggestTimer = setTimeout(() => loadSuggestions(input.value), 120);
     });
@@ -3815,7 +4659,6 @@
     document.addEventListener("click", e => {
       if (!form.contains(e.target)) hideSuggestions();
     });
-    updatePopupClose?.addEventListener("click", dismissUpdatePopup);
     homeButton.addEventListener("click", showHome);
     rankRefreshButton.addEventListener("click", () => loadRanking());
     rankMoreButton.addEventListener("click", () => {
@@ -3837,6 +4680,38 @@
       }
       const item = e.target.closest(".rank-item");
       if (item) search(item.dataset.query);
+    });
+    watchPanel?.addEventListener("pointerdown", e => {
+      if (e.target.closest("[data-watch-remove]")) return;
+      const handle = e.target.closest("[data-watch-drag]");
+      if (!handle) return;
+      e.preventDefault();
+      const row = handle.closest(".watch-item[data-watch-key]");
+      if (!row || !watchListEl?.contains(row)) return;
+      beginWatchPointerDrag(row, e);
+    });
+    watchPanel?.addEventListener("pointermove", updateWatchPointerDrag);
+    watchPanel?.addEventListener("pointerup", e => endWatchPointerDrag(e));
+    watchPanel?.addEventListener("pointercancel", e => endWatchPointerDrag(e, false));
+    watchPanel?.addEventListener("click", e => {
+      if (watchSuppressClick) {
+        e.preventDefault();
+        e.stopPropagation();
+        watchSuppressClick = false;
+        return;
+      }
+      const removeButton = e.target.closest("[data-watch-remove]");
+      if (removeButton) {
+        removeWatchItem(removeButton.dataset.watchRemove || "");
+        showToast("관심종목에서 뺐어요.", { position:"top" });
+        return;
+      }
+      const item = e.target.closest("[data-watch-query]");
+      if (item) {
+        const query = item.dataset.watchQuery || "";
+        analytics.send("watch_signal_click", { query });
+        search(query);
+      }
     });
     resultTabs.addEventListener("click", e => {
       const tab = e.target.closest(".result-tab[data-result-tab]");
@@ -3860,12 +4735,18 @@
     result.addEventListener("click", e => {
       const link = e.target.closest("a.source-link,a.evidence-source,a.channel");
       const shareButton = e.target.closest(".share-button[data-action='share-result']");
+      const watchButton = e.target.closest(".watch-result-button[data-action='toggle-watch-result']");
+      const dismissButton = e.target.closest("[data-action='dismiss-watch-tooltip']");
       const relatedTag = e.target.closest(".related-tag[data-related-query]");
       const detailFilter = e.target.closest(".detail-filter[data-detail-filter-stance]");
       const reportRefMoreWrap = e.target.closest(".report-ref-more-wrap");
       const reportRefMore = e.target.closest(".report-ref-more[data-action='toggle-ref-popover']");
       const reportRef = e.target.closest(".report-ref[data-opinion-anchor]");
       if (!reportRefMoreWrap) closeReportRefPopovers();
+      if (dismissButton) {
+        dismissWatchTooltip();
+        return;
+      }
       if (detailFilter) {
         activeDetailStance = detailFilter.dataset.detailFilterStance || "";
         analytics.send("detail_stance_filter_click", {
@@ -3889,6 +4770,10 @@
       }
       if (shareButton) {
         shareCurrentResult();
+        return;
+      }
+      if (watchButton) {
+        toggleWatchCurrentResult();
         return;
       }
       if (reportRefMore) {
@@ -3945,15 +4830,12 @@
         .find(item => item.dataset.stance === count.dataset.stance);
       if (card) card.scrollIntoView({ behavior:"smooth", block:"start" });
     });
-    showUpdatePopup();
     analytics.send("page_view");
     analytics.send("session_start");
     const initialQuery = fillQueryFromUrl();
+    renderWatchPanel();
     renderRanking("kr");
     loadRanking();
-    setInterval(() => {
-      if (!marketPanel.classList.contains("hide")) loadRanking();
-    }, 30000);
     loadStatus();
     if (initialQuery) search(initialQuery);
   </script>
