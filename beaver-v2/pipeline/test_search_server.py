@@ -1,7 +1,9 @@
 import json
 import re
+import tempfile
 import unittest
 import xml.etree.ElementTree as ET
+from pathlib import Path
 from unittest import mock
 
 import search_server
@@ -12,6 +14,11 @@ class SearchServerJobTest(unittest.TestCase):
     def tearDown(self):
         with search_server.JOBS_LOCK:
             search_server.JOBS.clear()
+        with search_server.SEARCH_RESULT_CACHE_LOCK:
+            search_server.SEARCH_RESULT_CACHE.clear()
+        with search_server.WATCHLIST_REFRESH_LOCK:
+            search_server.WATCHLIST_REFRESH_RATE_LIMIT.clear()
+            search_server.WATCHLIST_REFRESH_RESPONSE_CACHE.clear()
 
     def test_fallback_finishing_first_does_not_complete_primary_job(self):
         video = {
@@ -65,6 +72,234 @@ class SearchServerJobTest(unittest.TestCase):
         self.assertFalse(snapshot["running"])
         self.assertEqual(snapshot["processedVideos"], 1)
         self.assertEqual(len(snapshot["opinions"]), 1)
+
+    def test_empty_primary_job_attaches_null_report_before_cache(self):
+        job_id = "job-empty"
+        result = stock_search.base_search_result("없는종목", [], {
+            "mentionedVideoCount": 0,
+            "candidateYoutuberCount": 0,
+            "shownYoutuberCount": 0,
+        })
+        result.update({
+            "jobId": job_id,
+            "done": False,
+            "running": True,
+            "fallbackRunning": False,
+            "primaryDone": False,
+            "currentChannel": "",
+            "currentStatus": "검색을 시작했어요.",
+        })
+        with search_server.JOBS_LOCK:
+            search_server.JOBS[job_id] = {
+                "startedAt": 0,
+                "result": result,
+                "videoIds": set(),
+            }
+
+        with mock.patch("stock_search.summary_report_for", return_value=None) as summary_report, \
+                mock.patch("search_server._write_search_result_cache") as write_cache:
+            search_server._run_search_job(job_id, "없는종목", [], finalize=True)
+
+        snapshot = search_server._snapshot(job_id)
+        summary_report.assert_called_once()
+        self.assertIn("report", snapshot)
+        self.assertIsNone(snapshot["report"])
+        write_cache.assert_called_once()
+
+    def test_completed_search_result_is_returned_from_cache(self):
+        stock = {"name": "삼성전자", "code": "005930", "market": "KOSPI", "aliases": ["삼전"]}
+        video = {
+            "videoId": "v1",
+            "channel": "테스트채널",
+            "title": "삼성전자 실적 전망",
+            "publishedAt": "2026-07-04T10:00:00+09:00",
+            "views": 1234,
+            "url": "https://www.youtube.com/watch?v=v1",
+        }
+        payload = stock_search.base_search_result("삼성전자", [video], {
+            "mentionedVideoCount": 1,
+            "candidateYoutuberCount": 1,
+            "shownYoutuberCount": 1,
+        })
+        payload.update({
+            "jobId": "job-first",
+            "done": True,
+            "running": False,
+            "fallbackRunning": False,
+            "primaryDone": True,
+            "currentChannel": "",
+            "currentStatus": "분석이 끝났어요.",
+        })
+        stock_search.add_opinion(payload, {
+            "channel": "테스트채널",
+            "title": "삼성전자 실적 전망",
+            "publishedAt": "2026-07-04T10:00:00+09:00",
+            "views": 1234,
+            "url": "https://www.youtube.com/watch?v=v1",
+            "stance": "긍정",
+            "summary": "삼성전자 실적 개선을 긍정적으로 봅니다.",
+            "evidence": "실적 전망을 근거로 들었습니다.",
+            "reportable": True,
+        })
+        index = {
+            "version": stock_search._SEARCH_INDEX_VERSION,
+            "updatedAt": payload["indexUpdatedAt"],
+            "videos": [video],
+        }
+
+        with tempfile.TemporaryDirectory() as tmpdir, \
+                mock.patch.object(search_server, "SEARCH_RESULT_CACHE_DIR", Path(tmpdir)), \
+                mock.patch("stock_search.stock_master", return_value=[stock]), \
+                mock.patch("stock_search.load_index", return_value=index):
+            search_server._write_search_result_cache("삼성전자", payload)
+            with search_server.SEARCH_RESULT_CACHE_LOCK:
+                search_server.SEARCH_RESULT_CACHE.clear()
+
+            with mock.patch("stock_search.find_videos_with_stats") as find_videos:
+                cached = search_server.start_search_job("삼성전자")
+
+        find_videos.assert_not_called()
+        self.assertTrue(cached["done"])
+        self.assertFalse(cached["running"])
+        self.assertTrue(cached["searchCacheHit"])
+        self.assertTrue(cached["jobId"].startswith("cache-"))
+        self.assertEqual(cached["opinions"][0]["summary"], "삼성전자 실적 개선을 긍정적으로 봅니다.")
+
+    def test_popular_search_prewarm_interleaves_markets(self):
+        payload = {
+            "markets": {
+                "kr": {"rows": [
+                    {"rank": 1, "query": "삼성전자"},
+                    {"rank": 2, "query": "SK하이닉스"},
+                    {"rank": 3, "query": "현대차"},
+                ]},
+                "us": {"rows": [
+                    {"rank": 1, "query": "엔비디아"},
+                    {"rank": 2, "query": "테슬라"},
+                ]},
+            }
+        }
+
+        queries = search_server._popular_search_prewarm_queries(payload, 5)
+
+        self.assertEqual(queries, ["삼성전자", "엔비디아", "SK하이닉스", "테슬라", "현대차"])
+
+    def test_popular_search_prewarm_skips_fallback_needed_queries(self):
+        video = {
+            "videoId": "v1",
+            "channel": "테스트채널",
+            "title": "삼성전자 실적 전망",
+            "publishedAt": "2026-07-04T10:00:00+09:00",
+            "views": 1234,
+            "url": "https://www.youtube.com/watch?v=v1",
+        }
+        payload = {
+            "markets": {
+                "kr": {"rows": [{"rank": 1, "query": "삼성전자"}]},
+                "us": {"rows": [{"rank": 1, "query": "엔비디아"}]},
+            }
+        }
+        result = stock_search.base_search_result("삼성전자", [video], {
+            "mentionedVideoCount": 1,
+            "candidateYoutuberCount": 1,
+            "shownYoutuberCount": 1,
+        })
+        result["done"] = True
+
+        with mock.patch("stock_search.load_index", return_value={
+                "version": stock_search._SEARCH_INDEX_VERSION,
+                "updatedAt": "2026-07-05T09:00:00+09:00",
+                "videos": [video],
+        }), \
+                mock.patch("search_server._read_search_result_cache", return_value=None), \
+                mock.patch("stock_search.find_videos_with_stats", side_effect=[([video], {}), ([], {})]), \
+                mock.patch("stock_search.needs_search_fallback", side_effect=[False, True]), \
+                mock.patch("stock_search.search_stock", return_value=result) as search_stock, \
+                mock.patch("search_server._write_search_result_cache") as write_cache, \
+                mock.patch.object(search_server.config, "SEARCH_RESULT_PREWARM_DELAY_SECONDS", 0):
+            stats = search_server.warm_popular_search_result_cache(payload=payload, limit=2)
+
+        search_stock.assert_called_once_with("삼성전자", include_fallback=False)
+        write_cache.assert_called_once_with("삼성전자", result)
+        self.assertEqual(stats["requested"], 2)
+        self.assertEqual(stats["cached"], 1)
+        self.assertEqual(stats["skipped"], 1)
+        self.assertEqual(stats["errors"], 0)
+
+    def test_watchlist_refresh_skips_fresh_items(self):
+        with mock.patch("stock_search.load_index", return_value={
+                "version": stock_search._SEARCH_INDEX_VERSION,
+                "updatedAt": "2026-07-05T09:00:00+09:00",
+                "videos": [{"videoId": "v1"}],
+        }), mock.patch("stock_search.search_stock") as search_stock:
+            payload = search_server.refresh_watchlist_items([{
+                "key": "005930",
+                "query": "삼성전자",
+                "indexUpdatedAt": "2026-07-05T09:00:00+09:00",
+            }])
+
+        search_stock.assert_not_called()
+        self.assertEqual(payload["results"][0]["status"], "fresh")
+        self.assertEqual(payload["results"][0]["indexUpdatedAt"], "2026-07-05T09:00:00+09:00")
+
+    def test_watchlist_refresh_uses_fast_search_without_fallback(self):
+        video = {
+            "videoId": "v1",
+            "channel": "테스트채널",
+            "title": "삼성전자 실적 전망",
+            "publishedAt": "2026-07-04T10:00:00+09:00",
+            "views": 1234,
+            "url": "https://www.youtube.com/watch?v=v1",
+        }
+        result = stock_search.base_search_result("삼성전자", [video], {
+            "mentionedVideoCount": 1,
+            "candidateYoutuberCount": 1,
+            "shownYoutuberCount": 1,
+        })
+        result["done"] = True
+
+        with mock.patch("stock_search.load_index", return_value={
+                "version": stock_search._SEARCH_INDEX_VERSION,
+                "updatedAt": "2026-07-05T09:00:00+09:00",
+                "videos": [video],
+        }), \
+                mock.patch("search_server._read_search_result_cache", return_value=None), \
+                mock.patch("stock_search.search_stock", return_value=result) as search_stock, \
+                mock.patch("search_server._write_search_result_cache") as write_cache:
+            payload = search_server.refresh_watchlist_items([{
+                "key": "005930",
+                "query": "삼성전자",
+                "indexUpdatedAt": "old-index",
+            }])
+
+        search_stock.assert_called_once_with("삼성전자", include_fallback=False)
+        write_cache.assert_called_once_with("삼성전자", result)
+        self.assertEqual(payload["results"][0]["status"], "done")
+        self.assertEqual(payload["results"][0]["data"]["query"], "삼성전자")
+
+    def test_watchlist_refresh_rate_limit_blocks_excess_requests(self):
+        with mock.patch.object(search_server.config, "WATCHLIST_REFRESH_RATE_LIMIT_WINDOW_SECONDS", 60), \
+                mock.patch.object(search_server.config, "WATCHLIST_REFRESH_RATE_LIMIT_MAX", 2), \
+                mock.patch("search_server.time.time", return_value=1000):
+            self.assertEqual(search_server._allow_watchlist_refresh("1.2.3.4"), (True, 0))
+            self.assertEqual(search_server._allow_watchlist_refresh("1.2.3.4"), (True, 0))
+            allowed, retry_after = search_server._allow_watchlist_refresh("1.2.3.4")
+
+        self.assertFalse(allowed)
+        self.assertEqual(retry_after, 61)
+
+    def test_watchlist_refresh_response_cache_reuses_identical_payload(self):
+        payload = {"indexUpdatedAt": "idx", "results": [{"key": "005930", "status": "fresh"}]}
+        items = [{"key": "005930", "query": "삼성전자", "indexUpdatedAt": "idx"}]
+        signature = search_server._watchlist_refresh_signature(items, "idx")
+
+        with mock.patch.object(search_server.config, "WATCHLIST_REFRESH_RESPONSE_CACHE_SECONDS", 30), \
+                mock.patch("search_server.time.time", return_value=1000):
+            search_server._remember_watchlist_response("1.2.3.4", signature, payload)
+            cached = search_server._watchlist_cached_response("1.2.3.4", signature)
+
+        self.assertTrue(cached["watchlistRefreshCacheHit"])
+        self.assertEqual(cached["results"][0]["key"], "005930")
 
 
 class SearchServerSeoTest(unittest.TestCase):

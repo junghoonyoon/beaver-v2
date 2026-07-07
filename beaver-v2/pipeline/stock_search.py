@@ -16,6 +16,7 @@ import us_listed
 
 KST = ZoneInfo("Asia/Seoul")
 _STOCK_CACHE_VERSION = 6
+_REPORT_CACHE_VERSION = 1
 _SEARCH_INDEX_VERSION = 3
 _POPULAR_STOCKS_CACHE_VERSION = 7
 _POPULAR_STOCKS_REMOTE_PATH = "popular_stocks.json"
@@ -1663,6 +1664,7 @@ def opinion_from_result(video, result, cached, query=""):
     quality = _infer_opinion_quality(result, video, query=query)
     fact_check_warning = _fact_check_warning(result)
     return {
+        "videoId": video.get("videoId", ""),
         "channel": video["channel"],
         "channelId": video.get("channelId", ""),
         "channelType": video.get("channelType") or "",
@@ -1776,6 +1778,100 @@ def sort_opinions(search_result):
         opinion.pop("_order", None)
 
 
+def report_opinions(search_result):
+    """요약 리포트의 근거가 되는 판단 가능한 의견만 고른다."""
+    rows = []
+    for opinion in search_result.get("opinions") or []:
+        if opinion.get("stance") == "단순언급":
+            continue
+        if opinion.get("reportable") is False:
+            continue
+        if not str(opinion.get("videoId") or "").strip():
+            continue
+        if not str(opinion.get("summary") or "").strip():
+            continue
+        rows.append(opinion)
+    return rows
+
+
+def _report_digest(query, opinions):
+    identity = stock_identity(query)
+    raw = json.dumps({
+        "version": _REPORT_CACHE_VERSION,
+        "stock": identity.get("name") or query.strip(),
+        "code": identity.get("code", ""),
+        "opinions": [
+            {
+                "videoId": op.get("videoId") or "",
+                "stance": op.get("stance") or "",
+                "summary": op.get("summary") or "",
+                "evidence": op.get("evidence") or "",
+            }
+            for op in opinions
+        ],
+    }, ensure_ascii=False, sort_keys=True)
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def _report_cache_path(digest):
+    return config.STOCK_REPORT_CACHE_DIR / f"{digest}.json"
+
+
+def _read_cached_report(digest):
+    if config.FORCE_ANALYSIS_REFRESH:
+        return None
+    path = _report_cache_path(digest)
+    if not path.exists():
+        return None
+    try:
+        cached = json.loads(path.read_text(encoding="utf-8"))
+        if cached.get("version") == _REPORT_CACHE_VERSION and cached.get("digest") == digest:
+            return cached.get("data") or None
+    except (OSError, ValueError):
+        pass
+    return None
+
+
+def summary_report_for(search_result, min_opinions=2):
+    """검색 결과의 의견 묶음 -> 쟁점·체크포인트 요약 리포트 (캐시 우선)."""
+    import analyze
+
+    opinions = report_opinions(search_result)
+    if len(opinions) < min_opinions:
+        return None
+    query = search_result.get("rawQuery") or search_result.get("query") or ""
+    digest = _report_digest(query, opinions)
+    cached = _read_cached_report(digest)
+    if cached:
+        return cached
+
+    stock_name = search_result.get("query") or query
+    data = analyze.analyze_stock_report(stock_name, opinions)
+    data["generatedAt"] = datetime.datetime.now(KST).isoformat()
+    config.STOCK_REPORT_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    path = _report_cache_path(digest)
+    tmp = path.with_suffix(f".{time.monotonic_ns()}.tmp")
+    tmp.write_text(json.dumps({
+        "version": _REPORT_CACHE_VERSION,
+        "digest": digest,
+        "provider": analyze.LAST_GENERATION_PROVIDER or "",
+        "data": data,
+    }, ensure_ascii=False), encoding="utf-8")
+    tmp.replace(path)
+    remote_cache.upload_file(f"stock_reports/{path.name}", path)
+    return data
+
+
+def attach_summary_report(search_result):
+    """요약 리포트를 만들어 붙인다. 실패해도 검색 결과는 그대로 둔다(프론트 fallback)."""
+    try:
+        search_result["report"] = summary_report_for(search_result)
+    except Exception as exc:
+        search_result["report"] = None
+        print(f"⚠️ 요약 리포트 생성 실패: {str(exc)[:200]}")
+    return search_result
+
+
 def search_stock(query, include_fallback=True):
     videos, stats = find_videos_with_stats(query, include_fallback=include_fallback)
     search_result = base_search_result(query, videos, stats)
@@ -1800,5 +1896,6 @@ def search_stock(query, include_fallback=True):
         add_opinion(search_result, opinion_from_analysis(query, video, result, cached))
         search_result["processedVideos"] += 1
     sort_opinions(search_result)
+    attach_summary_report(search_result)
     search_result["done"] = True
     return search_result

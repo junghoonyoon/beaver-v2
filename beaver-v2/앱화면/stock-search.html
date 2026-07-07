@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="naver-site-verification" content="ddef5be53c5a428e2046ea2215b0eeb2c0ec7e67">
   <meta name="robots" content="index,follow,max-image-preview:large">
-  <meta name="description" content="최근 2주 유튜버들의 의견을 모아 긍정·관망·주의로 나누고, 현재 분위기 리포트까지 30초 만에 볼 수 있어요.">
+  <meta name="description" content="최근 2주 유튜버들의 의견을 모아 긍정·관망·주의로 나누고, 현재 분위기 리포트까지 30초 만에 확인">
   <meta name="application-name" content="지금사도될까요?">
   <meta name="theme-color" content="#ffffff">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="지금사도될까요?">
   <meta property="og:title" content="지금사도될까요? | 주식 유튜브 의견 요약 리포트">
-  <meta property="og:description" content="최근 2주 유튜버들의 의견을 모아 긍정·관망·주의로 나누고, 현재 분위기 리포트까지 30초 만에 볼 수 있어요.">
+  <meta property="og:description" content="최근 2주 유튜버들의 의견을 모아 긍정·관망·주의로 나누고, 현재 분위기 리포트까지 30초 만에 확인">
   <meta property="og:url" content="https://stockzip.kr/">
   <link rel="canonical" href="https://stockzip.kr/">
   <meta property="og:image" content="https://stockzip.kr/assets/og-image.png">
@@ -22,7 +22,7 @@
   <meta property="og:image:alt" content="지금사도될까요? - 유튜브 분위기 요약리포트">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="지금사도될까요? | 주식 유튜브 의견 요약 리포트">
-  <meta name="twitter:description" content="최근 2주 유튜버들의 의견을 모아 긍정·관망·주의로 나누고, 현재 분위기 리포트까지 30초 만에 볼 수 있어요.">
+  <meta name="twitter:description" content="최근 2주 유튜버들의 의견을 모아 긍정·관망·주의로 나누고, 현재 분위기 리포트까지 30초 만에 확인">
   <meta name="twitter:image" content="https://stockzip.kr/assets/og-image.png">
   <meta name="twitter:image:alt" content="지금사도될까요? - 유튜브 분위기 요약리포트">
   <title>지금사도될까요? | 주식 유튜브 의견 요약 리포트</title>
@@ -44,7 +44,7 @@
         "name": "지금사도될까요?",
         "alternateName": ["지금사도될까요", "지금 사도 될까요", "stockzip", "stockzip.kr"],
         "url": "https://stockzip.kr/",
-        "description": "최근 2주 유튜버들의 의견을 모아 긍정·관망·주의로 나누고, 현재 분위기 리포트까지 30초 만에 볼 수 있어요.",
+        "description": "최근 2주 유튜버들의 의견을 모아 긍정·관망·주의로 나누고, 현재 분위기 리포트까지 30초 만에 확인",
         "inLanguage": "ko-KR",
         "publisher": {
           "@id": "https://stockzip.kr/#organization"
@@ -286,8 +286,18 @@
     }
     .watch-panel.show { display:block }
     body.result-mode .watch-panel { display:none }
-    .watch-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px }
+    .watch-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:12px }
+    .watch-heading { display:grid; gap:4px; min-width:0 }
     .watch-title { color:var(--ink); font-size:16px; font-weight:850; line-height:1.25 }
+    .watch-note { color:#858d99; font-size:13px; font-weight:400; line-height:1.45; word-break:keep-all }
+    .watch-refresh {
+      appearance:none; display:inline-flex; align-items:center; gap:4px; border:0; padding:0;
+      background:transparent; color:#667085; text-decoration:underline; text-underline-offset:3px;
+      font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap;
+    }
+    .watch-refresh-icon { font-size:13px; line-height:1 }
+    .watch-refresh:hover { color:#30343b }
+    .watch-refresh:disabled { color:#b8bec8; cursor:wait }
     .watch-list { display:grid; gap:0 }
     .watch-item {
       display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:8px;
@@ -323,6 +333,8 @@
       content:""; width:8px; height:8px; border-radius:999px; background:#9aa0a9;
       animation:watchPulse 1s ease-in-out infinite;
     }
+    .watch-queued-badge { color:#6e7480; background:#f3f4f6 }
+    .watch-failed-badge { color:#b42318; background:#fff1f0 }
     .watch-meta { margin-top:3px; color:#858d99; font-size:13px; font-weight:400; line-height:1.45 }
     .watch-home-remove {
       appearance:none; justify-self:end; width:28px; height:28px; border:0; border-radius:999px;
@@ -522,6 +534,17 @@
     .report-text { margin:0; color:#242832; font-size:15px; font-weight:430; line-height:1.7; word-break:keep-all }
     .report-row.muted .report-label,
     .report-row.muted .report-text { color:#9aa2af }
+    .checkpoint-list { display:grid; gap:14px; margin:0; padding:0; list-style:none }
+    .checkpoint-item { display:grid; gap:4px; min-width:0 }
+    .checkpoint-head { display:flex; flex-wrap:wrap; align-items:center; gap:8px }
+    .checkpoint-head::before { content:"☐"; color:#8a93a1; font-size:14px; line-height:1.4 }
+    .checkpoint-event { color:#111318; font-size:15px; font-weight:680; line-height:1.5; word-break:keep-all }
+    .checkpoint-when {
+      display:inline-flex; align-items:center; padding:2px 8px; border-radius:999px;
+      background:#eef2f8; color:#4b5563; font-size:11.5px; font-weight:640; line-height:1.4;
+    }
+    .checkpoint-text { margin:0; color:#242832; font-size:14.5px; font-weight:430; line-height:1.65; word-break:keep-all }
+    .checkpoint-interpret { margin:0; color:#747b87; font-size:13px; font-weight:430; line-height:1.6; word-break:keep-all }
     .report-body { min-width:0 }
     .report-refs { display:flex; flex-wrap:wrap; align-items:center; gap:5px; margin-top:5px }
     .report-refs::before { content:"↳"; color:#b3bbc8; font-size:11px; font-weight:600; line-height:1.4 }
@@ -856,7 +879,7 @@
     </button>
     <div class="hero-copy" id="heroCopy">
       <h1>이 주식 살까 말까 고민될 때,<br>유튜버들은 어떻게 생각할까?</h1>
-      <p class="lead">최근 2주 유튜버들의 의견을 모아 긍정·관망·주의로 나누고,<br>현재 분위기 리포트까지 <span class="lead-emphasis">30초 만에</span> 볼 수 있어요.</p>
+      <p class="lead">최근 2주 유튜버들의 의견을 모아 긍정·관망·주의로 나누고,<br>현재 분위기 리포트까지 <span class="lead-emphasis">30초 만에</span> 확인</p>
     </div>
 
     <div class="result-sticky-bar">
@@ -873,7 +896,13 @@
     </div>
     <section class="watch-panel" id="watchPanel" aria-label="내 관심종목">
       <div class="watch-head">
-        <div class="watch-title">내 관심종목</div>
+        <div class="watch-heading">
+          <div class="watch-title">내 관심종목</div>
+          <div class="watch-note">베타 기간에는 관심종목이 이 브라우저에만 저장돼요. 같은 기기와 브라우저에서 이용해 주세요.</div>
+        </div>
+        <button class="watch-refresh" id="watchRefreshButton" type="button">
+          <span class="watch-refresh-label">새로고침</span><span class="watch-refresh-icon" aria-hidden="true">↻</span>
+        </button>
       </div>
       <div class="watch-list" id="watchList"></div>
     </section>
@@ -911,9 +940,14 @@
     const loading = $("loading"), loadingTitle = $("loadingTitle"), loadingText = $("loadingText");
     const result = $("result"), statusEl = $("status"), suggestionsEl = $("suggestions"), resultTabs = $("resultTabs");
     const marketPanel = $("marketPanel"), rankListEl = $("rankList"), rankRefreshButton = $("rankRefreshButton"), rankMoreButton = $("rankMoreButton");
-    const watchPanel = $("watchPanel"), watchListEl = $("watchList");
+    const watchPanel = $("watchPanel"), watchListEl = $("watchList"), watchRefreshButton = $("watchRefreshButton");
     const RANK_INITIAL_LIMIT = 10, RANK_STEP = 10, RANK_MAX_LIMIT = 30;
     const WATCH_STORAGE_KEY = "beaver.watchlist.signals.v1";
+    const WATCH_MAX_ITEMS = 10;
+    const WATCH_REFRESH_CONCURRENCY = 2;
+    const WATCH_REFRESH_POLL_INTERVAL_MS = 900;
+    const WATCH_REFRESH_MAX_POLLS = 240;
+    const WATCH_REFRESH_COOLDOWN_MS = 30000;
     const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const stanceClass = stance => ({긍정:"pos",신중:"neu",부정:"neg",단순언급:"mention"}[stance] || "mention");
     const stanceShortLabel = stance => ({긍정:"긍정적",신중:"관망",부정:"주의",단순언급:"정보성"}[stance] || stance);
@@ -2736,6 +2770,13 @@
     let toastTimer = null;
     const shareButtonDefaultLabel = "살까 말까 고민하는 친구에게 보내기";
     const watchBackgroundJobs = new Map();
+    const watchRefreshStatuses = new Map();
+    let watchRefreshRunning = false;
+    let watchRefreshToken = 0;
+    let watchRefreshCompleted = 0;
+    let watchRefreshTotal = 0;
+    let watchRefreshCooldownUntil = 0;
+    let watchRefreshCooldownTimer = null;
     const trackedSearchResults = new Set();
     const trackedDetailViews = new Set();
     const trackedMarketMoodViews = new Set();
@@ -2983,12 +3024,31 @@
       return `긍정적 ${Number(counts.긍정 || 0)} · 관망 ${Number(counts.신중 || 0)} · 주의 ${Number(counts.부정 || 0)}`;
     }
 
+    function summaryReport(data) {
+      const report = data?.report;
+      if (!report || typeof report !== "object") return null;
+      const headline = String(report.headline || "").trim();
+      const summary = String(report.summary || "").trim();
+      if (!headline || !summary) return null;
+      const checkpoints = Array.isArray(report.checkpoints)
+        ? report.checkpoints.filter(item => item && String(item.event || "").trim() && String(item.check || "").trim())
+        : [];
+      if (!checkpoints.length) return null;
+      const bullText = String(report.bullCase?.text || "").trim();
+      const bearText = String(report.bearCase?.text || "").trim();
+      if (!bullText && !bearText) return null;
+      return { ...report, checkpoints };
+    }
+
     function verdictHeadline(data, mood) {
       const currentMood = mood || data.marketMood || marketMoodFromCounts(data.counts || {});
-      return explainMarketTerms(evidenceBackedHeadline(data, currentMood) || plainDecisionTitle(currentMood));
+      const reportHeadline = String(summaryReport(data)?.headline || "").trim();
+      return explainMarketTerms(reportHeadline || evidenceBackedHeadline(data, currentMood) || plainDecisionTitle(currentMood));
     }
 
     function verdictSummary(data, mood) {
+      const reportSummary = String(summaryReport(data)?.summary || "").trim();
+      if (reportSummary) return explainMarketTerms(reportSummary);
       return explainMarketTerms(richMoodSummary(data, mood || data.marketMood || marketMoodFromCounts(data.counts || {})));
     }
 
@@ -3043,7 +3103,58 @@
       return clipText(primary.check, 45);
     }
 
+    function reportRefsFor(data, videoIds = [], stances = null) {
+      const opinions = reportableOpinions(data.opinions || []);
+      const ids = (videoIds || []).map(String).filter(Boolean);
+      if (ids.length) {
+        return refsFromOpinions(opinions.filter(opinion => ids.includes(String(opinion.videoId || ""))), 2);
+      }
+      const pool = stances ? opinions.filter(opinion => stances.includes(opinion.stance)) : [];
+      return refsFromOpinions(pool, 2);
+    }
+    function checkpointFlatText(checkpoints = []) {
+      return checkpoints
+        .map(item => `${item.event}${item.when ? ` (${item.when})` : ""} — ${item.check}`)
+        .join(" / ");
+    }
+    function reportRowsFromSummary(data, report) {
+      const counts = data.counts || {};
+      const positiveCount = Number(counts.긍정 || 0);
+      const cautionCount = Number(counts.신중 || 0) + Number(counts.부정 || 0);
+      const rows = [];
+      const consensusText = String(report.consensus?.text || "").trim();
+      const bullText = String(report.bullCase?.text || "").trim();
+      const bearText = String(report.bearCase?.text || "").trim();
+      const turningText = String(report.turningPoint?.text || "").trim();
+      if (consensusText) {
+        rows.push({ label:"양쪽이 동의하는 것", text:consensusText, refs:reportRefsFor(data, report.consensus?.videoIds) });
+      }
+      rows.push(bullText
+        ? { label:reportRowLabel("좋게 보는 쪽", positiveCount), text:bullText, refs:reportRefsFor(data, report.bullCase?.videoIds, ["긍정"]) }
+        : { label:"좋게 보는 쪽", text:"뚜렷한 긍정 의견은 아직 없어요.", refs:[], tone:"muted" });
+      rows.push(bearText
+        ? { label:reportRowLabel("관망·주의하는 쪽", cautionCount), text:bearText, refs:reportRefsFor(data, report.bearCase?.videoIds, ["신중", "부정"]) }
+        : { label:"관망·주의하는 쪽", text:"뚜렷한 신중·주의 의견은 아직 없어요.", refs:[], tone:"muted" });
+      if (turningText) {
+        rows.push({ label:"긍정으로 기우는 조건", text:turningText, refs:reportRefsFor(data, report.turningPoint?.videoIds, ["신중", "부정"]) });
+      }
+      rows.push({
+        label:"사기 전 체크포인트",
+        text:checkpointFlatText(report.checkpoints),
+        refs:[],
+        checkpoints:report.checkpoints.map(item => ({
+          event:String(item.event || "").trim(),
+          when:String(item.when || "").trim(),
+          check:String(item.check || "").trim(),
+          interpretation:String(item.interpretation || "").trim(),
+          refs:reportRefsFor(data, item.videoIds),
+        })),
+      });
+      return rows;
+    }
     function verdictReportRows(data, mood) {
+      const report = summaryReport(data);
+      if (report) return reportRowsFromSummary(data, report);
       return plainBriefRows(data, mood);
     }
     function normalizeReportRow(row) {
@@ -3053,6 +3164,7 @@
         text:explainMarketTerms(row?.text || ""),
         refs:Array.isArray(row?.refs) ? row.refs : [],
         tone:row?.tone || "",
+        checkpoints:Array.isArray(row?.checkpoints) ? row.checkpoints : null,
       };
     }
     function reportRefsHtml(refs = []) {
@@ -3070,6 +3182,21 @@
       </div>`;
     }
 
+    function checkpointListHtml(checkpoints = []) {
+      return `
+        <ul class="checkpoint-list" aria-label="사기 전 체크포인트 목록">
+          ${checkpoints.map(item => `
+            <li class="checkpoint-item">
+              <div class="checkpoint-head">
+                <span class="checkpoint-event">${esc(item.event)}</span>
+                ${item.when ? `<span class="checkpoint-when">${esc(item.when)}</span>` : ""}
+              </div>
+              <p class="checkpoint-text">${esc(explainMarketTerms(item.check))}</p>
+              ${item.interpretation ? `<p class="checkpoint-interpret">${esc(explainMarketTerms(item.interpretation))}</p>` : ""}
+              ${reportRefsHtml(item.refs || [])}
+            </li>`).join("")}
+        </ul>`;
+    }
     function verdictReportHtml(data, mood) {
       return `
         <div class="verdict-report" aria-label="판정 리포트">
@@ -3077,8 +3204,9 @@
             <div class="report-row ${esc(row.tone)} ${row.label.includes("체크포인트") ? "checkpoint-row" : ""}">
               <span class="report-label">${esc(row.label)}</span>
               <div class="report-body">
+                ${row.checkpoints?.length ? checkpointListHtml(row.checkpoints) : `
                 <p class="report-text">${esc(row.text)}</p>
-                ${reportRefsHtml(row.refs)}
+                ${reportRefsHtml(row.refs)}`}
               </div>
             </div>`).join("")}
         </div>`;
@@ -3189,7 +3317,7 @@
       try {
         const parsed = JSON.parse(localStorage.getItem(WATCH_STORAGE_KEY) || "{}");
         return {
-          items:Array.isArray(parsed.items) ? parsed.items : [],
+          items:Array.isArray(parsed.items) ? parsed.items.slice(0, WATCH_MAX_ITEMS) : [],
           signals:Array.isArray(parsed.signals) ? parsed.signals : [],
           watchInteracted:Boolean(parsed.watchInteracted),
           watchTooltipDismissed:Boolean(parsed.watchTooltipDismissed),
@@ -3202,7 +3330,7 @@
     function writeWatchState(state) {
       try {
         localStorage.setItem(WATCH_STORAGE_KEY, JSON.stringify({
-          items:(state.items || []).slice(0, 20),
+          items:(state.items || []).slice(0, WATCH_MAX_ITEMS),
           signals:(state.signals || []).slice(0, 40),
           watchInteracted:Boolean(state.watchInteracted),
           watchTooltipDismissed:Boolean(state.watchTooltipDismissed),
@@ -3265,6 +3393,7 @@
         checkpoint:checkpointText,
         distribution,
         signature,
+        indexUpdatedAt:data.indexUpdatedAt || "",
         updatedAt:new Date().toISOString(),
       };
     }
@@ -3297,7 +3426,7 @@
       const items = state.items || [];
       const existingKey = existing?.key || item.key;
       if (!existing) {
-        state.items = [item, ...items.filter(row => row.key !== item.key)].slice(0, 20);
+        state.items = [item, ...items.filter(row => row.key !== item.key)].slice(0, WATCH_MAX_ITEMS);
         return;
       }
       let replaced = false;
@@ -3309,8 +3438,8 @@
         }
         if (row.key !== item.key) rows.push(row);
         return rows;
-      }, []).slice(0, 20);
-      if (!replaced) state.items = [item, ...state.items].slice(0, 20);
+      }, []).slice(0, WATCH_MAX_ITEMS);
+      if (!replaced) state.items = [item, ...state.items].slice(0, WATCH_MAX_ITEMS);
     }
 
     function isWatchingData(data = activeResultData) {
@@ -3346,6 +3475,7 @@
         checkpoint:snapshot.checkpoint,
         distribution:snapshot.distribution,
         lastSignature:snapshot.signature,
+        indexUpdatedAt:snapshot.indexUpdatedAt,
         pending:false,
         updatedAt:snapshot.updatedAt,
       };
@@ -3384,6 +3514,7 @@
         label,
         code:data.stockCode || "",
         jobId:data.jobId || existing?.jobId || "",
+        indexUpdatedAt:data.indexUpdatedAt || existing?.indexUpdatedAt || "",
         pending:true,
         updatedAt:existing?.updatedAt || now,
       };
@@ -3421,6 +3552,7 @@
         status:"insufficient",
         pending:false,
         jobId:"",
+        indexUpdatedAt:data.indexUpdatedAt || existing?.indexUpdatedAt || "",
         updatedAt:now,
       };
       if (!existing) item.createdAt = now;
@@ -3470,6 +3602,187 @@
       pollWatchInBackground(data.jobId, key);
     }
 
+    function syncWatchRefreshData(data = {}, currentKey = "") {
+      syncWatchItemFromSearchData(data);
+      const currentItem = watchItemForData(readWatchState(), data) || watchItemForKey(readWatchState(), currentKey);
+      return moveWatchRefreshState(currentKey, currentItem?.key || currentKey);
+    }
+
+    function markWatchItemFresh(key, indexUpdatedAt = "") {
+      const state = readWatchState();
+      const existing = watchItemForKey(state, key);
+      if (!existing) return "";
+      const item = {
+        ...existing,
+        pending:false,
+        jobId:"",
+        indexUpdatedAt:indexUpdatedAt || existing.indexUpdatedAt || "",
+        updatedAt:new Date().toISOString(),
+      };
+      putWatchItem(state, item, existing);
+      writeWatchState(state);
+      renderWatchPanel();
+      return item.key;
+    }
+
+    function watchRefreshPayloadItems(items = []) {
+      return items.map(item => ({
+        key:item.key || "",
+        query:item.query || item.label || item.code || "",
+        label:item.label || "",
+        code:item.code || "",
+        pending:Boolean(item.pending),
+        indexUpdatedAt:item.indexUpdatedAt || "",
+      }));
+    }
+
+    async function refreshWatchItemsBatch(items = [], token) {
+      const response = await fetch("/api/watchlist/refresh", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body:JSON.stringify({ items:watchRefreshPayloadItems(items) }),
+      });
+      let payload = {};
+      try {
+        payload = await response.json();
+      } catch {
+        payload = {};
+      }
+      if (!response.ok) {
+        if (response.status === 429 || payload.retryAfter) {
+          startWatchRefreshCooldown(Number(payload.retryAfter || 30) * 1000);
+        }
+        const message = response.status === 404
+          ? "관심종목 새로고침 서버가 아직 반영되지 않았어요. 종목검색실행.command를 다시 실행해 주세요."
+          : (payload.error || "관심종목 업데이트에 실패했어요.");
+        throw new Error(message);
+      }
+      const results = Array.isArray(payload.results) ? payload.results : [];
+      let successCount = 0;
+      let failureCount = 0;
+      results.forEach(row => {
+        if (token !== watchRefreshToken) return;
+        const originalKey = row.key || "";
+        let key = originalKey;
+        if (!watchItemForKey(readWatchState(), key)) return;
+        if (row.status === "fresh") {
+          key = markWatchItemFresh(key, row.indexUpdatedAt || payload.indexUpdatedAt || "");
+          setWatchRefreshState(key, "done");
+          successCount++;
+        } else if ((row.status === "cached" || row.status === "done") && row.data) {
+          key = syncWatchRefreshData(row.data, key);
+          setWatchRefreshState(key, "done");
+          successCount++;
+        } else {
+          setWatchRefreshState(key, "failed", row.error || "업데이트에 실패했어요.");
+          failureCount++;
+        }
+        watchRefreshCompleted++;
+        updateWatchRefreshButton();
+        setTimeout(() => {
+          if (watchRefreshStateFor(key)?.status === "done") {
+            watchRefreshStatuses.delete(key);
+            renderWatchPanel();
+          }
+        }, 1500);
+      });
+      return { successCount, failureCount, resultCount:results.length };
+    }
+
+    async function refreshSingleWatchItem(item = {}, token) {
+      let key = item.key;
+      const query = String(item.query || item.label || item.code || "").trim();
+      if (!key || query.length < 2) {
+        setWatchRefreshState(key, "failed", "검색어가 부족해요.");
+        return false;
+      }
+      if (!watchItemForKey(readWatchState(), key)) return true;
+      setWatchRefreshState(key, "running");
+      try {
+        if (isFileMode) throw new Error(serverRequiredMessage);
+        const response = await fetch(`/api/search/start?q=${encodeURIComponent(query)}`);
+        let data = await response.json();
+        if (!response.ok) throw new Error(data.error || "업데이트를 시작하지 못했어요.");
+        if (!data.jobId) throw new Error("업데이트 작업을 시작하지 못했어요.");
+        key = syncWatchRefreshData(data, key);
+        for (let count = 0; token === watchRefreshToken && !data.done && count < WATCH_REFRESH_MAX_POLLS; count++) {
+          await new Promise(resolve => setTimeout(resolve, WATCH_REFRESH_POLL_INTERVAL_MS));
+          if (!watchItemForKey(readWatchState(), key)) return true;
+          const progressResponse = await fetch(`/api/search/progress?id=${encodeURIComponent(data.jobId)}`);
+          data = await progressResponse.json();
+          if (!progressResponse.ok) throw new Error(data.error || "업데이트 진행상황을 읽지 못했어요.");
+          key = syncWatchRefreshData(data, key);
+        }
+        if (!data.done) throw new Error("업데이트가 오래 걸리고 있어요.");
+        key = syncWatchRefreshData(data, key);
+        setWatchRefreshState(key, "done");
+        setTimeout(() => {
+          if (watchRefreshStateFor(key)?.status === "done") {
+            watchRefreshStatuses.delete(key);
+            renderWatchPanel();
+          }
+        }, 1500);
+        return true;
+      } catch (error) {
+        setWatchRefreshState(key, "failed", error.message || "업데이트에 실패했어요.");
+        return false;
+      }
+    }
+
+    async function refreshAllWatchItems() {
+      if (watchRefreshRunning) return;
+      const items = [...(readWatchState().items || [])];
+      if (!items.length) return;
+      if (isFileMode) {
+        showToast(serverRequiredMessage, { position:"top" });
+        return;
+      }
+      const cooldownMs = watchRefreshCooldownRemainingMs();
+      if (cooldownMs > 0) {
+        showToast(`${Math.ceil(cooldownMs / 1000)}초 뒤에 다시 확인할 수 있어요.`, { position:"top" });
+        updateWatchRefreshButton();
+        return;
+      }
+      watchRefreshRunning = true;
+      watchRefreshToken++;
+      watchRefreshCompleted = 0;
+      watchRefreshTotal = items.length;
+      watchRefreshStatuses.clear();
+      items.forEach(item => watchRefreshStatuses.set(item.key, { status:"queued", message:"" }));
+      renderWatchPanel();
+      analytics.send("watch_refresh_all_start", { count:items.length });
+
+      let successCount = 0;
+      let failureCount = 0;
+      let refreshError = "";
+      const token = watchRefreshToken;
+      try {
+        const result = await refreshWatchItemsBatch(items, token);
+        successCount = result.successCount;
+        failureCount = result.failureCount + Math.max(0, items.length - result.resultCount);
+      } catch (error) {
+        refreshError = error.message || "관심종목 업데이트에 실패했어요.";
+        failureCount = items.length;
+        watchRefreshStatuses.clear();
+        watchRefreshCompleted = items.length;
+        updateWatchRefreshButton();
+      }
+
+      if (token !== watchRefreshToken) return;
+      watchRefreshRunning = false;
+      startWatchRefreshCooldown();
+      renderWatchPanel();
+      const message = refreshError || (failureCount
+        ? `${successCount}개 확인, ${failureCount}개는 실패했어요.`
+        : `관심종목 ${successCount}개를 확인했어요.`);
+      showToast(message, { position:"top" });
+      analytics.send("watch_refresh_all_done", {
+        count:items.length,
+        successCount,
+        failureCount,
+      });
+    }
+
     function toggleWatchCurrentResult() {
       if (!activeResultData) return;
       const key = watchKeyForData(activeResultData);
@@ -3487,6 +3800,10 @@
         refreshWatchButtons(activeResultData);
         showToast("관심종목에서 뺐어요.", { position:"top" });
         analytics.send("watch_remove", { query:existing.label || activeSearchQuery });
+        return;
+      }
+      if ((state.items || []).length >= WATCH_MAX_ITEMS) {
+        showToast(`관심종목은 현재 ${WATCH_MAX_ITEMS}개를 초과할 수 없어요.`, { position:"top" });
         return;
       }
       const canSaveSnapshot = activeResultData.done !== false && reportableOpinions(activeResultData.opinions || []).length >= 2;
@@ -3516,6 +3833,7 @@
       state.items = state.items.filter(row => row.key !== key);
       state.signals = state.signals.filter(signal => signal.key !== key);
       watchBackgroundJobs.delete(key);
+      watchRefreshStatuses.delete(key);
       writeWatchState(state);
       renderWatchPanel();
       if (activeResultData && watchComparableValues(activeResultData).includes(compact(key))) refreshWatchButtons(activeResultData);
@@ -3641,6 +3959,58 @@
       return `${Math.floor(hours / 24)}일 전`;
     }
 
+    function watchRefreshStateFor(key) {
+      return watchRefreshStatuses.get(key) || null;
+    }
+
+    function setWatchRefreshState(key, status, message = "") {
+      if (!key) return;
+      watchRefreshStatuses.set(key, { status, message });
+      renderWatchPanel();
+    }
+
+    function moveWatchRefreshState(fromKey, toKey) {
+      if (!fromKey || !toKey || fromKey === toKey) return toKey || fromKey;
+      const state = watchRefreshStatuses.get(fromKey);
+      if (state) {
+        watchRefreshStatuses.delete(fromKey);
+        watchRefreshStatuses.set(toKey, state);
+      }
+      return toKey;
+    }
+
+    function updateWatchRefreshButton() {
+      if (!watchRefreshButton) return;
+      const itemCount = (readWatchState().items || []).length;
+      const label = watchRefreshButton.querySelector(".watch-refresh-label");
+      const cooldownMs = Math.max(0, watchRefreshCooldownUntil - Date.now());
+      watchRefreshButton.disabled = watchRefreshRunning || !itemCount || cooldownMs > 0;
+      watchRefreshButton.setAttribute("aria-busy", String(watchRefreshRunning));
+      if (label) {
+        label.textContent = watchRefreshRunning
+          ? `${watchRefreshCompleted}/${watchRefreshTotal} 확인 중`
+          : (cooldownMs > 0 ? `${Math.ceil(cooldownMs / 1000)}초 후` : "새로고침");
+      }
+    }
+
+    function scheduleWatchRefreshCooldownTick() {
+      if (watchRefreshCooldownTimer) clearTimeout(watchRefreshCooldownTimer);
+      const remaining = Math.max(0, watchRefreshCooldownUntil - Date.now());
+      updateWatchRefreshButton();
+      if (remaining > 0) {
+        watchRefreshCooldownTimer = setTimeout(scheduleWatchRefreshCooldownTick, Math.min(1000, remaining));
+      }
+    }
+
+    function startWatchRefreshCooldown(ms = WATCH_REFRESH_COOLDOWN_MS) {
+      watchRefreshCooldownUntil = Math.max(watchRefreshCooldownUntil, Date.now() + ms);
+      scheduleWatchRefreshCooldownTick();
+    }
+
+    function watchRefreshCooldownRemainingMs() {
+      return Math.max(0, watchRefreshCooldownUntil - Date.now());
+    }
+
     function watchCountsFromItem(item = {}) {
       const direct = item.counts || {};
       const positive = Number(direct.positive);
@@ -3660,17 +4030,31 @@
     }
 
     function watchMetaText(item = {}) {
+      const refreshState = watchRefreshStateFor(item.key);
       const counts = watchCountsFromItem(item);
       const countText = item.pending && !item.mood
         ? "분석 중"
         : (item.status === "insufficient"
           ? "의견 부족"
           : `긍정 ${counts.positive}, 관망 ${counts.watch}, 주의 ${counts.risk}`);
+      if (refreshState?.status === "queued") return [countText, "업데이트 대기"].filter(Boolean).join(" · ");
+      if (refreshState?.status === "running") return [countText, "업데이트 중"].filter(Boolean).join(" · ");
+      if (refreshState?.status === "failed") return [countText, "업데이트 실패"].filter(Boolean).join(" · ");
       const checkedText = relativeSignalTime(item.updatedAt);
       return [countText, checkedText ? `${checkedText} 확인` : ""].filter(Boolean).join(" · ");
     }
 
     function watchHomeBadgeHtml(item = {}) {
+      const refreshState = watchRefreshStateFor(item.key);
+      if (refreshState?.status === "queued") {
+        return `<span class="badge watch-home-badge watch-queued-badge" aria-label="업데이트 대기 중">대기 중</span>`;
+      }
+      if (refreshState?.status === "running") {
+        return `<span class="badge watch-home-badge watch-loading-badge" aria-label="업데이트 중">업데이트 중</span>`;
+      }
+      if (refreshState?.status === "failed") {
+        return `<span class="badge watch-home-badge watch-failed-badge" aria-label="${esc(refreshState.message || "업데이트 실패")}">실패</span>`;
+      }
       if (item.mood) {
         return `<span class="badge watch-home-badge ${esc(moodClass(item.mood))}">${esc(displayMoodLabel(item.mood))}</span>`;
       }
@@ -3688,6 +4072,7 @@
       const state = readWatchState();
       const items = state.items || [];
       watchPanel.classList.toggle("show", items.length > 0);
+      updateWatchRefreshButton();
       watchListEl.innerHTML = items.map(item => {
         const meta = watchMetaText(item);
         const label = item.label || item.query;
@@ -3778,6 +4163,11 @@
       const url = new URL(location.href);
       url.searchParams.set("q", query);
       history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+    }
+
+    function clearUrlQuery() {
+      if (!window.history?.replaceState || isFileMode) return;
+      history.replaceState(null, "", "/");
     }
 
     function fillQueryFromUrl() {
@@ -4522,6 +4912,7 @@
       marketPanel.classList.remove("hide");
       renderWatchPanel();
       renderRanking(activeMarket || "kr");
+      clearUrlQuery();
       window.scrollTo({ top:0, behavior:"smooth" });
     }
 
@@ -4577,6 +4968,7 @@
           submit.disabled = false;
         }
         trackSearchSnapshot(data);
+        if (data.done) return;
         await pollSearch(data.jobId, token);
       } catch (error) {
         if (token !== activeSearchToken) return;
@@ -4660,6 +5052,7 @@
       if (!form.contains(e.target)) hideSuggestions();
     });
     homeButton.addEventListener("click", showHome);
+    watchRefreshButton?.addEventListener("click", refreshAllWatchItems);
     rankRefreshButton.addEventListener("click", () => loadRanking());
     rankMoreButton.addEventListener("click", () => {
       rankVisibleCounts[activeMarket] = Math.min((rankVisibleCounts[activeMarket] || RANK_INITIAL_LIMIT) + RANK_STEP, RANK_MAX_LIMIT);

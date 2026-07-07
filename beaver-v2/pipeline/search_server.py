@@ -42,6 +42,12 @@ QUOTE_WS_INTERVAL_SECONDS = max(3, int(os.environ.get("QUOTE_WS_INTERVAL_SECONDS
 JOBS = {}
 JOBS_LOCK = threading.Lock()
 MAX_JOBS = 20
+SEARCH_RESULT_CACHE = {}
+SEARCH_RESULT_CACHE_LOCK = threading.Lock()
+SEARCH_RESULT_CACHE_DIR = config.CACHE_DIR / "search_results"
+SEARCH_RESULT_CACHE_VERSION = 2
+SEARCH_RESULT_CACHE_TTL_SECONDS = max(60, int(os.environ.get("SEARCH_RESULT_CACHE_TTL_SECONDS", "3600")))
+SEARCH_RESULT_CACHE_MAX_ITEMS = max(10, int(os.environ.get("SEARCH_RESULT_CACHE_MAX_ITEMS", "200")))
 SEARCH_REFRESH_STATE = {
     "running": False,
     "lastStartedAt": None,
@@ -58,6 +64,18 @@ POPULAR_PREWARM_STATE = {
     "lastStats": None,
 }
 POPULAR_PREWARM_LOCK = threading.Lock()
+SEARCH_RESULT_PREWARM_STATE = {
+    "running": False,
+    "lastStartedAt": None,
+    "lastFinishedAt": None,
+    "lastIndexUpdatedAt": None,
+    "lastError": "",
+    "lastStats": None,
+}
+SEARCH_RESULT_PREWARM_LOCK = threading.Lock()
+WATCHLIST_REFRESH_RATE_LIMIT = {}
+WATCHLIST_REFRESH_RESPONSE_CACHE = {}
+WATCHLIST_REFRESH_LOCK = threading.Lock()
 
 
 class SearchServer(ThreadingHTTPServer):
@@ -116,6 +134,16 @@ def popular_prewarm_status():
     state.update({
         "enabled": config.POPULAR_PREWARM_ENABLED,
         "marketLimit": config.POPULAR_PREWARM_MARKET_LIMIT,
+    })
+    return state
+
+
+def search_result_prewarm_status():
+    with SEARCH_RESULT_PREWARM_LOCK:
+        state = dict(SEARCH_RESULT_PREWARM_STATE)
+    state.update({
+        "enabled": config.SEARCH_RESULT_PREWARM_ENABLED,
+        "limit": config.SEARCH_RESULT_PREWARM_LIMIT,
     })
     return state
 
@@ -424,6 +452,122 @@ def prewarm_popular_async(reason=""):
             with POPULAR_PREWARM_LOCK:
                 POPULAR_PREWARM_STATE["running"] = False
                 POPULAR_PREWARM_STATE["lastFinishedAt"] = datetime.datetime.now(stock_search.KST).isoformat()
+            prewarm_popular_search_results_async(reason=reason or "popular-prewarm")
+
+    threading.Thread(target=worker, daemon=True).start()
+    return True
+
+
+def _popular_search_prewarm_queries(payload, limit):
+    markets = payload.get("markets") or {}
+    rows_by_market = {
+        key: sorted(market.get("rows") or [], key=lambda row: int(row.get("rank") or 9999))
+        for key, market in markets.items()
+    }
+    queries = []
+    seen = set()
+    max_rows = max((len(rows) for rows in rows_by_market.values()), default=0)
+    for idx in range(max_rows):
+        for market_key in ("kr", "us"):
+            rows = rows_by_market.get(market_key) or []
+            if idx >= len(rows):
+                continue
+            row = rows[idx]
+            query = str(row.get("query") or row.get("name") or row.get("code") or "").strip()
+            key = stock_search.compact(query)
+            if not key or key in seen:
+                continue
+            seen.add(key)
+            queries.append(query)
+            if len(queries) >= limit:
+                return queries
+    return queries
+
+
+def warm_popular_search_result_cache(payload=None, limit=None):
+    """인기종목의 최종 검색 결과를 홈 요청과 분리해서 미리 만든다."""
+    index = stock_search.load_index()
+    if not index.get("videos"):
+        return {"requested": 0, "cached": 0, "skipped": 0, "errors": 0, "indexUpdatedAt": index.get("updatedAt")}
+    limit = max(0, int(limit if limit is not None else config.SEARCH_RESULT_PREWARM_LIMIT))
+    if not limit:
+        return {"requested": 0, "cached": 0, "skipped": 0, "errors": 0, "indexUpdatedAt": index.get("updatedAt")}
+    payload = payload or stock_search.popular_stocks(
+        limit=max(limit, config.SEARCH_RESULT_PREWARM_LIMIT),
+        use_saved=True,
+        refresh_quotes=False,
+    )
+    queries = _popular_search_prewarm_queries(payload, limit)
+    stats = {
+        "requested": len(queries),
+        "cached": 0,
+        "skipped": 0,
+        "errors": 0,
+        "indexUpdatedAt": index.get("updatedAt"),
+    }
+    for query in queries:
+        try:
+            cache_key = _search_result_cache_key(query, index.get("updatedAt"))
+            if _read_search_result_cache(cache_key):
+                stats["cached"] += 1
+                continue
+            videos, _ = stock_search.find_videos_with_stats(query, include_fallback=False)
+            if stock_search.needs_search_fallback(videos):
+                stats["skipped"] += 1
+                continue
+            result = stock_search.search_stock(query, include_fallback=False)
+            _write_search_result_cache(query, result)
+            stats["cached"] += 1
+            delay = max(0, float(config.SEARCH_RESULT_PREWARM_DELAY_SECONDS))
+            if delay:
+                time.sleep(delay)
+        except Exception as exc:
+            stats["errors"] += 1
+            print(f"⚠️ 인기종목 검색 결과 캐시 예열 실패({query}): {str(exc)[:160]}")
+    return stats
+
+
+def prewarm_popular_search_results_async(reason="", payload=None):
+    """인기종목 검색 결과 캐시를 백그라운드에서 예열한다."""
+    if not config.SEARCH_RESULT_PREWARM_ENABLED:
+        return False
+    index = stock_search.load_index()
+    if not index.get("videos"):
+        return False
+    index_updated_at = index.get("updatedAt")
+    with SEARCH_RESULT_PREWARM_LOCK:
+        if SEARCH_RESULT_PREWARM_STATE["running"]:
+            return False
+        if (
+                SEARCH_RESULT_PREWARM_STATE.get("lastStats") is not None and
+                SEARCH_RESULT_PREWARM_STATE.get("lastIndexUpdatedAt") == index_updated_at):
+            return False
+        SEARCH_RESULT_PREWARM_STATE.update({
+            "running": True,
+            "lastStartedAt": datetime.datetime.now(stock_search.KST).isoformat(),
+            "lastError": "",
+        })
+
+    def worker():
+        try:
+            why = f" ({reason})" if reason else ""
+            print(f"인기종목 검색 결과 캐시를 백그라운드에서 예열합니다{why}.")
+            stats = warm_popular_search_result_cache(payload=payload)
+            with SEARCH_RESULT_PREWARM_LOCK:
+                SEARCH_RESULT_PREWARM_STATE["lastStats"] = stats
+                SEARCH_RESULT_PREWARM_STATE["lastIndexUpdatedAt"] = index_updated_at
+            print(
+                "✅ 인기종목 검색 결과 캐시 예열 완료: "
+                f"{stats['cached']}개 저장 · {stats['skipped']}개 건너뜀 · 오류 {stats['errors']}개"
+            )
+        except Exception as exc:
+            with SEARCH_RESULT_PREWARM_LOCK:
+                SEARCH_RESULT_PREWARM_STATE["lastError"] = str(exc)[:200]
+            print(f"⚠️ 인기종목 검색 결과 캐시 예열 실패: {exc}")
+        finally:
+            with SEARCH_RESULT_PREWARM_LOCK:
+                SEARCH_RESULT_PREWARM_STATE["running"] = False
+                SEARCH_RESULT_PREWARM_STATE["lastFinishedAt"] = datetime.datetime.now(stock_search.KST).isoformat()
 
     threading.Thread(target=worker, daemon=True).start()
     return True
@@ -469,7 +613,8 @@ def refresh_search_index_async(force=False, reason=""):
                 SEARCH_REFRESH_STATE["running"] = False
                 SEARCH_REFRESH_STATE["lastFinishedAt"] = datetime.datetime.now(stock_search.KST).isoformat()
             if refreshed:
-                prewarm_popular_async(reason="index-refresh")
+                if not prewarm_popular_async(reason="index-refresh"):
+                    prewarm_popular_search_results_async(reason="index-refresh")
 
     threading.Thread(target=worker, daemon=True).start()
     return True
@@ -484,6 +629,244 @@ def _snapshot(job_id):
         payload = json.loads(json.dumps(job["result"], ensure_ascii=False))
     _sort_snapshot_opinions(payload)
     return payload
+
+
+def _json_copy(payload):
+    return json.loads(json.dumps(payload, ensure_ascii=False))
+
+
+def _watchlist_refresh_signature(items, index_updated_at=""):
+    normalized = []
+    for raw in (items or [])[:20]:
+        item = raw if isinstance(raw, dict) else {}
+        query = str(item.get("query") or item.get("label") or item.get("code") or "").strip()
+        normalized.append({
+            "key": str(item.get("key") or "").strip(),
+            "query": stock_search.compact(query),
+            "label": stock_search.compact(item.get("label") or ""),
+            "code": str(item.get("code") or "").strip().upper(),
+            "pending": bool(item.get("pending")),
+            "indexUpdatedAt": str(item.get("indexUpdatedAt") or ""),
+        })
+    raw = json.dumps({
+        "indexUpdatedAt": index_updated_at or "",
+        "items": normalized,
+    }, ensure_ascii=False, sort_keys=True)
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def _client_key(headers, client_address):
+    forwarded = headers.get("X-Forwarded-For", "")
+    if forwarded:
+        return forwarded.split(",")[0].strip() or "unknown"
+    return (client_address or ("unknown",))[0] or "unknown"
+
+
+def _watchlist_cached_response(client_key, signature):
+    now = time.time()
+    ttl = max(0, config.WATCHLIST_REFRESH_RESPONSE_CACHE_SECONDS)
+    if not ttl:
+        return None
+    cache_key = (client_key, signature)
+    with WATCHLIST_REFRESH_LOCK:
+        record = WATCHLIST_REFRESH_RESPONSE_CACHE.get(cache_key)
+        if not record:
+            return None
+        if now - float(record.get("createdAt") or 0) > ttl:
+            WATCHLIST_REFRESH_RESPONSE_CACHE.pop(cache_key, None)
+            return None
+        payload = _json_copy(record["payload"])
+    payload["watchlistRefreshCacheHit"] = True
+    return payload
+
+
+def _remember_watchlist_response(client_key, signature, payload):
+    ttl = max(0, config.WATCHLIST_REFRESH_RESPONSE_CACHE_SECONDS)
+    if not ttl:
+        return
+    now = time.time()
+    cache_key = (client_key, signature)
+    with WATCHLIST_REFRESH_LOCK:
+        WATCHLIST_REFRESH_RESPONSE_CACHE[cache_key] = {
+            "createdAt": now,
+            "payload": _json_copy(payload),
+        }
+        expired = [
+            key for key, record in WATCHLIST_REFRESH_RESPONSE_CACHE.items()
+            if now - float(record.get("createdAt") or 0) > ttl
+        ]
+        for key in expired:
+            WATCHLIST_REFRESH_RESPONSE_CACHE.pop(key, None)
+
+
+def _allow_watchlist_refresh(client_key):
+    now = time.time()
+    window = max(1, config.WATCHLIST_REFRESH_RATE_LIMIT_WINDOW_SECONDS)
+    limit = max(1, config.WATCHLIST_REFRESH_RATE_LIMIT_MAX)
+    with WATCHLIST_REFRESH_LOCK:
+        hits = [
+            timestamp for timestamp in WATCHLIST_REFRESH_RATE_LIMIT.get(client_key, [])
+            if now - timestamp < window
+        ]
+        if len(hits) >= limit:
+            retry_after = max(1, int(window - (now - hits[0])) + 1)
+            WATCHLIST_REFRESH_RATE_LIMIT[client_key] = hits
+            return False, retry_after
+        hits.append(now)
+        WATCHLIST_REFRESH_RATE_LIMIT[client_key] = hits
+    return True, 0
+
+
+def _search_result_cache_identity(query):
+    identity = stock_search.stock_identity(query)
+    name = identity.get("name") or query.strip()
+    return {
+        "name": stock_search.compact(name),
+        "code": str(identity.get("code") or "").strip().upper(),
+        "market": str(identity.get("market") or "").strip().upper(),
+    }
+
+
+def _search_result_cache_key(query, index_updated_at):
+    identity = _search_result_cache_identity(query)
+    raw = json.dumps({
+        "version": SEARCH_RESULT_CACHE_VERSION,
+        "stock": identity,
+        "indexUpdatedAt": index_updated_at or "",
+        "lookbackDays": config.SEARCH_LOOKBACK_DAYS,
+        "maxVideosPerChannel": config.SEARCH_MAX_VIDEOS_PER_CHANNEL,
+        "maxYoutubers": config.SEARCH_MAX_YOUTUBERS,
+        "maxAnalyzedVideos": config.SEARCH_MAX_ANALYZED_VIDEOS,
+        "fallbackEnabled": config.SEARCH_FALLBACK_ENABLED,
+        "fallbackMinResults": config.SEARCH_FALLBACK_MIN_RESULTS,
+        "stockCacheVersion": getattr(stock_search, "_STOCK_CACHE_VERSION", 0),
+    }, ensure_ascii=False, sort_keys=True)
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def _search_result_cache_path(cache_key):
+    return SEARCH_RESULT_CACHE_DIR / f"{cache_key}.json"
+
+
+def _is_search_result_cache_fresh(record):
+    try:
+        created_at = float(record.get("createdAt") or 0)
+    except (TypeError, ValueError):
+        return False
+    return time.time() - created_at <= SEARCH_RESULT_CACHE_TTL_SECONDS
+
+
+def _cached_search_result_payload(payload, cache_key):
+    cached = _json_copy(payload)
+    cached.update({
+        "jobId": f"cache-{cache_key[:12]}",
+        "done": True,
+        "running": False,
+        "fallbackRunning": False,
+        "primaryDone": True,
+        "currentChannel": "",
+        "currentStatus": "캐시된 결과를 바로 보여드려요.",
+        "searchCacheHit": True,
+    })
+    _sort_snapshot_opinions(cached)
+    return cached
+
+
+def _read_search_result_cache(cache_key):
+    if config.FORCE_ANALYSIS_REFRESH:
+        return None
+    with SEARCH_RESULT_CACHE_LOCK:
+        record = SEARCH_RESULT_CACHE.get(cache_key)
+        if record and _is_search_result_cache_fresh(record):
+            return _cached_search_result_payload(record["payload"], cache_key)
+        if record:
+            SEARCH_RESULT_CACHE.pop(cache_key, None)
+
+    path = _search_result_cache_path(cache_key)
+    if not path.exists():
+        return None
+    try:
+        record = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if (
+            record.get("version") != SEARCH_RESULT_CACHE_VERSION or
+            record.get("cacheKey") != cache_key or
+            not _is_search_result_cache_fresh(record)):
+        return None
+    payload = record.get("payload")
+    if not isinstance(payload, dict) or not payload.get("done"):
+        return None
+    with SEARCH_RESULT_CACHE_LOCK:
+        SEARCH_RESULT_CACHE[cache_key] = {
+            "createdAt": record.get("createdAt"),
+            "payload": payload,
+        }
+        _trim_search_result_cache_locked()
+    return _cached_search_result_payload(payload, cache_key)
+
+
+def _trim_search_result_cache_locked():
+    if len(SEARCH_RESULT_CACHE) <= SEARCH_RESULT_CACHE_MAX_ITEMS:
+        return
+    old_keys = sorted(
+        SEARCH_RESULT_CACHE,
+        key=lambda key: float(SEARCH_RESULT_CACHE[key].get("createdAt") or 0),
+    )[:len(SEARCH_RESULT_CACHE) - SEARCH_RESULT_CACHE_MAX_ITEMS]
+    for old_key in old_keys:
+        SEARCH_RESULT_CACHE.pop(old_key, None)
+
+
+def _write_search_result_cache(query, payload):
+    if config.FORCE_ANALYSIS_REFRESH or not payload or not payload.get("done"):
+        return
+    if payload.get("errors") and not payload.get("opinions"):
+        return
+    cache_key = _search_result_cache_key(query, payload.get("indexUpdatedAt"))
+    cached = _json_copy(payload)
+    cached.update({
+        "jobId": "",
+        "done": True,
+        "running": False,
+        "fallbackRunning": False,
+        "primaryDone": True,
+        "currentChannel": "",
+        "currentStatus": "분석이 끝났어요.",
+        "searchCacheHit": False,
+    })
+    cached.pop("searchCacheStoredAt", None)
+    record = {
+        "version": SEARCH_RESULT_CACHE_VERSION,
+        "cacheKey": cache_key,
+        "createdAt": time.time(),
+        "payload": cached,
+    }
+    with SEARCH_RESULT_CACHE_LOCK:
+        SEARCH_RESULT_CACHE[cache_key] = {
+            "createdAt": record["createdAt"],
+            "payload": cached,
+        }
+        _trim_search_result_cache_locked()
+    try:
+        SEARCH_RESULT_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = _search_result_cache_path(cache_key).with_suffix(f".{time.monotonic_ns()}.tmp")
+        tmp.write_text(json.dumps(record, ensure_ascii=False), encoding="utf-8")
+        tmp.replace(_search_result_cache_path(cache_key))
+    except OSError:
+        pass
+
+
+def _store_search_result_from_job(job_id, query):
+    with JOBS_LOCK:
+        job = JOBS.get(job_id)
+        if not job:
+            return
+        result = job.get("result")
+        if not result or not result.get("done") or result.get("running"):
+            return
+        payload = _json_copy(result)
+    _sort_snapshot_opinions(payload)
+    _write_search_result_cache(query, payload)
 
 
 def _sort_snapshot_opinions(payload):
@@ -504,6 +887,30 @@ def _trim_jobs():
         JOBS.pop(old_id, None)
 
 
+def _attach_search_report(job_id, will_finalize):
+    """검색이 끝나는 시점에 한 번만 쟁점·체크포인트 요약 리포트를 붙인다."""
+    if not will_finalize:
+        return
+    with JOBS_LOCK:
+        job = JOBS.get(job_id)
+        if not job or job.get("reportDone"):
+            return
+        job["reportDone"] = True
+        result = job["result"]
+        result["currentStatus"] = "핵심 쟁점과 체크포인트를 정리하는 중이에요."
+        snapshot = _json_copy(result)
+    stock_search.sort_opinions(snapshot)
+    report = None
+    try:
+        report = stock_search.summary_report_for(snapshot)
+    except Exception as exc:
+        print(f"⚠️ 요약 리포트 생성 실패: {str(exc)[:200]}")
+    with JOBS_LOCK:
+        job = JOBS.get(job_id)
+        if job:
+            job["result"]["report"] = report
+
+
 def _run_search_job(job_id, query, videos, finalize=True):
     with JOBS_LOCK:
         result = JOBS[job_id]["result"]
@@ -517,6 +924,8 @@ def _run_search_job(job_id, query, videos, finalize=True):
                 result["done"] = True
                 result["running"] = False
             result["currentStatus"] = "최근 영상에서 이 종목 언급을 찾지 못했어요."
+        _attach_search_report(job_id, finalize and not result.get("fallbackRunning"))
+        _store_search_result_from_job(job_id, query)
         return
 
     for video in videos:
@@ -552,6 +961,9 @@ def _run_search_job(job_id, query, videos, finalize=True):
                 result["processedVideos"] += 1
 
     with JOBS_LOCK:
+        will_finalize = finalize or not JOBS.get(job_id, {}).get("result", {}).get("fallbackRunning")
+    _attach_search_report(job_id, will_finalize)
+    with JOBS_LOCK:
         result = JOBS[job_id]["result"]
         result["primaryDone"] = True
         if finalize or not result.get("fallbackRunning"):
@@ -559,6 +971,7 @@ def _run_search_job(job_id, query, videos, finalize=True):
             result["running"] = False
         result["currentChannel"] = ""
         result["currentStatus"] = "분석이 끝났어요." if result["done"] else "최신 영상을 보강 중이에요."
+    _store_search_result_from_job(job_id, query)
 
 
 def _run_fallback_job(job_id, query, existing_videos):
@@ -585,6 +998,9 @@ def _run_fallback_job(job_id, query, existing_videos):
                 result["errors"].append(f"최신 영상 보강: {str(exc)[:120]}")
     finally:
         with JOBS_LOCK:
+            primary_done = bool(JOBS.get(job_id, {}).get("result", {}).get("primaryDone"))
+        _attach_search_report(job_id, primary_done)
+        with JOBS_LOCK:
             result = JOBS.get(job_id, {}).get("result")
             if result is not None:
                 result["fallbackRunning"] = False
@@ -597,6 +1013,7 @@ def _run_fallback_job(job_id, query, existing_videos):
                     if result.get("done")
                     else "기본 후보 의견을 분석 중이에요."
                 )
+        _store_search_result_from_job(job_id, query)
 
 
 def _wait_for_first_search_update(job_id, timeout_seconds=1.0):
@@ -616,6 +1033,12 @@ def _wait_for_first_search_update(job_id, timeout_seconds=1.0):
 
 
 def start_search_job(query):
+    index = stock_search.load_index()
+    cache_key = _search_result_cache_key(query, index.get("updatedAt"))
+    cached = _read_search_result_cache(cache_key)
+    if cached:
+        return cached
+
     videos, stats = stock_search.find_videos_with_stats(query, include_fallback=False)
     fallback_running = stock_search.needs_search_fallback(videos)
     job_id = uuid.uuid4().hex[:12]
@@ -643,6 +1066,66 @@ def start_search_job(query):
         fallback_thread.start()
     _wait_for_first_search_update(job_id)
     return _snapshot(job_id)
+
+
+def refresh_watchlist_items(items):
+    index = stock_search.load_index()
+    index_updated_at = index.get("updatedAt") or ""
+    results = []
+    for raw in (items or [])[:20]:
+        item = raw if isinstance(raw, dict) else {}
+        key = str(item.get("key") or "").strip()
+        query = str(item.get("query") or item.get("label") or item.get("code") or "").strip()
+        if len(query) < 2:
+            results.append({
+                "key": key,
+                "query": query,
+                "status": "failed",
+                "error": "검색어가 부족해요.",
+            })
+            continue
+        if (
+                not item.get("pending") and
+                str(item.get("indexUpdatedAt") or "") == index_updated_at):
+            results.append({
+                "key": key,
+                "query": query,
+                "status": "fresh",
+                "indexUpdatedAt": index_updated_at,
+            })
+            continue
+        try:
+            cache_key = _search_result_cache_key(query, index_updated_at)
+            cached = _read_search_result_cache(cache_key)
+            if cached:
+                results.append({
+                    "key": key,
+                    "query": query,
+                    "status": "cached",
+                    "data": cached,
+                    "indexUpdatedAt": index_updated_at,
+                })
+                continue
+            result = stock_search.search_stock(query, include_fallback=False)
+            _write_search_result_cache(query, result)
+            results.append({
+                "key": key,
+                "query": query,
+                "status": "done",
+                "data": result,
+                "indexUpdatedAt": result.get("indexUpdatedAt") or index_updated_at,
+            })
+        except Exception as exc:
+            results.append({
+                "key": key,
+                "query": query,
+                "status": "failed",
+                "error": str(exc)[:200],
+            })
+    return {
+        "indexUpdatedAt": index_updated_at,
+        "results": results,
+    }
 
 
 def _websocket_accept_key(key):
@@ -687,7 +1170,7 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):
         print(f"[검색 서버] {fmt % args}")
 
-    def _json(self, payload, status=200, cors=False):
+    def _json(self, payload, status=200, cors=False, headers=None):
         body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
@@ -697,6 +1180,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Access-Control-Allow-Origin", "*")
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
             self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        for name, value in (headers or {}).items():
+            self.send_header(name, str(value))
         self.end_headers()
         self.wfile.write(body)
 
@@ -809,6 +1294,32 @@ class Handler(BaseHTTPRequestHandler):
             except Exception as exc:
                 self._json({"ok": False, "error": str(exc)[:200]}, 400, cors=True)
             return
+        if parsed.path == "/api/watchlist/refresh":
+            try:
+                length = min(int(self.headers.get("Content-Length", "0")), 65536)
+                body = self.rfile.read(length).decode("utf-8") if length else "{}"
+                payload = json.loads(body or "{}")
+                items = payload.get("items") if isinstance(payload, dict) else []
+                client_key = _client_key(self.headers, self.client_address)
+                index_updated_at = stock_search.load_index().get("updatedAt") or ""
+                signature = _watchlist_refresh_signature(items, index_updated_at)
+                cached = _watchlist_cached_response(client_key, signature)
+                if cached:
+                    self._json(cached)
+                    return
+                allowed, retry_after = _allow_watchlist_refresh(client_key)
+                if not allowed:
+                    self._json({
+                        "error": f"방금 확인했어요. {retry_after}초 뒤에 다시 시도해 주세요.",
+                        "retryAfter": retry_after,
+                    }, 429, headers={"Retry-After": retry_after})
+                    return
+                response = refresh_watchlist_items(items)
+                _remember_watchlist_response(client_key, signature, response)
+                self._json(response)
+            except Exception as exc:
+                self._json({"error": str(exc)[:200]}, 400)
+            return
         self.send_error(404)
 
     def _popular_stock_quotes_ws(self, parsed):
@@ -879,6 +1390,7 @@ class Handler(BaseHTTPRequestHandler):
                 "model": model,
                 "searchRefresh": search_refresh_status(index),
                 "popularPrewarm": popular_prewarm_status(),
+                "searchResultPrewarm": search_result_prewarm_status(),
                 "stockMaster": krx_listed.cache_status(),
                 "usStockMaster": us_listed.cache_status(),
             })
@@ -1023,7 +1535,8 @@ def main():
         print("⚠️ 검색 인덱스가 오래되어 기존 데이터로 서버를 먼저 시작합니다.")
     if config.STARTUP_SEARCH_REFRESH_ENABLED:
         refresh_search_index_async(reason="startup")
-    prewarm_popular_async(reason="startup")
+    if not prewarm_popular_async(reason="startup"):
+        prewarm_popular_search_results_async(reason="startup")
     if config.STARTUP_STOCK_REFRESH_ENABLED:
         krx_listed.refresh_if_needed_async()
         us_listed.refresh_if_needed_async()
