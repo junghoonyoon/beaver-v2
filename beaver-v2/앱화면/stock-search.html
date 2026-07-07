@@ -3024,20 +3024,43 @@
       return `긍정적 ${Number(counts.긍정 || 0)} · 관망 ${Number(counts.신중 || 0)} · 주의 ${Number(counts.부정 || 0)}`;
     }
 
+    const reportEmptyTextValues = new Set(["빈 문자열", "[빈 문자열]", "\"\"", "''", "없음", "없어요", "해당 없음", "해당없음", "n/a", "N/A", "null", "None"]);
+    function reportFieldText(value) {
+      const text = String(value ?? "").trim();
+      return reportEmptyTextValues.has(text) ? "" : text;
+    }
+
     function summaryReport(data) {
       const report = data?.report;
       if (!report || typeof report !== "object") return null;
-      const headline = String(report.headline || "").trim();
-      const summary = String(report.summary || "").trim();
+      const headline = reportFieldText(report.headline);
+      const summary = reportFieldText(report.summary);
       if (!headline || !summary) return null;
       const checkpoints = Array.isArray(report.checkpoints)
-        ? report.checkpoints.filter(item => item && String(item.event || "").trim() && String(item.check || "").trim())
+        ? report.checkpoints
+          .map(item => ({
+            ...item,
+            event:reportFieldText(item?.event),
+            when:reportFieldText(item?.when),
+            check:reportFieldText(item?.check),
+            interpretation:reportFieldText(item?.interpretation),
+          }))
+          .filter(item => item.event && item.check)
         : [];
       if (!checkpoints.length) return null;
-      const bullText = String(report.bullCase?.text || "").trim();
-      const bearText = String(report.bearCase?.text || "").trim();
+      const bullText = reportFieldText(report.bullCase?.text);
+      const bearText = reportFieldText(report.bearCase?.text);
       if (!bullText && !bearText) return null;
-      return { ...report, checkpoints };
+      return {
+        ...report,
+        headline,
+        summary,
+        consensus:{ ...(report.consensus || {}), text:reportFieldText(report.consensus?.text) },
+        bullCase:{ ...(report.bullCase || {}), text:bullText },
+        bearCase:{ ...(report.bearCase || {}), text:bearText },
+        turningPoint:{ ...(report.turningPoint || {}), text:reportFieldText(report.turningPoint?.text) },
+        checkpoints,
+      };
     }
 
     function verdictHeadline(data, mood) {
@@ -3143,10 +3166,10 @@
         text:checkpointFlatText(report.checkpoints),
         refs:[],
         checkpoints:report.checkpoints.map(item => ({
-          event:String(item.event || "").trim(),
-          when:String(item.when || "").trim(),
-          check:String(item.check || "").trim(),
-          interpretation:String(item.interpretation || "").trim(),
+          event:reportFieldText(item.event),
+          when:reportFieldText(item.when),
+          check:reportFieldText(item.check),
+          interpretation:reportFieldText(item.interpretation),
           refs:reportRefsFor(data, item.videoIds),
         })),
       });

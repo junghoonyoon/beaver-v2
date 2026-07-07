@@ -52,6 +52,20 @@ class NormalizeStockReportTest(unittest.TestCase):
         self.assertEqual(report["checkpoints"][0]["videoIds"], ["v1"])
         self.assertEqual(report["consensus"]["videoIds"], ["v1", "v2"])
 
+    def test_normalize_hides_empty_text_markers(self):
+        raw = json.loads(json.dumps(_RAW_REPORT))
+        raw["consensus"] = {"text": "빈 문자열", "videoIds": ["v1"]}
+        raw["turningPoint"] = {"text": "[빈 문자열]", "videoIds": ["v2"]}
+        raw["checkpoints"][0]["when"] = "빈 문자열"
+        raw["checkpoints"][0]["interpretation"] = "없음"
+
+        report = analyze._normalize_stock_report(raw, ["v1", "v2"])
+
+        self.assertEqual(report["consensus"]["text"], "")
+        self.assertEqual(report["turningPoint"]["text"], "")
+        self.assertEqual(report["checkpoints"][0]["when"], "")
+        self.assertEqual(report["checkpoints"][0]["interpretation"], "")
+
     def test_normalize_fails_without_usable_checkpoints(self):
         broken = json.loads(json.dumps(_RAW_REPORT))
         broken["checkpoints"] = [{"event": "", "check": ""}]

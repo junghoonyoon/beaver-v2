@@ -301,14 +301,14 @@ _STOCK_REPORT_PROMPT = """다음은 최근 2주 동안 주식 유튜버들이 '{
 {{
   "headline": "지금 이 종목 판단을 쉼표 없이 완결된 한 문장으로 (20~45자, ~요)",
   "summary": "긍정과 관망이 각각 무엇을 근거로 삼는지 한 문장으로 종합 (40~90자)",
-  "consensus": {{"text": "긍정·관망 양쪽이 공통으로 인정한 사실. 없으면 빈 문자열", "videoIds": ["…"]}},
+  "consensus": {{"text": "긍정·관망 양쪽이 공통으로 인정한 사실. 없으면 반드시 \"\"", "videoIds": ["…"]}},
   "bullCase": {{"text": "좋게 보는 쪽의 핵심 논리. 무엇을 근거로 긍정적으로 보는지", "videoIds": ["…"]}},
   "bearCase": {{"text": "관망·부정 쪽의 핵심 논리. 긍정 쪽과 무엇을 다르게 해석하는지가 드러나게", "videoIds": ["…"]}},
-  "turningPoint": {{"text": "관망 의견이 긍정으로 바뀌기 위한 조건. 의견에 없으면 빈 문자열", "videoIds": ["…"]}},
+  "turningPoint": {{"text": "관망 의견이 긍정으로 바뀌기 위한 조건. 의견에 없으면 반드시 \"\"", "videoIds": ["…"]}},
   "checkpoints": [
     {{
       "event": "확인할 이벤트나 지표 이름 (예: 2분기 실적 발표)",
-      "when": "확인 시점. 의견에 언급된 경우만 (예: 다음 주, 7월 말). 없으면 빈 문자열",
+      "when": "확인 시점. 의견에 언급된 경우만 (예: 다음 주, 7월 말). 없으면 반드시 \"\"",
       "check": "무엇을 어떤 기준으로 확인해야 하는지 1문장",
       "interpretation": "확인 결과가 좋으면/나쁘면 어느 쪽 의견에 힘이 실리는지 1문장",
       "videoIds": ["…"]
@@ -319,6 +319,7 @@ _STOCK_REPORT_PROMPT = """다음은 최근 2주 동안 주식 유튜버들이 '{
 규칙:
 - 위 JSON 구조를 그대로 지키세요. consensus, bullCase, bearCase, turningPoint는 절대 문자열이 아니라 반드시 {{"text": "...", "videoIds": ["..."]}} 객체여야 합니다.
 - 최상위에는 videoIds 키를 만들지 마세요. 각 근거 id는 해당 section 객체나 checkpoint 안에만 넣으세요.
+- 값이 없을 때 "빈 문자열", "[빈 문자열]", "없음" 같은 설명 문구를 쓰지 마세요. 실제 JSON 빈 문자열 ""로 두세요.
 - 의견 목록에 실제로 나온 사실·수치·일정만 쓰세요. 목록에 없는 내용을 추측하거나 일반론을 만들지 마세요.
 - 수치는 의견 목록의 표현을 그대로 쓰세요. 조/억/만 같은 단위를 합치거나 변환하지 마세요.
 - headline은 반드시 20~45자 안에서 끝나는 완결 문장으로 쓰고, 길어서 중간에 끊길 문장은 만들지 마세요.
@@ -392,11 +393,32 @@ def _clip_text(value, limit=220):
     return text[:limit]
 
 
+_EMPTY_REPORT_TEXTS = {
+    "빈 문자열",
+    "[빈 문자열]",
+    "\"\"",
+    "''",
+    "없음",
+    "없어요",
+    "해당 없음",
+    "해당없음",
+    "n/a",
+    "N/A",
+    "null",
+    "None",
+}
+
+
+def _optional_report_text(value, limit=220):
+    text = _clip_text(value, limit)
+    return "" if text in _EMPTY_REPORT_TEXTS else text
+
+
 def _report_section(raw, allowed_ids):
     section = raw if isinstance(raw, dict) else {}
     video_ids = [str(v).strip() for v in (section.get("videoIds") or []) if str(v).strip()]
     return {
-        "text": _clip_text(section.get("text"), 360),
+        "text": _optional_report_text(section.get("text"), 360),
         "videoIds": [v for v in video_ids if v in allowed_ids][:4],
     }
 
@@ -414,9 +436,9 @@ def _normalize_stock_report(data, allowed_ids):
         video_ids = [str(v).strip() for v in (raw.get("videoIds") or []) if str(v).strip()]
         checkpoints.append({
             "event": event,
-            "when": _clip_text(raw.get("when"), 40),
+            "when": _optional_report_text(raw.get("when"), 40),
             "check": check,
-            "interpretation": _clip_text(raw.get("interpretation"), 160),
+            "interpretation": _optional_report_text(raw.get("interpretation"), 160),
             "videoIds": [v for v in video_ids if v in allowed_ids][:4],
         })
     if not checkpoints:
