@@ -82,6 +82,24 @@ class NormalizeStockReportTest(unittest.TestCase):
 
         self.assertEqual(report["checkpoints"][0]["event"], "메모리 비용과 공급망 리스크")
 
+    def test_normalize_reframes_product_feature_as_monetization_checkpoint(self):
+        raw = json.loads(json.dumps(_RAW_REPORT))
+        raw["checkpoints"][0].update({
+            "event": "AI 부동산 플랫폼 고도화 및 AI 부동산 탐색 기능 탑재",
+            "timing": "예정",
+            "when": "하반기 예정",
+            "check": "네이버 페이가 AI와 디지털 트윈 기술을 결합한 부동산 플랫폼으로 진화하는지 확인해야 해요.",
+            "interpretation": "성공적으로 고도화되고 기능이 탑재된다면 신사업 성장 동력에 긍정적인 영향을 줄 거예요.",
+        })
+
+        report = analyze._normalize_stock_report(raw, ["v1", "v2"])
+        checkpoint = report["checkpoints"][0]
+
+        self.assertEqual(checkpoint["event"], "신사업 수익화와 이익 기여도")
+        self.assertIn("거래액", checkpoint["check"])
+        self.assertIn("영업이익률", checkpoint["check"])
+        self.assertIn("수익화", checkpoint["interpretation"])
+
     def test_normalize_clips_report_sections_at_sentence_boundary(self):
         raw = json.loads(json.dumps(_RAW_REPORT))
         raw["bullCase"]["text"] = "실적 개선과 저평가 매력이 이어지고 있어요. " * 20

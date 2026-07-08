@@ -338,6 +338,8 @@ _STOCK_REPORT_PROMPT = """다음은 최근 2주 동안 주식 유튜버들이 '{
 - checkpoints는 2~4개. "실적 확인하세요" 같은 막연한 항목 대신, 의견에 언급된 구체적 이벤트(실적 발표, 상장, 계약, 가격 지표 등)를 고르세요.
 - checkpoints의 event는 뉴스 제목이 아니라 사기 전 판단 기준이 되는 사업 변수로 쓰세요. 개별 협력사·부품·기술·정책 뉴스는 매출·마진·수요·공급망·규제·수급 같은 투자 변수로 묶으세요.
 - event가 "~사용 여부", "~탑재 여부", "~도입 여부"처럼 좁아질 때는 왜 주가·실적 판단에 중요한지 드러나는 이름으로 바꾸세요 (예: "애플의 중국 창신 메모리 반도체 칩 사용 여부" 대신 "메모리 비용과 공급망 리스크").
+- 기능 출시, 서비스 개편, 플랫폼 진화, AI 탑재, 앱 개편 같은 제품 뉴스는 그 자체로 체크포인트가 아닙니다. 사용자 증가, 거래액, 광고·결제·금융 매출, 유료 전환, 비용 절감, 영업이익률 개선처럼 주가 판단을 바꿀 수 있는 수익화·실적 연결 기준으로 바꾸세요.
+- 체크포인트의 check와 interpretation에는 반드시 "그래서 매출·마진·수익성·거래액·수급·밸류에이션 중 무엇이 바뀌는지"가 드러나야 합니다. 단순히 "성공하면 긍정적"이라고 쓰지 마세요.
 - 구체적인 회사명·부품명·정책명은 event보다 check, outcome.text, newsKeywords에 담으세요.
 - timing은 오늘 날짜({today}) 기준으로 판단하세요. 이미 일어난 이벤트는 지남, 날짜가 확정된 미래 이벤트는 확정, 대략의 시점만 알려진 미래 이벤트는 예정, 시점을 전혀 알 수 없으면 미정, 특정 날짜가 없는 현재 진행형 상태·심리·지표는 진행중입니다.
 - when은 의견에 나온 시점을 우선 쓰고, 확정 전 시점에는 '예정'을 붙이세요 (예: 8월 중 예정). 의견에 시점이 없어도 실적 발표처럼 정기적이라 널리 알려진 일정은 대략의 시점에 '추정'을 붙여 쓸 수 있어요 (예: 7월 초 추정). 그 외에는 지어내지 말고 ""로 두세요.
@@ -459,11 +461,56 @@ def _has_any(text, words):
     return any(word in text for word in words)
 
 
+_INVESTMENT_LINKAGE_WORDS = (
+    "매출", "영업이익", "이익", "마진", "수익성", "거래액", "GMV", "가입자", "이용자",
+    "전환", "유료", "광고", "결제", "대출", "금융", "수수료", "수주", "계약", "판매",
+    "출하", "가격", "판가", "원가", "비용", "현금흐름", "점유율", "수급", "밸류",
+    "밸류에이션", "EPS", "PER",
+)
+
+
+def _has_investment_linkage(text):
+    return _has_any(text, _INVESTMENT_LINKAGE_WORDS)
+
+
+def _is_product_feature_checkpoint(text):
+    return _has_any(text, (
+        "기능", "탑재", "도입", "출시", "개편", "고도화", "진화", "서비스", "플랫폼",
+        "앱", "AI", "인공지능", "디지털 트윈", "탐색", "검색", "커머스", "페이",
+        "부동산", "콘텐츠", "구독",
+    ))
+
+
+def _monetization_event_name(text):
+    if _has_any(text, ("부동산", "페이", "결제", "금융", "대출")):
+        return "신사업 수익화와 이익 기여도"
+    if _has_any(text, ("광고", "커머스", "쇼핑", "검색")):
+        return "광고·커머스 매출 전환 여부"
+    if _has_any(text, ("구독", "콘텐츠", "웹툰", "게임")):
+        return "유료 전환과 콘텐츠 매출 기여도"
+    return "신규 서비스의 실적 기여도"
+
+
+def _ensure_investment_linkage_text(text, event, fallback):
+    text = _optional_report_sentence_text(text, 180)
+    if not text:
+        return ""
+    if _has_investment_linkage(text):
+        return text
+    if _is_product_feature_checkpoint(f"{event} {text}"):
+        return fallback
+    return text
+
+
 def _investor_facing_checkpoint_event(event, check="", outcome_text="", interpretation=""):
     """너무 좁은 뉴스성 이벤트명은 투자 판단 변수로 보정한다."""
     event = _clip_text(event, 60)
     text = f"{event} {check} {outcome_text} {interpretation}"
     narrow_suffixes = ("사용 여부", "탑재 여부", "도입 여부", "채택 여부", "활용 여부")
+    if _is_product_feature_checkpoint(event) and not _has_investment_linkage(event):
+        return _monetization_event_name(text)
+    if _is_product_feature_checkpoint(text) and not _has_investment_linkage(text):
+        return _monetization_event_name(text)
     if not any(event.endswith(suffix) or suffix in event for suffix in narrow_suffixes):
         return event
     if (
@@ -511,8 +558,14 @@ def _normalize_stock_report(data, allowed_ids):
     for raw in (data.get("checkpoints") or [])[:4]:
         if not isinstance(raw, dict):
             continue
-        check = _clip_text(raw.get("check"), 160)
+        raw_check = raw.get("check")
         event = _clip_text(raw.get("event"), 60)
+        raw_text = " ".join(str(raw.get(key) or "") for key in ("event", "check", "interpretation"))
+        default_check = (
+            "이 변화가 사용자 증가와 거래액·광고·결제·금융 매출, 영업이익률 개선으로 "
+            "이어지는지 확인하세요."
+        )
+        check = _ensure_investment_linkage_text(raw_check, event, default_check)
         if not event or not check:
             continue
         video_ids = [str(v).strip() for v in (raw.get("videoIds") or []) if str(v).strip()]
@@ -526,7 +579,13 @@ def _normalize_stock_report(data, allowed_ids):
         if timing not in ("지남", "진행중") or outcome_label not in ("좋음", "나쁨", "중립"):
             outcome_label, outcome_text = "", ""
         keywords_raw = raw.get("newsKeywords") if isinstance(raw.get("newsKeywords"), dict) else {}
-        interpretation = _optional_report_text(raw.get("interpretation"), 160)
+        default_interpretation = (
+            "수익화 지표와 이익 기여가 확인되면 긍정 쪽 의견에 힘이 실리고, 기능 출시만으로 "
+            "그치면 주가 판단 근거로는 약해요."
+        )
+        interpretation = _ensure_investment_linkage_text(
+            raw.get("interpretation"), raw_text, default_interpretation
+        )
         event = _investor_facing_checkpoint_event(event, check, outcome_text, interpretation)
         checkpoints.append({
             "event": event,
