@@ -66,6 +66,31 @@ class NormalizeStockReportTest(unittest.TestCase):
         self.assertEqual(report["checkpoints"][0]["when"], "")
         self.assertEqual(report["checkpoints"][0]["interpretation"], "")
 
+    def test_normalize_reframes_narrow_component_checkpoint(self):
+        raw = json.loads(json.dumps(_RAW_REPORT))
+        raw["checkpoints"][0].update({
+            "event": "애플의 중국 창신 메모리 반도체 칩 사용 여부",
+            "timing": "진행중",
+            "outcome": {
+                "label": "중립",
+                "text": "DDR5 제조 원가가 높아 가격 메리트가 크지 않고 글로벌 제품 탑재가 어려워요.",
+            },
+            "check": "중국 메모리 도입이 글로벌 제품 탑재와 마진 개선으로 이어지는지 확인하세요.",
+        })
+
+        report = analyze._normalize_stock_report(raw, ["v1", "v2"])
+
+        self.assertEqual(report["checkpoints"][0]["event"], "메모리 비용과 공급망 리스크")
+
+    def test_normalize_clips_report_sections_at_sentence_boundary(self):
+        raw = json.loads(json.dumps(_RAW_REPORT))
+        raw["bullCase"]["text"] = "실적 개선과 저평가 매력이 이어지고 있어요. " * 20
+
+        report = analyze._normalize_stock_report(raw, ["v1", "v2"])
+
+        self.assertLessEqual(len(report["bullCase"]["text"]), 360)
+        self.assertTrue(report["bullCase"]["text"].endswith("요."))
+
     def test_normalize_fails_without_usable_checkpoints(self):
         broken = json.loads(json.dumps(_RAW_REPORT))
         broken["checkpoints"] = [{"event": "", "check": ""}]

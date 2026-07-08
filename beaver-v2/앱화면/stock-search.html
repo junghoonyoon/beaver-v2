@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="naver-site-verification" content="ddef5be53c5a428e2046ea2215b0eeb2c0ec7e67">
   <meta name="robots" content="index,follow,max-image-preview:large">
-  <meta name="description" content="최근 2주 유튜버들의 의견을 모아 긍정·관망·주의로 나누고, 현재 분위기 리포트까지 30초 만에 확인">
+  <meta name="description" content="주식 유튜브, 이제 안 봐도 됩니다. 최근 2주 유튜버 의견을 긍정·관망·주의로 나눠 30초 리포트로 요약해 드려요.">
   <meta name="application-name" content="지금사도될까요?">
   <meta name="theme-color" content="#ffffff">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="지금사도될까요?">
   <meta property="og:title" content="지금사도될까요? | 주식 유튜브 의견 요약 리포트">
-  <meta property="og:description" content="최근 2주 유튜버들의 의견을 모아 긍정·관망·주의로 나누고, 현재 분위기 리포트까지 30초 만에 확인">
+  <meta property="og:description" content="주식 유튜브, 이제 안 봐도 됩니다. 최근 2주 유튜버 의견을 긍정·관망·주의로 나눠 30초 리포트로 요약해 드려요.">
   <meta property="og:url" content="https://stockzip.kr/">
   <link rel="canonical" href="https://stockzip.kr/">
   <meta property="og:image" content="https://stockzip.kr/assets/og-image.png">
@@ -22,7 +22,7 @@
   <meta property="og:image:alt" content="지금사도될까요? - 유튜브 분위기 요약리포트">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="지금사도될까요? | 주식 유튜브 의견 요약 리포트">
-  <meta name="twitter:description" content="최근 2주 유튜버들의 의견을 모아 긍정·관망·주의로 나누고, 현재 분위기 리포트까지 30초 만에 확인">
+  <meta name="twitter:description" content="주식 유튜브, 이제 안 봐도 됩니다. 최근 2주 유튜버 의견을 긍정·관망·주의로 나눠 30초 리포트로 요약해 드려요.">
   <meta name="twitter:image" content="https://stockzip.kr/assets/og-image.png">
   <meta name="twitter:image:alt" content="지금사도될까요? - 유튜브 분위기 요약리포트">
   <title>지금사도될까요? | 주식 유튜브 의견 요약 리포트</title>
@@ -44,7 +44,7 @@
         "name": "지금사도될까요?",
         "alternateName": ["지금사도될까요", "지금 사도 될까요", "stockzip", "stockzip.kr"],
         "url": "https://stockzip.kr/",
-        "description": "최근 2주 유튜버들의 의견을 모아 긍정·관망·주의로 나누고, 현재 분위기 리포트까지 30초 만에 확인",
+        "description": "주식 유튜브, 이제 안 봐도 됩니다. 최근 2주 유튜버 의견을 긍정·관망·주의로 나눠 30초 리포트로 요약해 드려요.",
         "inLanguage": "ko-KR",
         "publisher": {
           "@id": "https://stockzip.kr/#organization"
@@ -130,10 +130,11 @@
       transform:translateY(1px)
     }
     .brand-name strong { font-weight:700 }
+    .hero-copy { margin-top:46px; max-width:720px }
     .hero-copy.hide { display:none }
-    h1 { margin:24px 0 16px; font-size:clamp(30px,5.2vw,42px); line-height:1.15; letter-spacing:0; text-wrap:balance }
+    h1 { margin:0 0 16px; font-size:clamp(32px,5.4vw,46px); line-height:1.1; letter-spacing:0; text-wrap:balance }
     .lead { margin:0; color:#4b5563; font-size:16px; line-height:1.65 }
-    .lead-emphasis { color:var(--blue); font-weight:760 }
+    .lead-primary { color:var(--blue); font-weight:760 }
     .result-sticky-bar {
       position:sticky; top:12px; z-index:30; margin-top:32px; isolation:isolate;
     }
@@ -159,6 +160,19 @@
       margin-left:auto;
       background:var(--blue); color:#fff; font-weight:750; cursor:pointer;
       box-shadow:0 8px 18px rgba(0,113,227,.18);
+    }
+    body:not(.result-mode) .result-sticky-bar {
+      position:relative; top:auto; width:min(640px,100%); margin:28px auto 0;
+    }
+    body:not(.result-mode) .result-sticky-bar::before { display:none }
+    body:not(.result-mode) .search {
+      border-color:#e9edf3; border-radius:18px; background:#f8fafc;
+      box-shadow:none; -webkit-backdrop-filter:none; backdrop-filter:none;
+    }
+    body:not(.result-mode) .search input { padding:11px 14px; font-size:16px }
+    body:not(.result-mode) .search-submit {
+      min-height:42px; border-radius:13px; padding:0 17px;
+      background:#111318; box-shadow:none; font-size:14px;
     }
     body.result-mode .search {
       gap:0; margin-top:28px; padding:5px; border-radius:18px;
@@ -219,7 +233,13 @@
     .suggestion-name { min-width:0; color:#14161a; font-size:16px; font-weight:700; line-height:1.3; word-break:keep-all }
     .suggestion-name .match { color:var(--blue); font-weight:800 }
     .suggestion-market { color:#70757d; font-size:15px; font-weight:600; line-height:1.3; text-align:right; white-space:nowrap }
-    .market-panel { margin-top:36px }
+    .market-panel {
+      margin-top:36px; padding-top:24px;
+    }
+    .section-eyebrow {
+      margin-bottom:7px; color:#8a93a1; font-size:12px; font-weight:760;
+      line-height:1.2; letter-spacing:.02em;
+    }
     .market-tabs {
       display:flex; width:100%; gap:3px; padding:3px;
       border:1px solid #eceff3; border-radius:999px; background:#f5f6f8;
@@ -229,25 +249,35 @@
       background:transparent; color:#8b9098; font-size:15px; font-weight:700; cursor:pointer;
     }
     .market-tab.active { background:#fff; color:var(--ink); box-shadow:0 1px 3px rgba(20,28,45,.08) }
-    .rank-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:22px 0 14px }
-    .rank-title-label { color:var(--ink); font-size:16px; font-weight:850; line-height:1.25; letter-spacing:0 }
-    .rank-actions { display:inline-flex; align-items:center; gap:8px; color:var(--muted); white-space:nowrap }
-    .rank-refresh-caption { font-size:12px; font-weight:500; line-height:1 }
-    .rank-refresh {
-      appearance:none; display:inline-flex; align-items:center; gap:4px; border:0; padding:0;
-      background:transparent; color:#667085; text-decoration:underline; text-underline-offset:3px;
-      font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap;
+    .rank-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin:0 0 18px }
+    .rank-title-row { display:flex; align-items:center; gap:8px; min-width:0 }
+    .rank-title-label { color:var(--ink); font-size:18px; font-weight:820; line-height:1.24; letter-spacing:0 }
+    .rank-description {
+      max-width:560px; margin:8px 0 0; color:#697281; font-size:14px; font-weight:430;
+      line-height:1.6; word-break:keep-all;
     }
-    .rank-refresh-icon { font-size:13px; line-height:1 }
+    .rank-refresh {
+      appearance:none; display:inline-flex; align-items:center; justify-content:center;
+      width:24px; height:24px; flex:none; border:0; padding:0;
+      background:transparent; color:#8b94a3; cursor:pointer;
+    }
+    .rank-refresh-label {
+      position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden;
+      clip:rect(0,0,0,0); white-space:nowrap; border:0;
+    }
+    .rank-refresh-icon {
+      display:inline-flex; align-items:center; justify-content:center;
+      width:24px; height:24px; font-size:18px; line-height:1;
+    }
     .rank-refresh:hover { color:#30343b }
     .rank-refresh:disabled { color:#b8bec8; cursor:default }
     .rank-list {
-      display:grid; gap:0; overflow:hidden; border:0; border-radius:12px;
+      display:grid; gap:0; overflow:hidden; margin-top:14px; border:0; border-radius:12px;
       background:#fff;
     }
     .rank-item {
       appearance:none; display:grid; grid-template-columns:24px minmax(0,1fr) auto; align-items:center; gap:14px;
-      width:100%; border:0; border-bottom:1px solid #eef0f4; padding:13px 0;
+      width:100%; border:0; border-bottom:1px solid #eef0f4; padding:15px 0;
       background:#fff; color:var(--ink); text-align:left; cursor:pointer;
     }
     .rank-item:last-child { border-bottom:0 }
@@ -266,7 +296,7 @@
     .rank-change.down { color:var(--neg) }
     .rank-change.flat { color:#667085 }
     .rank-meta {
-      display:block; color:#667085; font-size:12px; font-weight:500; line-height:1.2;
+      display:grid; justify-items:end; gap:5px; color:#667085; font-size:12px; font-weight:500; line-height:1.2;
       text-align:right; white-space:nowrap;
     }
     .rank-opinion { color:#667085; font-size:12px; font-weight:500 }
@@ -281,24 +311,43 @@
     .rank-more:hover { border-color:#c9d7eb; color:#30343b; background:#f8fafc }
     .rank-market { display:none }
     .market-panel.hide { display:none }
-    .watch-panel {
-      display:none; margin-top:30px; padding:0;
-    }
+    .watch-panel { display:none; margin-top:42px }
     .watch-panel.show { display:block }
-    body.result-mode .watch-panel { display:none }
-    .watch-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:12px }
+    .watch-panel.watch-empty-state.show { display:block }
+    body.result-mode .watch-panel,
+    body.result-mode .watch-panel.show,
+    body.result-mode .watch-panel.watch-empty-state.show { display:none }
+    .watch-head { display:grid; gap:6px; margin-bottom:12px }
+    .watch-panel.watch-empty-state .watch-head { margin-bottom:0 }
+    .watch-head-top { display:flex; align-items:center; gap:12px; min-width:0 }
+    .watch-title-row { display:flex; align-items:center; gap:8px; min-width:0 }
     .watch-heading { display:grid; gap:4px; min-width:0 }
-    .watch-title { color:var(--ink); font-size:16px; font-weight:850; line-height:1.25 }
+    .watch-title { color:var(--ink); font-size:18px; font-weight:820; line-height:1.24 }
+    .watch-count { color:#8b94a3; font-size:13px; font-weight:650; line-height:1.3; font-variant-numeric:tabular-nums }
     .watch-note { color:#858d99; font-size:13px; font-weight:400; line-height:1.45; word-break:keep-all }
     .watch-refresh {
-      appearance:none; display:inline-flex; align-items:center; gap:4px; border:0; padding:0;
-      background:transparent; color:#667085; text-decoration:underline; text-underline-offset:3px;
-      font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap;
+      appearance:none; display:inline-flex; align-items:center; justify-content:center;
+      width:24px; height:24px; flex:none; border:0; padding:0;
+      background:transparent; color:#8b94a3; cursor:pointer;
     }
-    .watch-refresh-icon { font-size:13px; line-height:1 }
+    .watch-refresh-label {
+      position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden;
+      clip:rect(0,0,0,0); white-space:nowrap; border:0;
+    }
+    .watch-refresh-icon {
+      display:inline-flex; align-items:center; justify-content:center;
+      width:24px; height:24px; font-size:18px; line-height:1;
+    }
     .watch-refresh:hover { color:#30343b }
-    .watch-refresh:disabled { color:#b8bec8; cursor:wait }
+    .watch-refresh:disabled { color:#b8bec8; cursor:default }
+    .watch-refresh[hidden] { display:none }
     .watch-list { display:grid; gap:0 }
+    .watch-panel.watch-empty-state .watch-list { display:flex; width:100% }
+    .watch-empty {
+      display:flex; align-items:center; justify-content:center;
+      width:100%; height:80px; padding:0; text-align:center;
+    }
+    .watch-empty-label { color:#a0a6b0; font-size:12px; font-weight:620; line-height:1.4 }
     .watch-item {
       display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:8px;
       border-bottom:1px solid #eef0f4; padding:13px 0; background:#fff; color:var(--ink);
@@ -483,14 +532,19 @@
       0% { background-position:120% 0 }
       100% { background-position:-120% 0 }
     }
-    .verdict-top { display:flex; align-items:flex-start; justify-content:space-between; gap:20px }
-    .verdict-title { min-width:0 }
+    .verdict-top { display:flex; align-items:flex-start; justify-content:space-between; gap:18px }
+    .verdict-title { min-width:0; max-width:960px }
     .verdict-eyebrow {
-      margin-bottom:18px; color:#6b7280; font-size:16px; font-weight:650; line-height:1.25;
+      display:grid; gap:4px; margin-bottom:14px; color:#6b7280;
+      font-size:15px; font-weight:620; line-height:1.3;
     }
-    .verdict-eyebrow-stock { color:var(--blue); font-weight:760 }
+    .verdict-eyebrow-title { display:block }
+    .verdict-eyebrow-stock { color:var(--blue); font-weight:730 }
+    .verdict-eyebrow-period {
+      display:block; color:#808996; font-size:13px; font-weight:500; line-height:1.35;
+    }
     .verdict-card h2 {
-      color:#111318; font-size:32px; font-weight:720; line-height:1.18;
+      color:#111318; font-size:29px; font-weight:700; line-height:1.24;
       letter-spacing:0;
     }
     .verdict-headline {
@@ -500,17 +554,23 @@
       color:#a0a6b0; font-size:25px; font-weight:760; transform:translateY(0);
     }
     .verdict-head-meta {
-      display:grid; gap:4px; margin-top:12px; color:#7c8490;
-      font-size:13px; font-weight:560; line-height:1.45;
+      display:flex; flex-wrap:wrap; align-items:center; gap:6px 10px; margin-top:14px; color:#7c8490;
+      font-size:12.5px; font-weight:520; line-height:1.45;
     }
     .verdict-head-distribution {
-      color:#4b5563; font-weight:720;
+      color:#5b6472; font-weight:640;
     }
     .verdict-head-flow {
-      color:#8a93a1; font-weight:560;
+      color:#8b94a3; font-weight:520;
+    }
+    .verdict-head-flow::before {
+      content:"·"; margin-right:10px; color:#c0c7d2;
+    }
+    .verdict-value-proof {
+      flex:1 1 100%; color:#4f5866; font-weight:650;
     }
     .verdict-chip {
-      flex:0 0 auto; border-radius:999px; padding:7px 10px; font-size:12px; font-weight:740;
+      flex:0 0 auto; border-radius:999px; padding:6px 9px; font-size:11px; font-weight:700;
       line-height:1; white-space:nowrap;
     }
     .verdict-chip.pos { color:var(--pos); background:var(--pos-bg) }
@@ -534,17 +594,37 @@
     .report-text { margin:0; color:#242832; font-size:15px; font-weight:430; line-height:1.7; word-break:keep-all }
     .report-row.muted .report-label,
     .report-row.muted .report-text { color:#9aa2af }
-    .checkpoint-list { display:grid; gap:14px; margin:0; padding:0; list-style:none }
-    .checkpoint-item { display:grid; gap:4px; min-width:0 }
+    .checkpoint-list {
+      display:grid; gap:14px; margin:0; padding:0; list-style:none;
+      color:#242832; font-size:15px; font-weight:430; line-height:1.7; word-break:keep-all;
+    }
+    .checkpoint-item { display:grid; gap:5px; min-width:0 }
     .checkpoint-head { display:flex; flex-wrap:wrap; align-items:center; gap:8px }
-    .checkpoint-head::before { content:"☐"; color:#8a93a1; font-size:14px; line-height:1.4 }
-    .checkpoint-event { color:#111318; font-size:15px; font-weight:680; line-height:1.5; word-break:keep-all }
+    .checkpoint-head::before { content:"☐"; color:#8a93a1; font-size:inherit; line-height:1.5 }
+    .checkpoint-event { color:#242832; font-size:inherit; font-weight:650; line-height:1.5; word-break:inherit }
     .checkpoint-when {
       display:inline-flex; align-items:center; padding:2px 8px; border-radius:999px;
       background:#eef2f8; color:#4b5563; font-size:11.5px; font-weight:640; line-height:1.4;
     }
-    .checkpoint-text { margin:0; color:#242832; font-size:14.5px; font-weight:430; line-height:1.65; word-break:keep-all }
-    .checkpoint-interpret { margin:0; color:#747b87; font-size:13px; font-weight:430; line-height:1.6; word-break:keep-all }
+    .checkpoint-when.past { background:#e7f3ec; color:#1f7a4d }
+    .checkpoint-when.tbd { background:#f3f4f6; color:#9aa1ac }
+    .checkpoint-outcome {
+      margin:0; display:grid; justify-items:start; gap:7px;
+      color:inherit; font-size:inherit; font-weight:400; line-height:1.66; word-break:inherit;
+    }
+    .checkpoint-outcome-label { flex:none; padding:1px 7px; border-radius:999px; font-size:11.5px; font-weight:680; line-height:1.5 }
+    .checkpoint-outcome.good .checkpoint-outcome-label { background:#e7f3ec; color:#1f7a4d }
+    .checkpoint-outcome.bad .checkpoint-outcome-label { background:#fdecec; color:#c2413b }
+    .checkpoint-outcome.flat .checkpoint-outcome-label { background:#eef2f8; color:#4b5563 }
+    .checkpoint-news { margin:2px 0 0; padding:0; list-style:none; display:grid; gap:3px }
+    .checkpoint-news li { display:flex; align-items:baseline; gap:6px; min-width:0 }
+    .checkpoint-news li::before { content:"›"; flex:none; color:#b3bbc8; font-size:12px; line-height:1.6 }
+    .checkpoint-news a { color:#3b5bd6; font-size:13px; font-weight:450; line-height:1.6; text-decoration:none; word-break:keep-all }
+    .checkpoint-news a:hover { text-decoration:underline }
+    .checkpoint-news-source { flex:none; color:#9aa1ac; font-size:11.5px; line-height:1.6 }
+    .checkpoint-outcome-text { display:block; color:inherit; font-size:inherit; font-weight:inherit; line-height:inherit; word-break:inherit }
+    .checkpoint-text { margin:0; color:inherit; font-size:inherit; font-weight:inherit; line-height:inherit; word-break:inherit }
+    .checkpoint-interpret { margin:0; color:#5f6672; font-size:inherit; font-weight:400; line-height:1.66; word-break:inherit }
     .report-body { min-width:0 }
     .report-refs { display:flex; flex-wrap:wrap; align-items:center; gap:5px; margin-top:5px }
     .report-refs::before { content:"↳"; color:#b3bbc8; font-size:11px; font-weight:600; line-height:1.4 }
@@ -572,6 +652,93 @@
     }
     .report-ref:hover,
     .report-ref-more:hover { color:var(--blue); text-decoration:underline; text-underline-offset:3px }
+    .report-value-note {
+      margin:22px 0 0; color:#697281; font-size:13px; font-weight:460;
+      line-height:1.65; word-break:keep-all;
+    }
+    .verdict-card {
+      padding:58px 64px 42px; border-color:#edf0f4; background:#fff;
+    }
+    .verdict-card > .sample-note:first-child {
+      margin:-58px -64px 40px; padding:13px 64px;
+    }
+    .verdict-top { display:block; text-align:center }
+    .verdict-title { max-width:920px; margin:0 auto }
+    .verdict-eyebrow {
+      justify-items:center; gap:6px; margin-bottom:18px;
+      color:#747b87; font-size:14px; font-weight:560;
+    }
+    .verdict-eyebrow-stock { color:#111318; font-weight:720 }
+    .verdict-eyebrow-period { color:#8b94a3; font-size:13px; font-weight:460 }
+    .verdict-chip-side { display:none }
+    .verdict-chip-inline {
+      display:inline-flex; align-items:center; width:max-content; margin:0 auto 18px;
+    }
+    .verdict-card h2 {
+      max-width:880px; margin:0 auto; color:#111318;
+      font-size:38px; font-weight:720; line-height:1.14;
+    }
+    .verdict-headline { justify-content:center }
+    .verdict-head-meta {
+      justify-content:center; gap:8px 12px; max-width:900px; margin:22px auto 0;
+      color:#7d8794; font-size:13px; font-weight:480;
+    }
+    .verdict-head-flow::before { content:""; margin:0 }
+    .verdict-value-proof {
+      flex:1 1 100%; color:#3f4650; font-weight:650;
+    }
+    .verdict-core {
+      max-width:820px; margin:30px auto 0; text-align:center;
+    }
+    .mood-summary {
+      color:#30343b; font-size:18px; font-weight:400; line-height:1.72;
+    }
+    .verdict-report {
+      display:grid; gap:0; margin-top:52px; border-top:1px solid #edf0f4;
+    }
+    .report-row {
+      grid-template-columns:1fr; gap:12px; padding:30px 0;
+      border-bottom:1px solid #edf0f4;
+    }
+    .report-label {
+      color:#111318; font-size:16px; font-weight:720; line-height:1.38;
+    }
+    .report-text {
+      max-width:980px; color:#3f4650; font-size:17px; font-weight:400;
+      line-height:1.78;
+    }
+    .report-refs { margin-top:13px }
+    .report-refs::before { content:"근거"; color:#a0a8b4; font-size:11.5px }
+    .report-row.checkpoint-row { gap:18px }
+    .checkpoint-list {
+      counter-reset:checkpoint; gap:0; font-size:16px; line-height:1.72;
+    }
+    .checkpoint-item {
+      counter-increment:checkpoint; display:grid; grid-template-columns:54px minmax(0,1fr);
+      column-gap:20px; gap:5px; padding:24px 0; border-top:1px solid #edf0f4;
+    }
+    .checkpoint-item:first-child { border-top:0; padding-top:2px }
+    .checkpoint-item::before {
+      content:counter(checkpoint, decimal-leading-zero); grid-column:1; grid-row:1 / span 7;
+      color:#b2bac6; font-size:15px; font-weight:720; line-height:1.5;
+    }
+    .checkpoint-item > * { grid-column:2 }
+    .checkpoint-head { align-items:center; gap:10px }
+    .checkpoint-head::before { content:none }
+    .checkpoint-event {
+      color:#111318; font-size:19px; font-weight:680; line-height:1.38;
+    }
+    .checkpoint-text,
+    .checkpoint-outcome,
+    .checkpoint-interpret {
+      max-width:980px; color:#3f4650; font-size:16px; line-height:1.72;
+    }
+    .checkpoint-outcome { margin-top:4px }
+    .checkpoint-news { margin-top:4px }
+    .report-value-note {
+      margin-top:30px; padding-top:18px; border-top:1px solid #edf0f4;
+      color:#7d8794; text-align:center;
+    }
     .watch-result-wrap {
       position:relative; display:inline-flex; align-items:center; justify-content:center;
     }
@@ -633,10 +800,12 @@
     }
     .related-tags { display:flex; flex-wrap:wrap; gap:7px }
     .related-tag {
-      appearance:none; min-height:28px; border:1px solid #dbe3ef; border-radius:999px;
+      appearance:none; display:inline-flex; align-items:center; justify-content:center;
+      min-height:28px; border:1px solid #dbe3ef; border-radius:999px;
       padding:0 10px; background:#fff; color:#4b5563; font-size:12px; font-weight:650;
-      cursor:pointer; line-height:1; white-space:nowrap;
+      cursor:pointer; line-height:1; white-space:nowrap; text-decoration:none;
     }
+    .related-tag:visited { color:#4b5563 }
     .related-tag:hover { border-color:#bcd3f5; color:var(--blue); background:#f7fbff }
     .verdict-distribution { display:flex; flex-wrap:wrap; gap:10px }
     .counts { display:flex; flex-wrap:wrap; gap:8px; margin-top:28px }
@@ -765,12 +934,19 @@
     .error { color:var(--neg); border-color:#f2c8c5 }
     .foot { margin-top:28px; color:var(--muted); font-size:12px; line-height:1.6 }
     @media (max-width:560px) {
-      .page { padding-top:28px }
+      .page { width:calc(100vw - 28px); max-width:calc(100vw - 28px); padding-top:28px }
+      body { overflow-x:hidden }
+      .hero-copy { margin-top:38px }
+      h1 { font-size:34px; line-height:1.12 }
+      .lead { font-size:15px; line-height:1.66 }
       .result-sticky-bar { top:10px }
       .result-sticky-bar::before { inset:-8px -10px -10px; border-radius:23px }
       .search { gap:6px; padding:6px }
       .search input { padding:10px 10px; font-size:16px }
       .search-submit { min-height:46px; padding:0 14px; font-size:15px; white-space:nowrap }
+      body:not(.result-mode) .result-sticky-bar { margin-top:24px }
+      body:not(.result-mode) .search input { padding:10px 11px; font-size:15px }
+      body:not(.result-mode) .search-submit { min-height:40px; padding:0 13px; font-size:13px }
       body.result-mode .search { padding:5px }
       body.result-mode .search input { padding:9px 0 9px 10px; font-size:15px }
       body.result-mode .search-submit { min-height:40px; padding:0 13px; font-size:14px }
@@ -779,13 +955,30 @@
       .result-tabs { margin-top:14px }
       .result-tab { padding:8px 8px; font-size:12px }
       body.result-mode .result { margin-top:16px }
-      .market-panel { margin-top:30px }
-      .market-tab { font-size:14px; padding:8px 13px }
-      .rank-head { gap:10px; margin-top:20px }
-      .rank-refresh-caption { display:none }
-      .rank-refresh { font-size:12px }
+      .watch-panel { margin-top:38px; padding-top:0 }
+      .market-panel { margin-top:16px; padding-top:0 }
+      .market-panel { padding-top:12px }
+      .watch-head { gap:6px }
+      .watch-head-top { align-items:flex-start; gap:12px }
+      .watch-title-row,
+      .rank-title-row { align-items:center; gap:8px }
+      .watch-heading,
+      .rank-head > div { min-width:0; max-width:100% }
+      .watch-title,
+      .rank-title-label { font-size:18px; line-height:1.28 }
+      .lead,
+      .watch-note,
+      .rank-description,
+      .watch-empty {
+        max-width:100%; word-break:normal; overflow-wrap:anywhere;
+      }
+      .rank-description { font-size:13px; line-height:1.55 }
+      .market-tabs { max-width:100%; overflow:hidden }
+      .market-tab { min-width:0; font-size:14px; padding:8px 13px }
+      .rank-head { align-items:flex-start; flex-direction:row; gap:12px; margin:0 0 14px }
       .rank-item { grid-template-columns:22px minmax(0,1fr) auto; gap:12px; padding:13px 0 }
       .rank-name { font-size:15px }
+      .rank-meta { gap:4px }
       .rank-more { min-height:36px; font-size:12px }
       .summary-head { align-items:flex-start; gap:10px }
       .summary h2 { font-size:24px }
@@ -793,17 +986,20 @@
       .verdict-card { padding:26px 20px 22px; border-radius:8px }
       .verdict-card > .sample-note:first-child { margin:-26px -20px 20px; padding:10px 20px }
       .detail-loading { padding:13px 14px }
-      .verdict-top { display:grid; gap:8px }
-      .verdict-eyebrow { margin-bottom:12px; color:#6b7280; font-size:15px; font-weight:620 }
+      .verdict-top { display:grid; gap:10px }
+      .verdict-eyebrow { gap:4px; margin-bottom:10px; color:#6b7280; font-size:14px; font-weight:600 }
       .verdict-eyebrow-stock { color:var(--blue); font-weight:760 }
+      .verdict-eyebrow-period { font-size:12px; font-weight:500; line-height:1.4 }
       .verdict-chip-side { display:none }
       .verdict-chip-inline {
-        display:inline-flex; align-items:center; width:max-content; margin:18px 0 6px;
+        display:inline-flex; align-items:center; width:max-content; margin:14px 0 4px;
       }
-      .verdict-card h2 { font-size:25px; font-weight:780; line-height:1.24 }
-      .verdict-head-meta { gap:5px; margin-top:14px; color:#8a8f98; font-size:14px; font-weight:500; line-height:1.5 }
-      .verdict-head-distribution { color:#5e6673; font-weight:610 }
+      .verdict-card h2 { font-size:24px; font-weight:740; line-height:1.28 }
+      .verdict-head-meta { display:grid; gap:4px; margin-top:12px; color:#8a8f98; font-size:13px; font-weight:500; line-height:1.5 }
+      .verdict-head-distribution { color:#5e6673; font-weight:600 }
       .verdict-head-flow { color:#8d95a2; font-weight:500 }
+      .verdict-head-flow::before { content:none }
+      .verdict-value-proof { font-weight:620 }
       .skeleton-eyebrow { width:68%; height:15px; margin-bottom:17px }
       .skeleton-title { width:92%; height:34px }
       .skeleton-chip { width:70px; height:14px }
@@ -815,7 +1011,7 @@
       .skeleton-footer { align-items:flex-start; flex-direction:column; gap:12px }
       .skeleton-flow { width:78%; max-width:100% }
       .skeleton-button { width:104px; height:30px }
-      .verdict-chip { width:max-content; font-size:12px; font-weight:650 }
+      .verdict-chip { width:max-content; font-size:11px; font-weight:650 }
       .verdict-core { margin-top:20px }
       .mood-summary { color:#3f4650; font-weight:400; line-height:1.76 }
       .verdict-report { gap:32px; margin-top:32px; padding:0; border-top:0 }
@@ -826,6 +1022,37 @@
         color:#4f5662; font-size:17px; font-weight:400;
         line-height:1.66; letter-spacing:0; word-break:keep-all;
       }
+      .checkpoint-list {
+        color:#4f5662; font-size:17px; font-weight:400;
+        line-height:1.66; letter-spacing:0; word-break:keep-all;
+      }
+      .checkpoint-head::before,
+      .checkpoint-event { line-height:1.45 }
+      .checkpoint-event { color:#242832; font-weight:640 }
+      .verdict-card { padding:34px 22px 26px }
+      .verdict-card > .sample-note:first-child { margin:-34px -22px 24px; padding:10px 22px }
+      .verdict-top { text-align:left }
+      .verdict-title { margin:0; max-width:none }
+      .verdict-eyebrow { justify-items:start; margin-bottom:12px }
+      .verdict-chip-inline { margin:0 0 14px }
+      .verdict-card h2 { max-width:none; margin:0; font-size:28px; line-height:1.22 }
+      .verdict-headline { justify-content:flex-start }
+      .verdict-head-meta { justify-content:flex-start; margin-top:16px }
+      .verdict-core { margin:24px 0 0; text-align:left }
+      .mood-summary { font-size:17px }
+      .verdict-report { margin-top:34px }
+      .checkpoint-item { grid-template-columns:1fr; gap:7px; padding:22px 0 }
+      .checkpoint-item::before {
+        grid-column:1; grid-row:auto; width:max-content; border-radius:999px;
+        padding:2px 8px; background:#f3f5f8; color:#8993a1;
+        font-size:11.5px; line-height:1.4;
+      }
+      .checkpoint-item > * { grid-column:1 }
+      .checkpoint-event { font-size:18px }
+      .checkpoint-text,
+      .checkpoint-outcome,
+      .checkpoint-interpret { font-size:16px }
+      .report-value-note { text-align:left }
       .report-refs { margin-top:10px; gap:7px }
       .report-refs::before,
       .report-ref-separator,
@@ -878,15 +1105,14 @@
       <span class="brand-name">지금사도될까요?</span>
     </button>
     <div class="hero-copy" id="heroCopy">
-      <h1>이 주식 살까 말까 고민될 때,<br>유튜버들은 어떻게 생각할까?</h1>
-      <p class="lead">최근 2주 유튜버들의 의견을 모아 긍정·관망·주의로 나누고,<br>현재 분위기 리포트까지 <span class="lead-emphasis">30초 만에</span> 확인</p>
+      <h1>주식 유튜브,<br>이제 안 봐도 됩니다</h1>
+      <p class="lead">최근 2주 영상 속 의견을 <span class="lead-primary">긍정·관망·주의</span>로 나눠 <span class="lead-primary">30초</span> 리포트로 요약해 드려요.<br>근거 영상은 필요한 부분만 골라 보세요.</p>
     </div>
-
     <div class="result-sticky-bar">
       <form class="search" id="form">
-        <input id="query" autocomplete="off" placeholder="예: 삼성전자, 엔비디아, 반도체, AI, 2차전지" aria-label="종목명, 섹터, 테마">
+        <input id="query" autocomplete="off" placeholder="종목명, 섹터, 테마 검색" aria-label="종목명, 섹터, 테마">
         <span class="search-watch-slot" id="searchWatchSlot"></span>
-        <button class="search-submit" id="submit" type="submit">의견 보기</button>
+        <button class="search-submit" id="submit" type="submit">의견보기</button>
         <div class="suggestions" id="suggestions" role="listbox" aria-label="종목, 섹터, 테마 추천"></div>
       </form>
       <nav class="result-tabs" id="resultTabs" aria-label="검색 결과 보기" role="tablist" hidden>
@@ -896,29 +1122,35 @@
     </div>
     <section class="watch-panel" id="watchPanel" aria-label="내 관심종목">
       <div class="watch-head">
-        <div class="watch-heading">
-          <div class="watch-title">내 관심종목</div>
-          <div class="watch-note">베타 기간에는 관심종목이 이 브라우저에만 저장돼요. 같은 기기와 브라우저에서 이용해 주세요.</div>
+        <div class="watch-head-top">
+          <div class="watch-title-row">
+            <div class="watch-title">내 관심종목</div>
+            <span class="watch-count" id="watchCount">0/10</span>
+            <button class="watch-refresh" id="watchRefreshButton" type="button" aria-label="새로고침">
+              <span class="watch-refresh-label">새로고침</span><span class="watch-refresh-icon" aria-hidden="true">↻</span>
+            </button>
+          </div>
         </div>
-        <button class="watch-refresh" id="watchRefreshButton" type="button">
-          <span class="watch-refresh-label">새로고침</span><span class="watch-refresh-icon" aria-hidden="true">↻</span>
-        </button>
+        <div class="watch-heading">
+          <div class="watch-note">보유하거나 지켜보는 종목의 최근 유튜브 의견 변화를 모아보세요.</div>
+        </div>
       </div>
       <div class="watch-list" id="watchList"></div>
     </section>
     <section class="market-panel" id="marketPanel" aria-label="인기주식">
+      <div class="rank-head">
+        <div>
+          <div class="rank-title-row">
+            <div class="rank-title-label" id="rankTitleLabel">최근 2주 유튜버가 주목한 종목</div>
+            <button class="rank-refresh" id="rankRefreshButton" type="button" aria-label="새로고침">
+              <span class="rank-refresh-label">새로고침</span><span class="rank-refresh-icon" aria-hidden="true">↻</span>
+            </button>
+          </div>
+        </div>
+      </div>
       <div class="market-tabs" role="tablist" aria-label="시장 선택">
         <button class="market-tab active" type="button" data-market="kr" role="tab" aria-selected="true">국내주식</button>
         <button class="market-tab" type="button" data-market="us" role="tab" aria-selected="false">미국주식</button>
-      </div>
-      <div class="rank-head">
-        <div class="rank-title-label" id="rankTitleLabel">최근 2주 유튜버가 주목한 종목</div>
-        <div class="rank-actions">
-          <span class="rank-refresh-caption">유튜버 의견 기준</span>
-          <button class="rank-refresh" id="rankRefreshButton" type="button">
-            <span>새로고침</span><span class="rank-refresh-icon" aria-hidden="true">↻</span>
-          </button>
-        </div>
       </div>
       <div class="rank-list" id="rankList"></div>
       <button class="rank-more" id="rankMoreButton" type="button"></button>
@@ -940,7 +1172,7 @@
     const loading = $("loading"), loadingTitle = $("loadingTitle"), loadingText = $("loadingText");
     const result = $("result"), statusEl = $("status"), suggestionsEl = $("suggestions"), resultTabs = $("resultTabs");
     const marketPanel = $("marketPanel"), rankListEl = $("rankList"), rankRefreshButton = $("rankRefreshButton"), rankMoreButton = $("rankMoreButton");
-    const watchPanel = $("watchPanel"), watchListEl = $("watchList"), watchRefreshButton = $("watchRefreshButton");
+    const watchPanel = $("watchPanel"), watchListEl = $("watchList"), watchRefreshButton = $("watchRefreshButton"), watchCountEl = $("watchCount");
     const RANK_INITIAL_LIMIT = 10, RANK_STEP = 10, RANK_MAX_LIMIT = 30;
     const WATCH_STORAGE_KEY = "beaver.watchlist.signals.v1";
     const WATCH_MAX_ITEMS = 10;
@@ -2550,7 +2782,7 @@
       return [
         { label:reportRowLabel("좋게 보는 이유", positiveOpinions.length), text:positive.reason, refs:positiveRefs, tone:hasPositive ? "" : "muted" },
         { label:reportRowLabel("관망·부정적으로 보는 이유", cautionOpinions.length), text:cautionText, refs:cautionRefs, tone:hasCaution ? "" : "muted" },
-        { label:"사기 전 체크포인트", text:checkpointTextForData(data), refs:fallbackNextRefs },
+        { label:"지금 판단을 바꿀 수 있는 체크포인트", text:checkpointTextForData(data), refs:fallbackNextRefs },
       ];
     }
     const moodSummaryUpsideText = label => ({
@@ -2901,7 +3133,7 @@
         <div class="related-stocks" aria-label="같이 보면 좋을 종목">
           <p class="related-title">같이 보면 좋을 종목</p>
           <div class="related-tags">
-            ${related.map(item => `<button class="related-tag" type="button" data-related-query="${esc(item)}">${esc(item)}</button>`).join("")}
+            ${related.map(item => `<a class="related-tag" href="${esc(serviceSearchUrl(item, { tab:"report" }))}" data-related-query="${esc(item)}" data-related-tab="report">${esc(item)}</a>`).join("")}
           </div>
         </div>`;
     }
@@ -3010,13 +3242,23 @@
       syncRankingQuoteSocket();
     }
 
-    function shareUrlFor(query, code) {
+    const resultTabNames = new Set(["details", "report"]);
+    function normalizeResultTab(tabName = "details") {
+      return resultTabNames.has(tabName) ? tabName : "details";
+    }
+    function serviceSearchUrl(query, options = {}) {
       const url = new URL("/", location.href);
-      if (code) {
-        url.pathname = `/stocks/${encodeURIComponent(String(code).trim().toUpperCase())}`;
-        return url.href;
-      }
       url.searchParams.set("q", query);
+      const tab = normalizeResultTab(options.tab || "details");
+      if (tab === "report") url.searchParams.set("tab", "report");
+      else url.searchParams.delete("tab");
+      return url.href;
+    }
+    function shareUrlFor(query, code, tab = "report") {
+      const normalizedTab = normalizeResultTab(tab);
+      if (normalizedTab === "report" || !code) return serviceSearchUrl(query, { tab:normalizedTab });
+      const url = new URL("/", location.href);
+      url.pathname = `/stocks/${encodeURIComponent(String(code).trim().toUpperCase())}`;
       return url.href;
     }
 
@@ -3041,7 +3283,10 @@
           .map(item => ({
             ...item,
             event:reportFieldText(item?.event),
+            timing:reportFieldText(item?.timing),
             when:reportFieldText(item?.when),
+            newsKeywords:item?.newsKeywords || {},
+            outcome:{ label:reportFieldText(item?.outcome?.label), text:reportFieldText(item?.outcome?.text) },
             check:reportFieldText(item?.check),
             interpretation:reportFieldText(item?.interpretation),
           }))
@@ -3061,18 +3306,6 @@
         turningPoint:{ ...(report.turningPoint || {}), text:reportFieldText(report.turningPoint?.text) },
         checkpoints,
       };
-    }
-
-    function verdictHeadline(data, mood) {
-      const currentMood = mood || data.marketMood || marketMoodFromCounts(data.counts || {});
-      const reportHeadline = String(summaryReport(data)?.headline || "").trim();
-      return explainMarketTerms(reportHeadline || evidenceBackedHeadline(data, currentMood) || plainDecisionTitle(currentMood));
-    }
-
-    function verdictSummary(data, mood) {
-      const reportSummary = String(summaryReport(data)?.summary || "").trim();
-      if (reportSummary) return explainMarketTerms(reportSummary);
-      return explainMarketTerms(richMoodSummary(data, mood || data.marketMood || marketMoodFromCounts(data.counts || {})));
     }
 
     function explainMarketTerms(text) {
@@ -3095,7 +3328,7 @@
         [/컨센서스/g, "시장 예상치"],
         [/실적 눈높이/g, "시장이 기대하는 실적 수준"],
         [/밸류에이션/g, "기업가치 평가"],
-        [/밸류/g, "기업가치"],
+        [/밸류(?!\s*체인)/g, "기업가치"],
         [/수급/g, "매수·매도 흐름"],
         [/인센티브/g, "판매 장려금"],
         [/믹스/g, "판매 구성"],
@@ -3104,13 +3337,78 @@
         value = value.replace(pattern, replacement);
       });
       return value
+        .replace(/이익률율/g, "이익률")
         .replace(/판매가격는/g, "판매가격은")
         .replace(/판매가격가/g, "판매가격이")
         .replace(/판매가격를/g, "판매가격을")
         .replace(/이익률는/g, "이익률은")
         .replace(/이익률가/g, "이익률이")
+        .replace(/이익률를/g, "이익률을")
+        .replace(/평가은/g, "평가는")
+        .replace(/평가이/g, "평가가")
+        .replace(/평가을/g, "평가를")
         .replace(/순자산가치는/g, "순자산가치는")
         .replace(/기업가치는/g, "기업가치는");
+    }
+
+    function headlineSubjectJosa(text) {
+      const value = String(text || "").trim();
+      const last = value.charCodeAt(value.length - 1);
+      if (last < 0xac00 || last > 0xd7a3) return "가";
+      return (last - 0xac00) % 28 ? "이" : "가";
+    }
+
+    function headlinePositiveAxis(text) {
+      if (includesAny(text, ["AI", "데이터센터", "인공지능"])) return "AI 수요";
+      if (includesAny(text, ["수주", "계약", "공급 계약"])) return "수주";
+      if (includesAny(text, ["실적", "매출", "영업이익", "이익"])) return "실적 성장";
+      if (includesAny(text, ["수요", "판매", "출하", "인도량"])) return "수요 회복";
+      if (includesAny(text, ["가격", "판매가격"])) return "가격 회복";
+      if (includesAny(text, ["성장", "개선", "회복"])) return "성장";
+      return "";
+    }
+
+    function headlineRiskAxis(text) {
+      if (includesAny(text, ["이익률", "수익성", "원가", "비용", "마진"])) return "수익성 부담";
+      if (includesAny(text, ["기업가치", "고평가", "평가 부담"])) return "기업가치 부담";
+      if (includesAny(text, ["규제", "소송", "제재", "승인"])) return "규제 리스크";
+      if (includesAny(text, ["수급", "매수·매도 흐름"])) return "수급 부담";
+      if (includesAny(text, ["부담", "우려", "리스크", "불확실"])) return "부담 요인";
+      return "";
+    }
+
+    function readableReportHeadline(text, data = {}) {
+      let value = String(text || "").trim();
+      const labels = [data.query, data.rawQuery, data.stockName, activeSearchQuery]
+        .map(item => String(item || "").trim())
+        .filter(Boolean);
+      labels.forEach(label => {
+        value = value.replace(new RegExp(`^${escapeRegExp(label)}(?:은|는|이|가)?\\s*`), "");
+      });
+      if (value.length <= 42) return value;
+
+      const hasUpside = includesAny(value, ["기대", "성장", "개선", "회복", "증가", "긍정"]);
+      const hasRisk = includesAny(value, ["부담", "우려", "리스크", "낮은", "높은", "부정", "고평가"]);
+      const positiveAxis = headlinePositiveAxis(value);
+      const riskAxis = headlineRiskAxis(value);
+      if (hasUpside && hasRisk && positiveAxis && riskAxis) {
+        const candidate = `${positiveAxis} 기대와 ${riskAxis}${headlineSubjectJosa(riskAxis)} 맞서요`;
+        if (candidate.length <= 42) return candidate;
+      }
+      return value;
+    }
+
+    function verdictHeadline(data, mood) {
+      const currentMood = mood || data.marketMood || marketMoodFromCounts(data.counts || {});
+      const reportHeadline = String(summaryReport(data)?.headline || "").trim();
+      const headline = reportHeadline || evidenceBackedHeadline(data, currentMood) || plainDecisionTitle(currentMood);
+      return readableReportHeadline(explainMarketTerms(headline), data);
+    }
+
+    function verdictSummary(data, mood) {
+      const reportSummary = String(summaryReport(data)?.summary || "").trim();
+      if (reportSummary) return explainMarketTerms(reportSummary);
+      return explainMarketTerms(richMoodSummary(data, mood || data.marketMood || marketMoodFromCounts(data.counts || {})));
     }
 
     function verdictSummaryHtml(data, mood) {
@@ -3137,7 +3435,7 @@
     }
     function checkpointFlatText(checkpoints = []) {
       return checkpoints
-        .map(item => `${item.event}${item.when ? ` (${item.when})` : ""} — ${item.check}`)
+        .map(item => `${item.event}${item.when ? ` (${item.when}${item.timing === "지남" ? " 완료" : ""})` : item.timing === "진행중" ? " (현재)" : ""} — ${item.check}${["지남", "진행중"].includes(item.timing) && item.outcome?.label ? ` [${item.timing === "진행중" ? "현황" : "결과"} ${item.outcome.label}${item.outcome.text ? `: ${item.outcome.text}` : ""}]` : ""}`)
         .join(" / ");
     }
     function reportRowsFromSummary(data, report) {
@@ -3162,12 +3460,16 @@
         rows.push({ label:"긍정으로 기우는 조건", text:turningText, refs:reportRefsFor(data, report.turningPoint?.videoIds, ["신중", "부정"]) });
       }
       rows.push({
-        label:"사기 전 체크포인트",
+        label:"지금 판단을 바꿀 수 있는 체크포인트",
         text:checkpointFlatText(report.checkpoints),
         refs:[],
         checkpoints:report.checkpoints.map(item => ({
           event:reportFieldText(item.event),
+          timing:reportFieldText(item.timing),
           when:reportFieldText(item.when),
+          newsQuery:reportFieldText(item.newsKeywords?.ko || item.newsKeywords?.en),
+          outcome:{ label:reportFieldText(item.outcome?.label), text:reportFieldText(item.outcome?.text) },
+          news:Array.isArray(item.news) ? item.news : [],
           check:reportFieldText(item.check),
           interpretation:reportFieldText(item.interpretation),
           refs:reportRefsFor(data, item.videoIds),
@@ -3205,16 +3507,59 @@
       </div>`;
     }
 
+    function checkpointWhenBadge(item = {}) {
+      if (item.when) {
+        const past = item.timing === "지남";
+        return `<span class="checkpoint-when${past ? " past" : ""}">${esc(item.when)}${past ? " · 완료" : ""}</span>`;
+      }
+      if (item.timing === "진행중") return `<span class="checkpoint-when">현재</span>`;
+      if (item.timing === "미정") return `<span class="checkpoint-when tbd">일정 미정</span>`;
+      return "";
+    }
+    function checkpointOutcomeHtml(item = {}) {
+      const label = item.outcome?.label;
+      if (!label || !["지남", "진행중"].includes(item.timing)) return "";
+      const ongoing = item.timing === "진행중";
+      const tone = label === "좋음" ? "good" : label === "나쁨" ? "bad" : "flat";
+      const display = ongoing
+        ? ({ "좋음":"현황 긍정적", "나쁨":"현황 부정적", "중립":"현황 중립" })[label]
+        : `결과 ${label}`;
+      return `<p class="checkpoint-outcome ${tone}">
+        <span class="checkpoint-outcome-label">${esc(display)}</span>
+        ${item.outcome?.text ? `<span class="checkpoint-outcome-text">${esc(explainMarketTerms(item.outcome.text))}</span>` : ""}
+      </p>`;
+    }
+    function checkpointNewsQuery(item = {}, baseQuery = "") {
+      const newsQuery = reportFieldText(item.newsQuery);
+      if (newsQuery) return newsQuery;
+      const event = reportFieldText(item.event);
+      if (baseQuery && event) return `${baseQuery} ${event}`;
+      return baseQuery || event;
+    }
+    function checkpointNewsHtml(item = {}) {
+      const news = (Array.isArray(item.news) ? item.news : [])
+        .filter(n => n && n.title && /^https?:\/\//.test(String(n.link || "")));
+      if (!news.length) return "";
+      const query = checkpointNewsQuery(item, activeSearchQuery || activeResultData?.query || "");
+      return `<ul class="checkpoint-news" aria-label="관련 뉴스">
+        ${news.map(n => `<li>
+          <a href="${esc(n.link)}" target="_blank" rel="noopener noreferrer" data-news-query="${esc(query || (n.titleKo || n.title))}" data-news-source="${esc(n.source || "")}">${esc(n.titleKo || n.title)}</a>
+          <span class="checkpoint-news-source">${esc([n.source, n.lang === "en" ? "원문" : ""].filter(Boolean).join(" · "))}</span>
+        </li>`).join("")}
+      </ul>`;
+    }
     function checkpointListHtml(checkpoints = []) {
       return `
-        <ul class="checkpoint-list" aria-label="사기 전 체크포인트 목록">
+        <ul class="checkpoint-list" aria-label="지금 판단을 바꿀 수 있는 체크포인트 목록">
           ${checkpoints.map(item => `
             <li class="checkpoint-item">
               <div class="checkpoint-head">
                 <span class="checkpoint-event">${esc(item.event)}</span>
-                ${item.when ? `<span class="checkpoint-when">${esc(item.when)}</span>` : ""}
+                ${checkpointWhenBadge(item)}
               </div>
               <p class="checkpoint-text">${esc(explainMarketTerms(item.check))}</p>
+              ${checkpointOutcomeHtml(item)}
+              ${checkpointNewsHtml(item)}
               ${item.interpretation ? `<p class="checkpoint-interpret">${esc(explainMarketTerms(item.interpretation))}</p>` : ""}
               ${reportRefsHtml(item.refs || [])}
             </li>`).join("")}
@@ -3261,13 +3606,31 @@
           <span class="flow-step confidence"><span>리포트</span> <b>${esc(reportConfidenceLabel(opinions))}</b></span>
         </div>`;
     }
+    function reportPeriodText(data, days = 14) {
+      const end = new Date(data?.indexUpdatedAt || Date.now());
+      if (Number.isNaN(end.getTime())) return "";
+      const start = new Date(end.getTime());
+      start.setHours(0, 0, 0, 0);
+      end.setHours(0, 0, 0, 0);
+      start.setDate(start.getDate() - Math.max(0, days - 1));
+      const format = value => `${value.getFullYear()}년 ${value.getMonth() + 1}월 ${value.getDate()}일`;
+      return `${format(start)} ~ ${format(end)}`;
+    }
     function verdictHeadMetaHtml(data) {
-      const { mentioned, opinions } = analysisCounts(data);
+      const { mentioned, candidate, opinions } = analysisCounts(data);
+      const candidateText = candidate ? `후보 유튜버 ${candidate}명에서 추림` : "후보 유튜버 선별";
       return `
         <div class="verdict-head-meta" aria-label="최근 2주 요약 리포트 표본 정보">
           <div class="verdict-head-distribution">${esc(distributionText(data.counts || {}))}</div>
-          <div class="verdict-head-flow">유튜브 언급 ${esc(mentioned)}개 중 판단 가능한 투자 의견 ${esc(opinions)}명으로 압축했어요.</div>
+          <div class="verdict-head-flow">${esc(candidateText)}</div>
+          <div class="verdict-value-proof">최근 2주 영상 ${esc(mentioned)}개 확인 · 판단 의견 ${esc(opinions)}건 반영 · 단순 언급 제외</div>
         </div>`;
+    }
+
+    function reportValueNoteHtml(data = {}) {
+      const { mentioned, opinions } = analysisCounts(data);
+      if (!mentioned || !opinions) return "";
+      return `<p class="report-value-note">직접 찾으면 오래 걸리는 유튜브 의견을 단순 언급은 빼고 판단 변수로 정리했어요. 근거 영상은 의견 카드에서 확인할 수 있어요.</p>`;
     }
 
     function verdictDistributionHtml(counts = {}) {
@@ -3326,10 +3689,10 @@
     function sharePayloadFor(data) {
       const queryLabel = reportQueryLabel(data);
       const text = summaryShareText(data);
-      const url = shareUrlFor(data.query, data.stockCode);
+      const url = shareUrlFor(data.query, data.stockCode, "report");
       return {
         query:queryLabel,
-        title:`지금사도될까요? ${queryLabel}`,
+        title:`${queryLabel} 최근 2주 유튜버 의견 요약 리포트`,
         text,
         url,
         fallbackText:`${text}\n${url}`,
@@ -3474,7 +3837,7 @@
         return `분위기가 ${displayMoodLabel(before.mood)}에서 ${displayMoodLabel(after.mood)}로 바뀌었어요.`;
       }
       if (before?.checkpoint && after?.checkpoint && compact(before.checkpoint) !== compact(after.checkpoint)) {
-        return "사기 전 체크포인트가 바뀌었어요.";
+        return "판단 체크포인트가 바뀌었어요.";
       }
       return "현재 분위기 리포트의 핵심 문장이 바뀌었어요.";
     }
@@ -3597,14 +3960,17 @@
     }
 
     async function pollWatchInBackground(jobId, key) {
+      let lastFp = "";
       while (watchBackgroundJobs.get(key) === jobId) {
-        await new Promise(resolve => setTimeout(resolve, 900));
+        await new Promise(resolve => setTimeout(resolve, 1500));
         const item = watchItemForKey(readWatchState(), key);
         if (!item || item.jobId !== jobId) break;
         try {
-          const response = await fetch(`/api/search/progress?id=${encodeURIComponent(jobId)}`);
+          const response = await fetch(`/api/search/progress?id=${encodeURIComponent(jobId)}&fp=${encodeURIComponent(lastFp)}`);
           const data = await response.json();
           if (!response.ok) throw new Error(data.error || "검색 진행상황을 읽지 못했어요.");
+          if (data.unchanged) continue;
+          lastFp = data.fp || "";
           syncWatchItemFromSearchData(data);
           startWatchBackgroundPolling(data);
           if (data.done) break;
@@ -3683,11 +4049,13 @@
       const results = Array.isArray(payload.results) ? payload.results : [];
       let successCount = 0;
       let failureCount = 0;
+      const handledKeys = new Set();
       results.forEach(row => {
         if (token !== watchRefreshToken) return;
         const originalKey = row.key || "";
         let key = originalKey;
         if (!watchItemForKey(readWatchState(), key)) return;
+        handledKeys.add(originalKey);
         if (row.status === "fresh") {
           key = markWatchItemFresh(key, row.indexUpdatedAt || payload.indexUpdatedAt || "");
           setWatchRefreshState(key, "done");
@@ -3709,7 +4077,15 @@
           }
         }, 1500);
       });
-      return { successCount, failureCount, resultCount:results.length };
+      items.forEach(item => {
+        const key = item.key || "";
+        if (token !== watchRefreshToken || !key || handledKeys.has(key) || !watchItemForKey(readWatchState(), key)) return;
+        setWatchRefreshState(key, "failed", "업데이트 결과를 받지 못했어요.");
+        failureCount++;
+        watchRefreshCompleted++;
+        updateWatchRefreshButton();
+      });
+      return { successCount, failureCount, resultCount:handledKeys.size };
     }
 
     async function refreshSingleWatchItem(item = {}, token) {
@@ -3752,18 +4128,21 @@
       }
     }
 
-    async function refreshAllWatchItems() {
+    async function refreshAllWatchItems(options = {}) {
+      const silent = Boolean(options.silent);
       if (watchRefreshRunning) return;
       const items = [...(readWatchState().items || [])];
       if (!items.length) return;
       if (isFileMode) {
-        showToast(serverRequiredMessage, { position:"top" });
+        if (!silent) showToast(serverRequiredMessage, { position:"top" });
         return;
       }
       const cooldownMs = watchRefreshCooldownRemainingMs();
       if (cooldownMs > 0) {
-        showToast(`${Math.ceil(cooldownMs / 1000)}초 뒤에 다시 확인할 수 있어요.`, { position:"top" });
-        updateWatchRefreshButton();
+        if (!silent) {
+          showToast(`${Math.ceil(cooldownMs / 1000)}초 뒤에 다시 확인할 수 있어요.`, { position:"top" });
+          updateWatchRefreshButton();
+        }
         return;
       }
       watchRefreshRunning = true;
@@ -3780,14 +4159,25 @@
       let refreshError = "";
       const token = watchRefreshToken;
       try {
-        const result = await refreshWatchItemsBatch(items, token);
-        successCount = result.successCount;
-        failureCount = result.failureCount + Math.max(0, items.length - result.resultCount);
+        for (let index = 0; index < items.length; index += WATCH_REFRESH_CONCURRENCY) {
+          if (token !== watchRefreshToken) return;
+          const batch = items.slice(index, index + WATCH_REFRESH_CONCURRENCY);
+          batch.forEach(item => {
+            if (watchItemForKey(readWatchState(), item.key)) setWatchRefreshState(item.key, "running");
+          });
+          const result = await refreshWatchItemsBatch(batch, token);
+          successCount += result.successCount;
+          failureCount += result.failureCount;
+        }
       } catch (error) {
         refreshError = error.message || "관심종목 업데이트에 실패했어요.";
-        failureCount = items.length;
-        watchRefreshStatuses.clear();
-        watchRefreshCompleted = items.length;
+        items.forEach(item => {
+          const status = watchRefreshStateFor(item.key)?.status;
+          if (!["queued", "running"].includes(status) || !watchItemForKey(readWatchState(), item.key)) return;
+          setWatchRefreshState(item.key, "failed", refreshError);
+          failureCount++;
+          watchRefreshCompleted++;
+        });
         updateWatchRefreshButton();
       }
 
@@ -3798,7 +4188,7 @@
       const message = refreshError || (failureCount
         ? `${successCount}개 확인, ${failureCount}개는 실패했어요.`
         : `관심종목 ${successCount}개를 확인했어요.`);
-      showToast(message, { position:"top" });
+      if (!silent) showToast(message, { position:"top" });
       analytics.send("watch_refresh_all_done", {
         count:items.length,
         successCount,
@@ -4007,12 +4397,16 @@
       const itemCount = (readWatchState().items || []).length;
       const label = watchRefreshButton.querySelector(".watch-refresh-label");
       const cooldownMs = Math.max(0, watchRefreshCooldownUntil - Date.now());
+      const labelText = watchRefreshRunning
+        ? `${watchRefreshCompleted}/${watchRefreshTotal} 확인 중`
+        : (cooldownMs > 0 ? `${Math.ceil(cooldownMs / 1000)}초 후` : "새로고침");
+      watchRefreshButton.hidden = !itemCount;
       watchRefreshButton.disabled = watchRefreshRunning || !itemCount || cooldownMs > 0;
       watchRefreshButton.setAttribute("aria-busy", String(watchRefreshRunning));
+      watchRefreshButton.setAttribute("aria-label", labelText);
+      watchRefreshButton.title = labelText;
       if (label) {
-        label.textContent = watchRefreshRunning
-          ? `${watchRefreshCompleted}/${watchRefreshTotal} 확인 중`
-          : (cooldownMs > 0 ? `${Math.ceil(cooldownMs / 1000)}초 후` : "새로고침");
+        label.textContent = labelText;
       }
     }
 
@@ -4094,8 +4488,16 @@
       if (!watchPanel || !watchListEl) return;
       const state = readWatchState();
       const items = state.items || [];
-      watchPanel.classList.toggle("show", items.length > 0);
+      if (watchCountEl) watchCountEl.textContent = `${items.length}/${WATCH_MAX_ITEMS}`;
+      watchPanel.classList.add("show");
+      watchPanel.classList.toggle("watch-empty-state", items.length === 0);
       updateWatchRefreshButton();
+      if (!items.length) {
+        watchListEl.innerHTML = `<div class="watch-empty">
+          <span class="watch-empty-label">아직 추가한 종목이 없어요</span>
+        </div>`;
+        return;
+      }
       watchListEl.innerHTML = items.map(item => {
         const meta = watchMetaText(item);
         const label = item.label || item.query;
@@ -4155,6 +4557,10 @@
     function syncSearchWatchButton(data = activeResultData) {
       if (!searchWatchSlot) return;
       syncSearchQueryWidth();
+      if (!input.value.trim()) {
+        searchWatchSlot.innerHTML = "";
+        return;
+      }
       searchWatchSlot.innerHTML = watchResultButtonHtml(data, { variant:"search" });
     }
 
@@ -4181,20 +4587,28 @@
       form.style.setProperty("--query-input-width", `${width}px`);
     }
 
-    function updateUrlQuery(query) {
+    function updateUrlQuery(query, tab = activeResultTab) {
       if (!window.history?.replaceState) return;
       const url = new URL(location.href);
       url.searchParams.set("q", query);
+      const nextTab = normalizeResultTab(tab);
+      if (nextTab === "report") url.searchParams.set("tab", "report");
+      else url.searchParams.delete("tab");
       history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
     }
 
     function clearUrlQuery() {
       if (!window.history?.replaceState || isFileMode) return;
-      history.replaceState(null, "", "/");
+      const url = new URL(location.href);
+      url.searchParams.delete("q");
+      url.searchParams.delete("tab");
+      history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
     }
 
     function fillQueryFromUrl() {
-      const query = (new URLSearchParams(location.search).get("q") || "").trim();
+      const params = new URLSearchParams(location.search);
+      const query = (params.get("q") || "").trim();
+      activeResultTab = normalizeResultTab(params.get("tab") || "details");
       if (query) input.value = query;
       return query;
     }
@@ -4213,14 +4627,15 @@
 
     function loadingStepText(data = {}) {
       const { mentioned, candidate, opinions } = analysisCounts(data);
-      if (data.done) return "단순 언급을 제외하고 의견 근거를 정리했어요.";
+      if (data.done) return "판단 의견만 추려 최근 2주 리포트로 정리했어요.";
       if (opinions) {
         const candidateText = candidate ? `후보 유튜버 ${candidate}명 중 ` : "";
-        return `${candidateText}의견 ${opinions}명을 확인했어요. 단순 언급을 제외하고 근거를 정리하고 있어요.`;
+        return `${candidateText}판단 의견 ${opinions}건을 찾았어요. 단순 언급을 제외하고 체크포인트로 정리하고 있어요.`;
       }
-      if (candidate) return `후보 유튜버 ${candidate}명 중 실제 투자 의견을 확인하고 있어요.`;
-      if (mentioned) return `언급 영상 ${mentioned}개에서 후보 유튜버를 추리고 있어요.`;
-      return "오늘 기준 최근 2주 유튜브 영상에서 종목·섹터·테마 언급을 찾고 있어요.";
+      if (candidate) return `후보 유튜버 ${candidate}명 중 실제 투자 의견인지 확인하고 있어요.`;
+      if (mentioned) return `최근 2주 언급 영상 ${mentioned}개에서 관련 구간을 추리고 있어요.`;
+      const query = reportQueryLabel(data);
+      return `${query} 관련 최근 2주 유튜브 언급을 찾고 있어요.`;
     }
 
     function resultMetaText(data) {
@@ -4381,6 +4796,8 @@
       if (isFileMode) return;
       if (rankingLoading) return;
       rankingLoading = true;
+      rankRefreshButton.setAttribute("aria-label", "새로고침 중");
+      rankRefreshButton.title = "새로고침 중";
       rankRefreshButton.disabled = true;
       try {
         const data = await getJson(`/api/popular-stocks?t=${Date.now()}`);
@@ -4396,6 +4813,8 @@
       } finally {
         rankingLoading = false;
         rankRefreshButton.disabled = false;
+        rankRefreshButton.setAttribute("aria-label", "새로고침");
+        rankRefreshButton.title = "새로고침";
       }
     }
 
@@ -4569,7 +4988,7 @@
     }
 
     function setActiveResultTab(tabName = "details") {
-      activeResultTab = tabName;
+      activeResultTab = normalizeResultTab(tabName);
       resultTabs.querySelectorAll(".result-tab").forEach(tab => {
         const active = tab.dataset.resultTab === activeResultTab;
         tab.classList.toggle("active", active);
@@ -4577,6 +4996,7 @@
       });
       syncResultPanels();
       setReportTabState();
+      if (activeSearchQuery) updateUrlQuery(activeSearchQuery, activeResultTab);
     }
 
     function setResultTabsVisible(visible) {
@@ -4766,12 +5186,16 @@
       const headline = verdictHeadline(data, mood);
       const summaryHtml = verdictSummaryHtml(data, mood);
       const reportLabel = reportQueryLabel(data);
+      const periodText = reportPeriodText(data);
       const reportContent = done ? `
         <div class="summary verdict-card">
           ${sampleNote}
           <div class="verdict-top">
             <div class="verdict-title">
-              <div class="verdict-eyebrow"><span class="verdict-eyebrow-stock">${esc(reportLabel)}</span> 최근 2주 유튜버 의견 요약 리포트</div>
+              <div class="verdict-eyebrow">
+                <span class="verdict-eyebrow-title"><span class="verdict-eyebrow-stock">${esc(reportLabel)}</span> 최근 2주 유튜버 의견 요약 리포트</span>
+                ${periodText ? `<span class="verdict-eyebrow-period">${esc(periodText)}</span>` : ""}
+              </div>
               <span class="verdict-chip verdict-chip-inline ${esc(moodClass(mood.label))}">${esc(displayMoodLabel(mood.label))}</span>
               <h2 class="verdict-headline">
                 <span>${esc(headline)}</span>
@@ -4785,9 +5209,9 @@
               <p class="mood-summary">${summaryHtml}</p>
             </div>` : ""}
           ${verdictReportHtml(data, mood)}
+          ${reportValueNoteHtml(data)}
           ${relatedStocksHtml(data)}
           ${done ? `<div class="verdict-footer">
-            ${watchResultButtonHtml(data)}
             <button class="share-button" type="button" data-action="share-result" aria-label="${esc(reportLabel)} 의견을 살까 말까 고민하는 친구에게 보내기">${esc(shareButtonDefaultLabel)}</button>
           </div>` : ""}
         </div>` : reportSkeletonHtml(data);
@@ -4939,12 +5363,15 @@
       window.scrollTo({ top:0, behavior:"smooth" });
     }
 
-    async function search(query) {
+    async function search(query, options = {}) {
       query = query.trim();
       if (query.length < 2) return;
+      const requestedTab = normalizeResultTab(options.tab || activeResultTab || "details");
       if (!activeSearchDone && compact(query) === compact(activeSearchQuery)) {
+        activeResultTab = requestedTab;
         activeResultData = pendingWatchData(query);
         syncSearchWatchButton(activeResultData);
+        submit.disabled = true;
         loading.classList.add("show");
         loadingTitle.textContent = "언급 영상에서 후보 유튜버와 실제 투자 의견을 확인하고 있어요.";
         loadingText.textContent = "";
@@ -4959,7 +5386,7 @@
       const token = ++activeSearchToken;
       activeSearchQuery = query;
       activeSearchDone = false;
-      activeResultTab = "details";
+      activeResultTab = requestedTab;
       activeDetailStance = "";
       activeResultData = pendingWatchData(query);
       syncSearchWatchButton(activeResultData);
@@ -4984,9 +5411,9 @@
         syncWatchItemFromSearchData(data);
         startWatchBackgroundPolling(data);
         if (token !== activeSearchToken) return;
-        updateUrlQuery(query);
+        updateUrlQuery(query, activeResultTab);
         render(data);
-        if ((data.opinions || []).length) {
+        if (data.done) {
           loading.classList.remove("show");
           submit.disabled = false;
         }
@@ -5008,18 +5435,31 @@
     }
 
     async function pollSearch(jobId, token) {
+      let lastData = null, lastFp = "";
       while (token === activeSearchToken) {
         await new Promise(resolve => setTimeout(resolve, 700));
-        const response = await fetch(`/api/search/progress?id=${encodeURIComponent(jobId)}`);
+        const response = await fetch(`/api/search/progress?id=${encodeURIComponent(jobId)}&fp=${encodeURIComponent(lastFp)}`);
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || "검색 진행상황을 읽지 못했어요.");
+        if (data.unchanged && lastData) {
+          // 내용 변화 없음: 상태 텍스트만 갱신하고 무거운 렌더는 건너뛴다.
+          Object.assign(lastData, {
+            currentStatus:data.currentStatus, currentChannel:data.currentChannel,
+            processedVideos:data.processedVideos, analyzedVideos:data.analyzedVideos,
+          });
+          if (token !== activeSearchToken) return;
+          loadingTitle.textContent = loadingStepText(lastData);
+          continue;
+        }
+        lastFp = data.fp || "";
+        lastData = data;
         syncWatchItemFromSearchData(data);
         startWatchBackgroundPolling(data);
         if (token !== activeSearchToken) return;
         loadingTitle.textContent = loadingStepText(data);
         loadingText.textContent = "";
         render(data);
-        if ((data.opinions || []).length) {
+        if (data.done) {
           loading.classList.remove("show");
           submit.disabled = false;
         }
@@ -5049,7 +5489,7 @@
       toggleWatchCurrentResult();
     });
     input.addEventListener("input", () => {
-      syncSearchQueryWidth();
+      syncSearchWatchButton(activeResultData);
       clearTimeout(suggestTimer);
       suggestTimer = setTimeout(() => loadSuggestions(input.value), 120);
     });
@@ -5126,7 +5566,7 @@
       if (item) {
         const query = item.dataset.watchQuery || "";
         analytics.send("watch_signal_click", { query });
-        search(query);
+        search(query, { tab:"report" });
       }
     });
     resultTabs.addEventListener("click", e => {
@@ -5154,6 +5594,7 @@
       const watchButton = e.target.closest(".watch-result-button[data-action='toggle-watch-result']");
       const dismissButton = e.target.closest("[data-action='dismiss-watch-tooltip']");
       const relatedTag = e.target.closest(".related-tag[data-related-query]");
+      const newsLink = e.target.closest(".checkpoint-news a[data-news-query]");
       const detailFilter = e.target.closest(".detail-filter[data-detail-filter-stance]");
       const reportRefMoreWrap = e.target.closest(".report-ref-more-wrap");
       const reportRefMore = e.target.closest(".report-ref-more[data-action='toggle-ref-popover']");
@@ -5176,12 +5617,24 @@
         return;
       }
       if (relatedTag) {
+        e.preventDefault();
         const query = relatedTag.dataset.relatedQuery || "";
         analytics.send("related_stock_click", {
           query:activeSearchQuery,
           relatedQuery:query,
         });
-        search(query);
+        search(query, { tab:relatedTag.dataset.relatedTab || "report" });
+        return;
+      }
+      if (newsLink) {
+        const query = newsLink.dataset.newsQuery || "";
+        analytics.send("related_news_click", {
+          query:activeSearchQuery,
+          relatedQuery:query,
+          source:newsLink.dataset.newsSource || "",
+          label:newsLink.textContent.trim(),
+          url:newsLink.href,
+        });
         return;
       }
       if (shareButton) {
@@ -5253,7 +5706,25 @@
     renderRanking("kr");
     loadRanking();
     loadStatus();
-    if (initialQuery) search(initialQuery);
+    if (initialQuery) search(initialQuery, { tab:activeResultTab });
+
+    // 재진입 시 관심종목 리포트 자동 최신화.
+    // 서버가 인덱스 서명·쿨다운·결과 캐시로 걸러주므로 실제 비용은 새 영상이 있을 때만 발생한다.
+    const WATCH_AUTO_REFRESH_MIN_GAP_MS = 10 * 60 * 1000;
+    let lastWatchAutoRefreshAt = 0;
+    function autoRefreshWatchItems(reason) {
+      if (isFileMode || watchRefreshRunning) return;
+      if (!(readWatchState().items || []).length) return;
+      if (Date.now() - lastWatchAutoRefreshAt < WATCH_AUTO_REFRESH_MIN_GAP_MS) return;
+      if (watchRefreshCooldownRemainingMs() > 0) return;
+      lastWatchAutoRefreshAt = Date.now();
+      analytics.send("watch_auto_refresh", { reason });
+      refreshAllWatchItems({ silent:true }).catch(() => {});
+    }
+    setTimeout(() => autoRefreshWatchItems("entry"), 1500);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") autoRefreshWatchItems("return");
+    });
   </script>
 </body>
 </html>

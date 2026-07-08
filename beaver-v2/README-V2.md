@@ -66,6 +66,25 @@ python3 -m unittest discover -s pipeline -p 'test_*.py'
 4. Gemini 키는 로컬 실패 시 fallback이 필요할 때만 입력한다.
 5. `종목검색실행.command`를 실행한다.
 
+`종목검색실행.command`는 Vercel portless를 사용해 서버를 `stockzip` 이름으로 띄운다.
+브라우저에서는 포트 번호 대신 아래 주소를 열면 된다.
+
+```text
+https://stockzip.localhost
+```
+
+수동으로 서버를 띄울 때도 같은 이름을 쓴다.
+
+```bash
+cd beaver-v2/pipeline
+SEARCH_HOST=127.0.0.1 npx -y portless stockzip -- ./.venv/bin/python search_server.py
+```
+
+portless는 Node.js 24 이상이 필요하다. 처음 실행할 때 HTTPS 프록시와 로컬 인증서
+설정 때문에 macOS 권한 확인이 뜰 수 있다.
+권한 확인을 피해야 하는 임시 실행 환경에서는 `PORTLESS_PORT=1355`를 앞에 붙이면
+`https://stockzip.localhost:1355`로 확인할 수 있다.
+
 KRX 상장종목정보 캐시는 `pipeline/cache/krx_listed_stocks.json`에 저장된다. 서버가
 켜질 때 오늘 갱신한 적이 없으면 백그라운드에서 자동 갱신한다. 즉시 갱신하려면:
 
@@ -82,7 +101,8 @@ cd pipeline
 ./.venv/bin/python sync_us_listed.py
 ```
 
-모바일에서 프로토타입을 보려면 `모바일미리보기.command`를 실행한다. 터미널에
+모바일에서 프로토타입을 보려면 `모바일미리보기.command`를 실행한다. 이 경로는
+같은 와이파이 접속을 위해 기존 고정 포트를 그대로 쓴다. 터미널에
 `http://맥IP:8765` 형태의 주소가 뜨면, 같은 와이파이에 연결된 휴대폰 브라우저에서
 그 주소를 열면 된다.
 

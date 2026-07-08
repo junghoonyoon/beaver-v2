@@ -277,6 +277,34 @@ class SearchServerJobTest(unittest.TestCase):
         self.assertEqual(payload["results"][0]["status"], "done")
         self.assertEqual(payload["results"][0]["data"]["query"], "삼성전자")
 
+    def test_watchlist_refresh_retries_with_fallback_after_fast_search_failure(self):
+        result = {"query": "삼성전자", "done": True, "opinions": []}
+
+        with mock.patch("stock_search.load_index", return_value={
+                "version": stock_search._SEARCH_INDEX_VERSION,
+                "updatedAt": "2026-07-05T09:00:00+09:00",
+                "videos": [],
+        }), \
+                mock.patch("search_server._read_search_result_cache", return_value=None), \
+                mock.patch("stock_search.search_stock", side_effect=[
+                    RuntimeError("fast path failed"),
+                    result,
+                ]) as search_stock, \
+                mock.patch("search_server._write_search_result_cache") as write_cache:
+            payload = search_server.refresh_watchlist_items([{
+                "key": "005930",
+                "query": "삼성전자",
+                "indexUpdatedAt": "old-index",
+            }])
+
+        self.assertEqual(search_stock.call_args_list, [
+            mock.call("삼성전자", include_fallback=False),
+            mock.call("삼성전자", include_fallback=True),
+        ])
+        write_cache.assert_called_once_with("삼성전자", result)
+        self.assertEqual(payload["results"][0]["status"], "done")
+        self.assertEqual(payload["results"][0]["data"]["query"], "삼성전자")
+
     def test_watchlist_refresh_rate_limit_blocks_excess_requests(self):
         with mock.patch.object(search_server.config, "WATCHLIST_REFRESH_RATE_LIMIT_WINDOW_SECONDS", 60), \
                 mock.patch.object(search_server.config, "WATCHLIST_REFRESH_RATE_LIMIT_MAX", 2), \
@@ -303,6 +331,31 @@ class SearchServerJobTest(unittest.TestCase):
 
 
 class SearchServerSeoTest(unittest.TestCase):
+    def test_app_report_share_meta_uses_stock_report_title(self):
+        stock = {"name": "현대차", "code": "005380", "market": "KOSPI", "aliases": ["현대자동차"]}
+        with mock.patch("stock_search.stock_master", return_value=[stock]):
+            base_html = """<!doctype html>
+<html lang="ko">
+<head>
+  <title>지금사도될까요? | 주식 유튜브 의견 요약 리포트</title>
+  <meta name="description" content="기본 설명">
+  <meta property="og:title" content="기본 제목">
+  <meta property="og:description" content="기본 OG 설명">
+  <meta property="og:url" content="https://stockzip.kr/">
+  <link rel="canonical" href="https://stockzip.kr/">
+  <meta name="twitter:title" content="기본 트위터 제목">
+  <meta name="twitter:description" content="기본 트위터 설명">
+</head>
+<body></body>
+</html>"""
+            meta = search_server._app_report_share_meta("현대자동차")
+            html = search_server._replace_app_share_meta(base_html, meta)
+
+        self.assertIn("<title>현대차 최근 2주 유튜버 의견 요약 리포트</title>", html)
+        self.assertIn('property="og:title" content="현대차 최근 2주 유튜버 의견 요약 리포트"', html)
+        self.assertIn('name="twitter:title" content="현대차 최근 2주 유튜버 의견 요약 리포트"', html)
+        self.assertIn('property="og:url" content="https://stockzip.kr/?q=%ED%98%84%EB%8C%80%EC%B0%A8&amp;tab=report"', html)
+
     def test_stock_page_html_has_indexable_stock_content(self):
         stock = {"name": "삼성전자", "code": "005930", "market": "KOSPI", "aliases": ["삼전"]}
         video = {
@@ -325,10 +378,12 @@ class SearchServerSeoTest(unittest.TestCase):
                 mock.patch("config.CHANNELS", [{"name": "테스트채널", "channelId": "UC1"}]):
             html = search_server._stock_page_html(stock)
 
-        self.assertIn("<title>삼성전자 유튜브 의견 리포트 | 지금사도될까요?</title>", html)
+        self.assertIn("<title>삼성전자 최근 2주 유튜버 의견 요약 리포트</title>", html)
         self.assertIn('rel="canonical" href="https://stockzip.kr/stocks/005930"', html)
         self.assertIn('<meta name="robots" content="index,follow,max-image-preview:large">', html)
-        self.assertIn('property="og:image:alt" content="삼성전자 유튜브 의견 리포트"', html)
+        self.assertIn('property="og:title" content="삼성전자 최근 2주 유튜버 의견 요약 리포트"', html)
+        self.assertIn('property="og:image:alt" content="삼성전자 최근 2주 유튜버 의견 요약 리포트"', html)
+        self.assertIn('href="https://stockzip.kr/?q=%EC%82%BC%EC%84%B1%EC%A0%84%EC%9E%90&amp;tab=report"', html)
         self.assertIn('aria-label="breadcrumb"', html)
         self.assertIn("삼성전자 실적 전망", html)
         self.assertIn("최근 언급 영상", html)

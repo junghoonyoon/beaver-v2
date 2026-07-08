@@ -3,14 +3,52 @@
 Render의 로컬 파일은 재배포/재시작 때 사라질 수 있으므로, 자막과 검색 인덱스는
 가능하면 Supabase Storage에도 저장해 로컬/배포 환경이 같은 캐시를 공유한다.
 """
+import hashlib
 import json
 import mimetypes
+import threading
+import time
 from pathlib import Path
 from urllib.parse import quote
 
 import requests
 
 import config
+
+# 같은 내용을 다시 올리지 않기 위한 로컬 업로드 지문 기록 (발신 트래픽 절약)
+_UPLOAD_DIGESTS_PATH = config.CACHE_DIR / "remote_upload_digests.json"
+_UPLOAD_DIGESTS_LOCK = threading.Lock()
+_upload_digests = None
+
+
+def _load_upload_digests():
+    global _upload_digests
+    if _upload_digests is None:
+        try:
+            _upload_digests = json.loads(_UPLOAD_DIGESTS_PATH.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            _upload_digests = {}
+        if not isinstance(_upload_digests, dict):
+            _upload_digests = {}
+    return _upload_digests
+
+
+def _already_uploaded(remote_path, digest):
+    with _UPLOAD_DIGESTS_LOCK:
+        return _load_upload_digests().get(str(remote_path)) == digest
+
+
+def _record_upload(remote_path, digest):
+    with _UPLOAD_DIGESTS_LOCK:
+        digests = _load_upload_digests()
+        digests[str(remote_path)] = digest
+        try:
+            config.CACHE_DIR.mkdir(parents=True, exist_ok=True)
+            tmp = _UPLOAD_DIGESTS_PATH.with_suffix(f".{time.monotonic_ns()}.tmp")
+            tmp.write_text(json.dumps(digests, ensure_ascii=False), encoding="utf-8")
+            tmp.replace(_UPLOAD_DIGESTS_PATH)
+        except OSError:
+            pass
 
 
 def enabled():
@@ -83,6 +121,11 @@ def download_to_file(remote_path, local_path, overwrite=False):
 def upload_bytes(remote_path, body, content_type="application/octet-stream"):
     if not enabled():
         return False
+    if isinstance(body, str):
+        body = body.encode("utf-8")
+    digest = hashlib.sha256(body).hexdigest()
+    if _already_uploaded(remote_path, digest):
+        return True  # 내용이 같으면 다시 올리지 않는다.
     headers = _headers(content_type)
     headers["x-upsert"] = "true"
     try:
@@ -93,6 +136,7 @@ def upload_bytes(remote_path, body, content_type="application/octet-stream"):
     if not response.ok:
         print(f"  ⚠️ Supabase 캐시 업로드 실패({remote_path}): {response.status_code} {response.text[:120]}")
         return False
+    _record_upload(remote_path, digest)
     return True
 
 

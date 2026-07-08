@@ -2,11 +2,13 @@
 """종목 검색 화면과 로컬 검색 API를 제공한다."""
 import base64
 import datetime
+import gzip
 import hashlib
 import html
 import json
 import mimetypes
 import os
+import re
 import struct
 import sys
 import threading
@@ -156,6 +158,44 @@ def _escape(value):
     return html.escape(str(value or ""), quote=True)
 
 
+def _report_period_label():
+    return "최근 2주" if config.SEARCH_LOOKBACK_DAYS == 14 else f"최근 {config.SEARCH_LOOKBACK_DAYS}일"
+
+
+def _app_report_share_meta(query):
+    identity = stock_search.stock_identity(query)
+    name = identity.get("name") or str(query or "").strip()
+    if not name:
+        return None
+    title = f"{name} {_report_period_label()} 유튜버 의견 요약 리포트"
+    description = f"{name} {_report_period_label()} 영상 속 의견을 모아 30초 리포트로 요약해 드려요. 근거 영상은 필요한 부분만 골라 보세요."
+    url = _public_url(f"/?q={quote(name)}&tab=report")
+    return {
+        "title": title,
+        "description": description,
+        "url": url,
+    }
+
+
+def _replace_head_attr(html_text, selector, value):
+    pattern = rf'(<meta {selector} content=")[^"]*(">)'
+    return re.sub(pattern, rf'\1{_escape(value)}\2', html_text, count=1)
+
+
+def _replace_app_share_meta(html_text, meta):
+    if not meta:
+        return html_text
+    html_text = re.sub(r"<title>.*?</title>", f"<title>{_escape(meta['title'])}</title>", html_text, count=1, flags=re.S)
+    html_text = re.sub(r'(<link rel="canonical" href=")[^"]*(">)', rf'\1{_escape(meta["url"])}\2', html_text, count=1)
+    html_text = _replace_head_attr(html_text, 'name="description"', meta["description"])
+    html_text = _replace_head_attr(html_text, 'property="og:title"', meta["title"])
+    html_text = _replace_head_attr(html_text, 'property="og:description"', meta["description"])
+    html_text = _replace_head_attr(html_text, 'property="og:url"', meta["url"])
+    html_text = _replace_head_attr(html_text, 'name="twitter:title"', meta["title"])
+    html_text = _replace_head_attr(html_text, 'name="twitter:description"', meta["description"])
+    return html_text
+
+
 def _format_date(value):
     if not value:
         return ""
@@ -199,15 +239,16 @@ def _stock_page_html(stock):
     code = payload["code"]
     market = payload["market"]
     code_label = f"{market} {code}".strip()
-    title = f"{name} 유튜브 의견 리포트 | 지금사도될까요?"
+    period_label = _report_period_label()
+    title = f"{name} {period_label} 유튜버 의견 요약 리포트"
     description = (
-        f"{name}({code}) 최근 {config.SEARCH_LOOKBACK_DAYS}일 주식 유튜버 언급 영상과 "
-        "종목 분위기를 확인하세요."
+        f"{name}({code}) {period_label} 영상 속 의견을 모아 30초 리포트로 요약해 드려요. "
+        "근거 영상은 필요한 부분만 골라 보세요."
         if code else
-        f"{name} 최근 {config.SEARCH_LOOKBACK_DAYS}일 주식 유튜버 언급 영상과 종목 분위기를 확인하세요."
+        f"{name} {period_label} 영상 속 의견을 모아 30초 리포트로 요약해 드려요. 근거 영상은 필요한 부분만 골라 보세요."
     )
     canonical = _stock_url(stock)
-    app_url = _public_url(f"/?q={quote(name)}")
+    app_url = _public_url(f"/?q={quote(name)}&tab=report")
     latest = _format_date(payload["latestPublishedAt"]) or _format_date(payload["indexUpdatedAt"])
     videos = payload["videos"][:8]
     stats = payload["stats"]
@@ -311,12 +352,12 @@ def _stock_page_html(stock):
   <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="{_escape(name)} 유튜브 의견 리포트">
+  <meta property="og:image:alt" content="{_escape(title)}">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="{_escape(title)}">
   <meta name="twitter:description" content="{_escape(description)}">
   <meta name="twitter:image" content="{_escape(image_url)}">
-  <meta name="twitter:image:alt" content="{_escape(name)} 유튜브 의견 리포트">
+  <meta name="twitter:image:alt" content="{_escape(title)}">
   <script type="application/ld+json">{json_ld}</script>
   <style>
     :root {{ color-scheme:light; --ink:#1d1d1f; --body:#555b64; --line:#e5e7eb; --blue:#0071e3; --canvas:#f7f8fa; }}
@@ -635,6 +676,26 @@ def _json_copy(payload):
     return json.loads(json.dumps(payload, ensure_ascii=False))
 
 
+def _search_fingerprint(payload):
+    """무거운 내용(의견·리포트)이 바뀌었는지만 감지하는 지문. 진행 카운터는 제외."""
+    report = payload.get("report") or {}
+    raw = ":".join([
+        str(len(payload.get("opinions") or [])),
+        str(payload.get("analyzedVideos") or 0),
+        str(report.get("generatedAt") or ("1" if report else "")),
+        "1" if payload.get("done") else "0",
+        "1" if payload.get("fallbackRunning") else "0",
+        str(len(payload.get("errors") or [])),
+    ])
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:12]
+
+
+_PROGRESS_LIGHT_FIELDS = (
+    "jobId", "done", "running", "fallbackRunning", "primaryDone",
+    "currentChannel", "currentStatus", "processedVideos", "analyzedVideos", "totalVideos",
+)
+
+
 def _watchlist_refresh_signature(items, index_updated_at=""):
     normalized = []
     for raw in (items or [])[:20]:
@@ -740,6 +801,7 @@ def _search_result_cache_key(query, index_updated_at):
         "fallbackEnabled": config.SEARCH_FALLBACK_ENABLED,
         "fallbackMinResults": config.SEARCH_FALLBACK_MIN_RESULTS,
         "stockCacheVersion": getattr(stock_search, "_STOCK_CACHE_VERSION", 0),
+        "reportCacheVersion": getattr(stock_search, "_REPORT_CACHE_VERSION", 0),
     }, ensure_ascii=False, sort_keys=True)
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
@@ -1106,7 +1168,12 @@ def refresh_watchlist_items(items):
                     "indexUpdatedAt": index_updated_at,
                 })
                 continue
-            result = stock_search.search_stock(query, include_fallback=False)
+            try:
+                result = stock_search.search_stock(query, include_fallback=False)
+            except Exception:
+                # 관심종목 새로고침은 평소엔 빠른 경로를 우선 쓰고,
+                # 그 경로에서 실패한 종목만 fallback 검색까지 허용한다.
+                result = stock_search.search_stock(query, include_fallback=True)
             _write_search_result_cache(query, result)
             results.append({
                 "key": key,
@@ -1170,12 +1237,39 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):
         print(f"[검색 서버] {fmt % args}")
 
-    def _json(self, payload, status=200, cors=False, headers=None):
-        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    def _accepts_gzip(self):
+        return "gzip" in (self.headers.get("Accept-Encoding") or "").lower()
+
+    def _send_body(self, body, content_type, status=200, cache="no-store", cors=False,
+                   headers=None, head_only=False, use_etag=False):
+        """모든 응답의 공통 출구. gzip 압축 + ETag 304로 발신 트래픽을 줄인다."""
+        etag = None
+        if use_etag and status == 200:
+            etag = f'"{hashlib.md5(body).hexdigest()}"'
+            if (self.headers.get("If-None-Match") or "").strip() == etag:
+                self.send_response(304)
+                self.send_header("ETag", etag)
+                self.send_header("Cache-Control", cache)
+                self.send_header("Vary", "Accept-Encoding")
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return
+        encoded = body
+        gzipped = False
+        if not head_only and len(body) >= 512 and self._accepts_gzip():
+            candidate = gzip.compress(body, 6)
+            if len(candidate) < len(body):
+                encoded = candidate
+                gzipped = True
         self.send_response(status)
-        self.send_header("Content-Type", "application/json; charset=utf-8")
-        self.send_header("Content-Length", str(len(body)))
-        self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Length", str(len(encoded)))
+        self.send_header("Cache-Control", cache)
+        self.send_header("Vary", "Accept-Encoding")
+        if gzipped:
+            self.send_header("Content-Encoding", "gzip")
+        if etag:
+            self.send_header("ETag", etag)
         if cors:
             self.send_header("Access-Control-Allow-Origin", "*")
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
@@ -1183,36 +1277,37 @@ class Handler(BaseHTTPRequestHandler):
         for name, value in (headers or {}).items():
             self.send_header(name, str(value))
         self.end_headers()
-        self.wfile.write(body)
-
-    def _text(self, text, content_type="text/plain; charset=utf-8", status=200, head_only=False):
-        body = text.encode("utf-8")
-        self.send_response(status)
-        self.send_header("Content-Type", content_type)
-        self.send_header("Content-Length", str(len(body)))
-        self.send_header("Cache-Control", "no-store")
-        self.end_headers()
         if not head_only:
-            self.wfile.write(body)
+            self.wfile.write(encoded)
 
-    def _file(self, path):
+    def _json(self, payload, status=200, cors=False, headers=None):
+        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        self._send_body(body, "application/json; charset=utf-8", status=status, cors=cors, headers=headers)
+
+    def _text(self, text, content_type="text/plain; charset=utf-8", status=200, head_only=False, cache="no-store"):
+        self._send_body(
+            text.encode("utf-8"), content_type, status=status, cache=cache,
+            head_only=head_only, use_etag=cache != "no-store",
+        )
+
+    def _file(self, path, cache="no-store"):
         if not path.exists() or not path.is_file():
             self.send_error(404)
             return
         body = path.read_bytes()
         mime = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
-        self.send_response(200)
-        self.send_header("Content-Type", f"{mime}; charset=utf-8" if mime.startswith("text/") else mime)
-        self.send_header("Content-Length", str(len(body)))
-        self.send_header("Cache-Control", "no-store")
-        self.end_headers()
-        self.wfile.write(body)
+        content_type = f"{mime}; charset=utf-8" if mime.startswith("text/") else mime
+        self._send_body(body, content_type, cache=cache, use_etag=cache != "no-store")
 
-    def _html(self):
+    def _html(self, parsed=None):
         if not APP_HTML.exists() or not APP_HTML.is_file():
             self.send_error(404)
             return
         html = APP_HTML.read_text(encoding="utf-8")
+        if parsed:
+            params = parse_qs(parsed.query)
+            if (params.get("tab") or [""])[0] == "report":
+                html = _replace_app_share_meta(html, _app_report_share_meta((params.get("q") or [""])[0]))
         try:
             payload = stock_search.popular_stocks(refresh_quotes=False)
             payload_json = json.dumps(payload, ensure_ascii=False).replace("</", "<\\/")
@@ -1221,12 +1316,7 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as exc:
             print(f"[검색 서버] 초기 인기주식 주입 실패: {exc}")
         body = html.encode("utf-8")
-        self.send_response(200)
-        self.send_header("Content-Type", "text/html; charset=utf-8")
-        self.send_header("Content-Length", str(len(body)))
-        self.send_header("Cache-Control", "no-store")
-        self.end_headers()
-        self.wfile.write(body)
+        self._send_body(body, "text/html; charset=utf-8", cache="public, max-age=60", use_etag=True)
 
     def _file_head(self, path):
         if not path.exists() or not path.is_file():
@@ -1483,10 +1573,20 @@ class Handler(BaseHTTPRequestHandler):
                 self._json({"error": str(exc)}, 500)
             return
         if parsed.path == "/api/search/progress":
-            job_id = parse_qs(parsed.query).get("id", [""])[0].strip()
+            params = parse_qs(parsed.query)
+            job_id = params.get("id", [""])[0].strip()
+            client_fp = params.get("fp", [""])[0].strip()
             payload = _snapshot(job_id)
             if not payload:
                 self._json({"error": "검색 작업을 찾지 못했어요."}, 404)
+                return
+            fp = _search_fingerprint(payload)
+            payload["fp"] = fp
+            if client_fp and client_fp == fp and not payload.get("done"):
+                # 의견·리포트가 그대로면 상태 필드만 얇게 보낸다 (대역폭 절약).
+                light = {key: payload.get(key) for key in _PROGRESS_LIGHT_FIELDS}
+                light.update({"unchanged": True, "fp": fp})
+                self._json(light)
                 return
             self._json(payload)
             return
@@ -1498,28 +1598,28 @@ class Handler(BaseHTTPRequestHandler):
             self._json({"suggestions": stock_search.suggest_stocks(query)})
             return
         if parsed.path in ("/", "/stock-search.html"):
-            self._html()
+            self._html(parsed)
             return
         if parsed.path.startswith("/stocks/"):
             stock = stock_search.stock_by_slug(unquote(parsed.path.removeprefix("/stocks/")))
             if not stock:
                 self.send_error(404)
                 return
-            self._text(_stock_page_html(stock), "text/html; charset=utf-8")
+            self._text(_stock_page_html(stock), "text/html; charset=utf-8", cache="public, max-age=300")
             return
         if parsed.path == "/robots.txt":
-            self._file(ROBOTS_TXT)
+            self._file(ROBOTS_TXT, cache="public, max-age=3600")
             return
         if parsed.path == "/sitemap.xml":
-            self._text(_sitemap_xml(), "application/xml; charset=utf-8")
+            self._text(_sitemap_xml(), "application/xml; charset=utf-8", cache="public, max-age=3600")
             return
         if parsed.path == "/google661da6d73ff97f8e.html":
-            self._file(GOOGLE_VERIFICATION_HTML)
+            self._file(GOOGLE_VERIFICATION_HTML, cache="public, max-age=3600")
             return
         if parsed.path.startswith("/assets/"):
             path = (APP_ASSETS / parsed.path.removeprefix("/assets/")).resolve()
             if APP_ASSETS.resolve() in path.parents:
-                self._file(path)
+                self._file(path, cache="public, max-age=86400")
                 return
         if parsed.path == "/mvp-dashboard.html":
             self._file(DASHBOARD_HTML)

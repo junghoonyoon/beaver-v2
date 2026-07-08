@@ -35,5 +35,28 @@ fi
 
 echo ""
 echo "검색 화면을 여는 중이에요..."
-(sleep 1; open "http://127.0.0.1:8765") &
-./.venv/bin/python search_server.py
+APP_NAME="stockzip"
+APP_URL="https://stockzip.localhost"
+echo "앞으로는 포트 번호 대신 아래 주소를 쓰면 됩니다:"
+echo "  $APP_URL"
+echo "처음 실행이면 macOS 권한 확인이 뜰 수 있어요."
+echo ""
+
+if ! command -v npx >/dev/null 2>&1; then
+  echo "❌ npx를 찾지 못했어요. Node.js 24 이상을 설치한 뒤 다시 실행하세요."
+  read -r -p "엔터를 누르면 닫혀요..."
+  exit 1
+fi
+
+(
+  for _ in 1 2 3 4 5 6 7 8 9 10; do
+    URL="$(npx -y portless get "$APP_NAME" 2>/dev/null || true)"
+    if [ -n "$URL" ]; then
+      open "$URL"
+      exit 0
+    fi
+    sleep 0.5
+  done
+  open "$APP_URL"
+) &
+SEARCH_HOST=127.0.0.1 npx -y portless "$APP_NAME" -- ./.venv/bin/python search_server.py

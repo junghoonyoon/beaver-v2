@@ -53,8 +53,19 @@
 
 ## 실행
 
-루트 폴더의 `종목검색실행.command`를 사용하세요.
+루트 폴더의 `종목검색실행.command`를 사용하세요. 기본 로컬 주소는 portless 이름을
+쓴 아래 주소입니다.
 
 ```text
 ../종목검색실행.command
+https://stockzip.localhost
 ```
+
+수동 실행이 필요하면 고정 포트 대신 `stockzip` 이름으로 띄웁니다.
+
+```text
+SEARCH_HOST=127.0.0.1 npx -y portless stockzip -- ./.venv/bin/python search_server.py
+```
+
+macOS 권한 확인을 피해야 하는 임시 실행에서는 앞에 `PORTLESS_PORT=1355`를 붙이고
+`https://stockzip.localhost:1355`로 확인합니다.

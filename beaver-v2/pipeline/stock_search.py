@@ -16,7 +16,7 @@ import us_listed
 
 KST = ZoneInfo("Asia/Seoul")
 _STOCK_CACHE_VERSION = 6
-_REPORT_CACHE_VERSION = 1
+_REPORT_CACHE_VERSION = 9
 _SEARCH_INDEX_VERSION = 3
 _POPULAR_STOCKS_CACHE_VERSION = 7
 _POPULAR_STOCKS_REMOTE_PATH = "popular_stocks.json"
@@ -1101,6 +1101,14 @@ def sync_index(channels):
     print(f"\n✅ 검색 인덱스 생성: 영상 {len(videos)}개 · 자막 {with_transcript}개 · 최근 {config.SEARCH_LOOKBACK_DAYS}일")
     if failed_channels:
         print("   건너뛴 채널:", ", ".join(failed_channels))
+    if config.INGEST_OPINION_EXTRACTION_ENABLED:
+        # 인덱스를 먼저 살리고, 새 영상만 영상당 1회 LLM으로 의견을 추출해 둔다.
+        # 이후 검색은 이 캐시 조회만으로 동작해 검색 시점 LLM이 사라진다.
+        print("\n영상별 종목 의견을 추출합니다 (새 영상만 분석).")
+        try:
+            extract_index_video_opinions(videos)
+        except Exception as exc:
+            print(f"⚠️ 의견 추출 단계 실패(검색은 기존 방식으로 동작): {str(exc)[:120]}")
     return payload
 
 
@@ -1308,6 +1316,108 @@ def _stock_cache_path(video_id, query):
     return config.STOCK_ANALYSIS_CACHE_DIR / f"{video_id}-{digest}.json"
 
 
+# ── 수집 시점 다중 종목 의견 추출 (영상당 LLM 1회) ──
+_VIDEO_OPINIONS_VERSION = 1
+
+
+def _video_opinions_path(video_id):
+    return config.VIDEO_OPINIONS_CACHE_DIR / f"{video_id}.json"
+
+
+def _video_opinions_hash(text):
+    trimmed = (text or "")[:config.VIDEO_OPINIONS_CONTEXT_MAX_CHARS]
+    return hashlib.sha256(trimmed.encode("utf-8")).hexdigest()
+
+
+def read_video_opinions(video_id, text=None):
+    """추출 캐시를 읽는다. 없거나 낡았으면 None."""
+    if config.FORCE_ANALYSIS_REFRESH:
+        return None
+    path = _video_opinions_path(video_id)
+    if not path.exists():
+        remote_cache.download_to_file(f"video_opinions/{path.name}", path)
+    if not path.exists():
+        return None
+    try:
+        cached = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    if cached.get("version") != _VIDEO_OPINIONS_VERSION:
+        return None
+    if text is not None and cached.get("transcriptHash") != _video_opinions_hash(text):
+        return None
+    entries = cached.get("opinions")
+    return entries if isinstance(entries, list) else None
+
+
+def extract_video_opinions(video_id, text=None):
+    """영상 1개의 모든 종목·테마 의견을 추출해 캐시한다 (캐시 있으면 LLM 0회)."""
+    import analyze
+
+    if text is None:
+        text = transcript_text(video_id)
+    if not (text or "").strip():
+        return None
+    cached = read_video_opinions(video_id, text)
+    if cached is not None:
+        return cached
+    entries = analyze.analyze_video_opinions(text)
+    payload = {
+        "version": _VIDEO_OPINIONS_VERSION,
+        "transcriptHash": _video_opinions_hash(text),
+        "provider": analyze.LAST_GENERATION_PROVIDER or "",
+        "extractedAt": datetime.datetime.now(KST).isoformat(),
+        "opinions": entries,
+    }
+    config.VIDEO_OPINIONS_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    path = _video_opinions_path(video_id)
+    tmp = path.with_suffix(f".{time.monotonic_ns()}.tmp")
+    tmp.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    tmp.replace(path)
+    remote_cache.upload_file(f"video_opinions/{path.name}", path)
+    return entries
+
+
+def _extracted_opinion_match(video, aliases):
+    """추출 캐시에서 질의 종목 의견 찾기. 반환: ('hit', data) | ('none', None) | ('miss', None)"""
+    if "_text" not in video:
+        video["_text"] = transcript_text(video["videoId"])
+    entries = read_video_opinions(video["videoId"], video["_text"])
+    if entries is None:
+        return "miss", None
+    alias_keys = {compact(alias) for alias in aliases if compact(alias)}
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        names = {compact(name) for name in (entry.get("names") or [])}
+        if alias_keys & names:
+            data = {key: value for key, value in entry.items() if key != "names"}
+            return "hit", data
+    return "none", None
+
+
+def extract_index_video_opinions(videos):
+    """인덱스 영상들의 의견을 일괄 추출한다. 새 영상만 LLM을 쓴다."""
+    extracted = skipped = failed = 0
+    targets = [row for row in (videos or []) if row.get("transcriptStatus") == "ok"]
+    for row in targets:
+        video_id = row.get("videoId") or ""
+        try:
+            text = transcript_text(video_id)
+            if not (text or "").strip():
+                continue
+            if read_video_opinions(video_id, text) is not None:
+                skipped += 1
+                continue
+            extract_video_opinions(video_id, text)
+            extracted += 1
+        except Exception as exc:
+            failed += 1
+            print(f"  ⚠️ 의견 추출 실패({video_id}): {str(exc)[:100]}")
+    print(f"✅ 영상 의견 추출: 신규 {extracted} · 캐시 재사용 {skipped} · 실패 {failed}")
+    return {"extracted": extracted, "skipped": skipped, "failed": failed}
+
+
 def _analysis_inputs(video, query):
     aliases = query_aliases(query)
     if "_text" not in video:
@@ -1390,21 +1500,36 @@ def analyze_match(video, query):
     if cached:
         return cached_data, True
 
+    # 1순위: 수집 시점 추출 캐시 (LLM 0회). 의견을 찾으면 종목별 캐시로도 저장해 둔다.
+    status, extracted = _extracted_opinion_match(video, aliases)
+    if status == "hit":
+        data = dict(extracted)
+        data["sourceTimeSec"] = source_time_sec(video["videoId"], aliases, data.get("evidence", ""))
+        data["_contextHash"] = context_hash
+        data["_analysisProvider"] = "ingest"
+        _write_stock_analysis_cache(path, context_hash, data)
+        return data, True
+
+    # fallback: 추출 캐시가 없거나(과거 영상·유튜브 fallback) 해당 종목을 못 찾은 경우만 LLM.
     data = analyze.analyze_stock_opinion(query, aliases, context)
     data["sourceTimeSec"] = source_time_sec(video["videoId"], aliases, data.get("evidence", ""))
     data["_contextHash"] = context_hash
     data["_analysisProvider"] = analyze.LAST_GENERATION_PROVIDER or ""
+    _write_stock_analysis_cache(path, context_hash, data)
+    return data, False
+
+
+def _write_stock_analysis_cache(path, context_hash, data):
     config.STOCK_ANALYSIS_CACHE_DIR.mkdir(parents=True, exist_ok=True)
     tmp = path.with_suffix(f".{time.monotonic_ns()}.tmp")
     tmp.write_text(json.dumps({
         "version": _STOCK_CACHE_VERSION,
         "contextHash": context_hash,
-        "provider": data["_analysisProvider"],
+        "provider": data.get("_analysisProvider", ""),
         "data": data,
     }, ensure_ascii=False), encoding="utf-8")
     tmp.replace(path)
     remote_cache.upload_file(f"stock_analysis/{path.name}", path)
-    return data, False
 
 
 def base_search_result(query, videos, stats=None):
@@ -1847,6 +1972,11 @@ def summary_report_for(search_result, min_opinions=2):
 
     stock_name = search_result.get("query") or query
     data = analyze.analyze_stock_report(stock_name, opinions)
+    try:
+        import report_news
+        report_news.attach_checkpoint_news(data)
+    except Exception as exc:
+        print(f"⚠️ 리포트 뉴스 수집 실패(무시): {str(exc)[:120]}")
     data["generatedAt"] = datetime.datetime.now(KST).isoformat()
     config.STOCK_REPORT_CACHE_DIR.mkdir(parents=True, exist_ok=True)
     path = _report_cache_path(digest)
