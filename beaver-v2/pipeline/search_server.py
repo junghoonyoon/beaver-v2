@@ -5,6 +5,7 @@ import datetime
 import gzip
 import hashlib
 import html
+import http.client
 import json
 import mimetypes
 import os
@@ -1447,8 +1448,25 @@ class Handler(BaseHTTPRequestHandler):
             self.wfile.flush()
             time.sleep(QUOTE_WS_INTERVAL_SECONDS)
 
+    def _proxy_maesu(self):
+        upstream_path = self.path[len("/maesu"):] or "/"
+        connection = http.client.HTTPConnection("127.0.0.1", 8001, timeout=120)
+        try:
+            connection.request("GET", upstream_path)
+            response = connection.getresponse()
+            body = response.read()
+            content_type = response.getheader("Content-Type") or "application/json; charset=utf-8"
+            self._send_body(body, content_type, status=response.status, cors=True)
+        except (OSError, TimeoutError) as exc:
+            self._json({"error": f"가격 추정 API를 연결하지 못했어요: {exc}"}, 503, cors=True)
+        finally:
+            connection.close()
+
     def do_GET(self):
         parsed = urlparse(self.path)
+        if parsed.path == "/maesu" or parsed.path.startswith("/maesu/"):
+            self._proxy_maesu()
+            return
         if parsed.path == "/ws/popular-stock-quotes":
             try:
                 self._popular_stock_quotes_ws(parsed)
